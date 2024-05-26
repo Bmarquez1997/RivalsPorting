@@ -102,6 +102,7 @@
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <assets:AssetTypePicker x:Name="DefaultAssetTypeButton" Type="Outfit" Image="/Assets/FN/Outfit.png"/>
+                        <assets:AssetTypePicker Type="LegoOutfit" Image="/Assets/FN/LegoOutfit.png"/>
                         <assets:AssetTypePicker Type="Backpack" Image="/Assets/FN/Backpack.png"/>
                         <assets:AssetTypePicker Type="Pickaxe" Image="/Assets/FN/Pickaxe.png"/>
                         <assets:AssetTypePicker Type="Glider" Image="/Assets/FN/Glider.png"/>

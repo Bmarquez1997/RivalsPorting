@@ -59,17 +59,17 @@ public partial class AssetItem : UserControl
 
         DisplayWidth = 64 * AppSettings.Current.AssetSizeMultiplier;
         DisplayHeight = 80 * AppSettings.Current.AssetSizeMultiplier;
-
+        UObject uiAsset = EAssetType.LegoOutfit == type ? GetLegoBaseCharacterDefinition(asset) : asset;
         Hidden = isHidden;
         Type = type;
         Asset = asset;
         IsFavorite = AppSettings.Current.FavoritePaths.Contains(asset.GetPathName());
         ID = asset.Name;
         DisplayName = useTitleCase ? displayName.TitleCase() : displayName;
-        var description = asset.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
+        var description =  uiAsset.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
         Description = description.Text;
-        Rarity = rarityOverride ?? asset.GetOrDefault("Rarity", EFortRarity.Uncommon);
-        GameplayTags = asset.GetOrDefault<FGameplayTagContainer?>("GameplayTags");
+        Rarity = rarityOverride ?? uiAsset.GetOrDefault("Rarity", EFortRarity.Uncommon);
+        GameplayTags = uiAsset.GetOrDefault<FGameplayTagContainer?>("GameplayTags");
         if (type is EAssetType.Prefab)
         {
             var tagsHelper = asset.GetOrDefault<FStructFallback?>("CreativeTagsHelper");
@@ -154,5 +154,15 @@ public partial class AssetItem : UserControl
     public void CopyID()
     {
         Clipboard.SetTextAsync(Asset.Name);
+    }
+
+    private UObject GetLegoBaseCharacterDefinition(UObject asset)
+    {
+        if (asset.TryGetValue(out UObject baseCharacterDef, "BaseAthenaCharacterItemDefinition"))
+        {
+            return baseCharacterDef;
+        }
+
+        return null;
     }
 }
