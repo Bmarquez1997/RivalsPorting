@@ -12,6 +12,7 @@ using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
+using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
@@ -26,6 +27,7 @@ namespace FortnitePorting.Export.Types;
 
 public class MeshExportData : ExportDataBase
 {
+    public readonly List<String> TexturePaths = [];
     public readonly List<ExportMesh> Meshes = [];
     public readonly List<ExportMesh> OverrideMeshes = [];
     public readonly List<ExportOverrideMaterial> OverrideMaterials = [];
@@ -79,7 +81,73 @@ public class MeshExportData : ExportDataBase
             }
             case EAssetType.LegoOutfit:
             {
-                throw new Exception("Lego Outfit export not supported yet.");
+                List<UObject> parts = new List<UObject>();
+                List<UTexture2D> textures = new List<UTexture2D>();
+                String characterName = "BuffCatA";
+                if (TryExportLegoPart(out UObject body, "_Figure_Core/SkeletalMesh/SKM_Figure_PreviewA"))
+                {
+                    parts.Add(body);
+                }
+                if (TryExportLegoPart(out UObject head, "_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" + characterName))
+                {
+                    parts.Add(head);
+                }
+                if (TryExportLegoPart(out UObject headAcc, "_Figure_SharedParts/HeadAcc_" + characterName + "/SKM_HeadAcc_" + characterName))
+                {
+                    parts.Add(headAcc);
+                }
+                if (TryExportLegoPart(out UObject hipAcc, "_Figure_SharedParts/HipAcc_" + characterName + "/SKM_HipAcc_" + characterName))
+                {
+                    parts.Add(hipAcc);
+                }
+                if (TryExportLegoPart(out UObject tail, "_Figure_SharedParts/HipAcc_15504/SKM_HipAcc_15504"))
+                {
+                    parts.Add(tail);
+                }
+                if (TryExportLegoPart(out UObject neckAcc, "_Figure_SharedParts/NeckAcc" + characterName + "/SKM_NeckAcc_" + characterName))
+                {
+                    parts.Add(neckAcc);
+                }
+
+                textures = GetLegoTextures(characterName);
+                
+                
+                // if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema") && 
+                //     ams.TryGetValue(out UObject mutable, "CustomizableObjectInstance") && 
+                //     mutable.TryGetValue(out FInstancedStruct[] descriptors, "Descriptor"))
+                // {
+                //     foreach (var descriptor in descriptors)
+                //     {
+                //         if (descriptor.NonConstStruct?.TryGetValue(out UStruct[] intParams, "IntParameters") ?? false)
+                //         {
+                //             foreach (var intParameter in intParams)
+                //             {
+                //                 Log.Information(intParameter.ToString());
+                //             }
+                //         }
+                //         
+                //         /*
+                //          * Head: Always search
+                //          * Body: Standard
+                //          * HipAcc: If not Debug, look for mesh
+                //          * Textures: fuck if I know
+                //          */
+                //     }
+                // }
+                
+                AssetsVM.ExportChunks = parts.Count() + textures.Count();
+                foreach (var part in parts)
+                {
+                    Meshes.AddIfNotNull(Exporter.Mesh(part as USkeletalMesh));
+                    AssetsVM.ExportProgress++;
+                }
+                foreach (var texture in textures)
+                {
+                    TexturePaths.AddIfNotNull(Exporter.Export(texture));
+                    AssetsVM.ExportProgress++;
+                }
+                
+                break;
             }
             case EAssetType.Backpack:
             {
@@ -438,5 +506,62 @@ public class MeshExportData : ExportDataBase
 
         var variantParameters = style.GetOrDefault("VariantMaterialParams", Array.Empty<FStructFallback>());
         foreach (var parameters in variantParameters) OverrideParameters.AddIfNotNull(Exporter.OverrideParameters(parameters));
+    }
+
+    private bool TryExportLegoPart(out UObject output, String filePath)
+    {
+        if (CUE4ParseVM.Provider.TryLoadObject("FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/" + filePath,
+                out output))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private List<UTexture2D> GetLegoTextures(String characterName)
+    {
+        List<UTexture2D> textures = new List<UTexture2D>();
+        foreach (var texturePath in BuildLegoTexturePaths(characterName))
+        {
+            if (CUE4ParseVM.Provider.TryLoadObject("FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/" + texturePath,
+                            out UTexture2D textureAsset))
+            {
+                textures.Add(textureAsset);
+            }
+        }
+        
+        return textures;
+    }
+
+    //head/headAcc norms: _Figure_SharedParts/(Head/HeadAcc)_Name/T_(Head/HeadAcc)_Name_N
+    //hipAcc norms: _Figure_SharedParts/HipAcc_Name/T_HipAcc_Name_N
+    //others: Figure_Name/Texture/T_Figure_(Body/Head/HeadBack/HeadAcc/HipAcc)_Name_(Elem/Deco/DecoFG/DecoBG)_(D/M)
+    private List<String> BuildLegoTexturePaths(String characterName)
+    {
+        List<String> textureNames = new List<string>();
+        textureNames.Add("_Figure_SharedParts/Head_" + characterName + "/T_Figure_Head_" + characterName + "_N");
+        textureNames.Add("_Figure_SharedParts/Head_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
+        textureNames.Add("_Figure_SharedParts/HeadAcc_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
+        textureNames.Add("_Figure_SharedParts/HipAcc_" + characterName + "/T_Figure_HipAcc_" + characterName + "_N");
+        textureNames.Add("_Figure_SharedParts/HipAcc_" + characterName + "/T_Figure_NeckAcc_" + characterName + "_N");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Elem_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Elem_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Deco_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Deco_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Elem_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Elem_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Deco_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Deco_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Elem_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Elem_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Deco_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Deco_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Elem_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Elem_M");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Deco_D");
+        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Deco_M");
+
+        return textureNames;
     }
 }

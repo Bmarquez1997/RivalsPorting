@@ -173,60 +173,6 @@ public partial class AssetsViewModel : ViewModelBase
 
                      return displayName;
                  }
-                // CustomLoadingHandler = async loader =>
-                // {
-                //     var figureConversionTables = new[]
-                //     {
-                //         "/FigureCosmetics/DataTables/DT_FigurePHConversion",
-                //         "/FigureCosmetics/DataTables/DT_FigureConversion",
-                //         "/FigureCosmetics/DataTables/DT_DefaultFigures"
-                //     };
-                //
-                //     var dataTables = new List<UDataTable>();
-                //     foreach (var conversionTable in figureConversionTables)
-                //     {
-                //         dataTables.Add(await CUE4ParseVM.Provider.LoadObjectAsync<UDataTable>(conversionTable));
-                //     }
-                //     
-                //     var mergedDataTableRows = dataTables
-                //         .SelectMany(table => table.RowMap)
-                //         .ToDictionary(pair => pair.Key, pair => pair.Value);
-                //
-                //     var assets = CUE4ParseVM.AssetRegistry.Where(data => data.AssetClass.Text.Equals("AthenaCharacterItemDefinition")).ToArray();
-                //     loader.Total = assets.Length;
-                //     foreach (var data in assets)
-                //     {
-                //         await loader.Pause.WaitIfPaused();
-                //         try
-                //         {
-                //             var asset = await CUE4ParseVM.Provider.LoadObjectAsync(data.ObjectPath);
-                //             var displayName = asset.GetAnyOrDefault<FText?>("DisplayName", "ItemName") ?? new FText(asset.Name);
-                //             var rarity = asset.GetOrDefault("Rarity", EFortRarity.Uncommon);
-                //
-                //             if (!mergedDataTableRows.TryGetDataTableRow(asset.Name, StringComparison.OrdinalIgnoreCase, out var characterData)) continue;
-                //
-                //             var meshSchema = await characterData.Get<FSoftObjectPath>("AssembledMeshSchema").LoadAsync();
-                //             
-                //             var customizableObject = await meshSchema.GetOrDefault<FSoftObjectPath>("CustomizableObjectInstance").LoadAsync();
-                //             
-                //             var additionalData = meshSchema.Get<FInstancedStruct[]>("AdditionalData").FirstOrDefault();
-                //             if (additionalData is null) continue;
-                //
-                //             var previewImage = additionalData.NonConstStruct!.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
-                //             if (previewImage is null) continue;
-                //             
-                //             await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(customizableObject, previewImage, displayName.Text, loader.Type, rarityOverride: rarity)), DispatcherPriority.Background);
-                //             loader.Loaded++;
-                //             
-                //         }
-                //         catch (Exception e)
-                //         {
-                //             Log.Error("{0}", e);
-                //         }
-                //     }
-                //
-                //     loader.Loaded = loader.Total;
-                // }
             },
             new(EAssetType.Backpack)
             {
