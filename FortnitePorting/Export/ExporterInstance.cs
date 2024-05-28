@@ -279,17 +279,6 @@ public class ExporterInstance
                 if (leftWeaponMesh is not null) exportWeapons.AddIfNotNull(leftWeaponMesh);
             }
         }
-        
-        if (exportWeapons.Count == 0 && weaponDefinition.TryGetValue(out FInstancedStruct[] dataList, "DataList"))
-        {
-            foreach (var data in dataList)
-            {
-                if (data.NonConstStruct?.TryGetValue(out UObject mesh, "PickupSkeletalMesh", "PickupStaticMesh") ?? false)
-                {
-                    exportWeapons.Add(mesh);
-                }
-            }
-        }
 
         if (exportWeapons.Count == 0 && weaponDefinition.TryGetValue(out FInstancedStruct[] dataList, "DataList"))
         {
