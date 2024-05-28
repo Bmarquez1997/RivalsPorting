@@ -52,24 +52,23 @@ public partial class AssetItem : UserControl
     public float DisplayHeight { get; set; }
     
 
-    public AssetItem(UObject asset, UTexture2D icon, string displayName, EAssetType type, bool isHidden = false, bool hideRarity = false, EFortRarity? rarityOverride = null, bool useTitleCase = true)
+    public AssetItem(UObject asset, UTexture2D icon, string displayName, EAssetType type, string description, bool isHidden = false, bool hideRarity = false, EFortRarity? rarityOverride = null, bool useTitleCase = true)
     {
         DataContext = this;
         InitializeComponent();
 
         DisplayWidth = 64 * AppSettings.Current.AssetSizeMultiplier;
         DisplayHeight = 80 * AppSettings.Current.AssetSizeMultiplier;
-        UObject uiAsset = EAssetType.LegoOutfit == type ? GetLegoBaseCharacterDefinition(asset) : asset;
+
         Hidden = isHidden;
         Type = type;
         Asset = asset;
         IsFavorite = AppSettings.Current.FavoritePaths.Contains(asset.GetPathName());
         ID = asset.Name;
         DisplayName = useTitleCase ? displayName.TitleCase() : displayName;
-        var description =  uiAsset.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
-        Description = description.Text;
-        Rarity = rarityOverride ?? uiAsset.GetOrDefault("Rarity", EFortRarity.Uncommon);
-        GameplayTags = uiAsset.GetOrDefault<FGameplayTagContainer?>("GameplayTags");
+        Description = description;
+        Rarity = rarityOverride ?? asset.GetOrDefault("Rarity", EFortRarity.Uncommon);
+        GameplayTags = asset.GetOrDefault<FGameplayTagContainer?>("GameplayTags");
         if (type is EAssetType.Prefab)
         {
             var tagsHelper = asset.GetOrDefault<FStructFallback?>("CreativeTagsHelper");
@@ -154,15 +153,5 @@ public partial class AssetItem : UserControl
     public void CopyID()
     {
         Clipboard.SetTextAsync(Asset.Name);
-    }
-
-    private UObject GetLegoBaseCharacterDefinition(UObject asset)
-    {
-        if (asset.TryGetValue(out UObject baseCharacterDef, "BaseAthenaCharacterItemDefinition"))
-        {
-            return baseCharacterDef;
-        }
-
-        return null;
     }
 }

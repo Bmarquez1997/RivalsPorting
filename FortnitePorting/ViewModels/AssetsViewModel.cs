@@ -144,35 +144,35 @@ public partial class AssetsViewModel : ViewModelBase
             },
             new(EAssetType.LegoOutfit)
             {
-                Classes = new[] { "JunoAthenaCharacterItemOverrideDefinition"},
+                Classes = ["JunoAthenaCharacterItemOverrideDefinition"],
                 IconHandler = asset =>
                 {
-                    UTexture2D? previewImage = new UTexture2D();
-                    if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema", "LowDetailsAssembledMeshSchema") 
-                        && ams.TryGetValue(out FInstancedStruct[] additionalData, "AdditionalData"))
+                    var meshSchema = asset.GetAnyOrDefault<UObject?>("AssembledMeshSchema", "LowDetailsAssembledMeshSchema");
+                    if (meshSchema is null) return null;
+
+                    var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
+                    foreach (var additionalData in additionalDatas)
                     {
-                        foreach (var data in additionalData)
-                        {
-                            if (data.NonConstStruct?.TryGetValue(out previewImage, "SmallPreviewImage",
-                                "LargePreviewImage") ?? false)
-                            {
-                                return previewImage;
-                            }
-                        }
+                        var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                        if (previewImage is not null) return previewImage;
                     }
 
-                    return new UTexture2D();
+                    return null;
                 },
-                 DisplayNameHandler = asset =>
-                 {
-                     var displayName = new FText("");
-                     if (asset.TryGetValue(out UObject baseCharacterDef, "BaseAthenaCharacterItemDefinition"))
-                     {
-                          displayName = baseCharacterDef.GetAnyOrDefault<FText?>("DisplayName", "ItemName") ?? new FText(asset.Name);
-                     }
+                DisplayNameHandler = asset =>
+                {
+                    var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
+                    if (baseItemDefinition is null) return new FText(asset.Name);
 
-                     return displayName;
-                 }
+                    return baseItemDefinition.GetAnyOrDefault<FText?>("DisplayName", "ItemName") ?? new FText(asset.Name);
+                },
+                DescriptionHandler = asset =>
+                {
+                    var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
+                    if (baseItemDefinition is null) return new FText("No description.");
+
+                    return baseItemDefinition.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
+                }
             },
             new(EAssetType.Backpack)
             {
@@ -368,7 +368,7 @@ public partial class AssetsViewModel : ViewModelBase
                     loader.Total = entries.Length;
                     foreach (var data in entries)
                     {
-                        await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(data.Mesh, data.PreviewImage, data.Name, loader.Type, hideRarity: true)), DispatcherPriority.Background);
+                        await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(data.Mesh, data.PreviewImage, data.Name, loader.Type, "No Description.", hideRarity: true)), DispatcherPriority.Background);
                         loader.Loaded++;
                     }
                 }
@@ -411,14 +411,14 @@ public partial class AssetsViewModel : ViewModelBase
                                 var name = modMesh.Name;
                                 if (loader.LoadedAssetsForFiltering.Contains(name)) continue;
 
-                                await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(modMesh, icon, name, EAssetType.WeaponMod, hideRarity: true, useTitleCase: false)), DispatcherPriority.Background);
+                                await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(modMesh, icon, name, EAssetType.WeaponMod, "No Description.", hideRarity: true, useTitleCase: false)), DispatcherPriority.Background);
                                 loader.LoadedAssetsForFiltering.Add(name);
                                 overridesAdded++;
                             }
 
                             if (overridesAdded == 0 && mainModMesh is not null)
                             {
-                                await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(mainModMesh, icon, mainModMesh.Name, EAssetType.WeaponMod, hideRarity: true, useTitleCase: false)), DispatcherPriority.Background);
+                                await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(mainModMesh, icon, mainModMesh.Name, EAssetType.WeaponMod, "No Description.", hideRarity: true, useTitleCase: false)), DispatcherPriority.Background);
                             }
                         }
                         catch (Exception e)
@@ -578,6 +578,7 @@ public partial class AssetLoader : ObservableObject
     public Func<AssetLoader, UObject, string, bool> HidePredicate = (_, _, _) => false;
     public Func<UObject, UTexture2D?> IconHandler = asset => asset.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
     public Func<UObject, FText?> DisplayNameHandler = asset => asset.GetAnyOrDefault<FText?>("DisplayName", "ItemName") ?? new FText(asset.Name);
+    public Func<UObject, FText> DescriptionHandler = asset => asset.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
     public Func<AssetLoader, Task>? CustomLoadingHandler;
 
     private bool Started;
@@ -650,7 +651,9 @@ public partial class AssetLoader : ObservableObject
         var displayName = DisplayNameHandler(asset)?.Text;
         if (string.IsNullOrEmpty(displayName)) displayName = asset.Name;
 
-        await TaskService.RunDispatcherAsync(() => Source.Add(new AssetItem(asset, icon, displayName, Type, isHiddenAsset, HideRarity)), DispatcherPriority.Background);
+        var description = DescriptionHandler(asset).Text;
+
+        await TaskService.RunDispatcherAsync(() => Source.Add(new AssetItem(asset, icon, displayName, Type, description, isHiddenAsset, HideRarity)), DispatcherPriority.Background);
     }
 }
 
