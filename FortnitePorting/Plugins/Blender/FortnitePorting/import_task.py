@@ -167,6 +167,20 @@ toon_mappings = MappingCollection(
     ]
 )
 
+lego_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Deco_D", alpha_slot="Deco Alpha"),
+        SlotMapping("DecoFG_D", "Deco_D", alpha_slot="Deco Alpha"),
+        SlotMapping("DecoBG_D", "Deco_D", alpha_slot="Deco Alpha"),
+        SlotMapping("Elem_D"),
+        SlotMapping("Deco_M", alpha_slot="Deco Alpha"),
+        SlotMapping("Elem_M"),
+        SlotMapping("Normals"),
+        SlotMapping("Normal_Map", "Normals"),
+        SlotMapping("Tex Normal", "Normals")
+    ]
+)
+
 valet_mappings = MappingCollection(
     textures=[
         SlotMapping("Diffuse"),
@@ -422,6 +436,24 @@ class DataImportTask:
 
             if self.rig_type == ERigType.TASTY:
                 apply_tasty_rig(master_skeleton, 1 if self.options.get("ScaleDown") else 100, self.options.get("UseFingerIK"), self.options.get("CustomDynamicBoneShape"))
+                
+        if self.type == "LegoProp":
+            for part in self.imported_meshes:
+                mesh = part.get("Mesh")
+    
+                decimate = mesh.modifiers.new(name='Decimate', type='DECIMATE')
+                decimate.decimate_type = "DISSOLVE"
+                decimate.angle_limit = 0.09
+    
+                geo_nodes = mesh.modifiers.new(name="Studs", type='NODES')
+                geo_nodes.node_group = bpy.data.node_groups.get("LegoStuds")
+    
+                bevel = mesh.modifiers.new(name='Bevel', type='BEVEL')
+                bevel.affect = "EDGES"
+                bevel.offset_type = "OFFSET"
+                bevel.width = 0.05
+                bevel.segments = 6
+                bevel.limit_method = "WEIGHT"
 
 
     def import_anim_data(self, data, override_skeleton=None):
@@ -1081,6 +1113,15 @@ class DataImportTask:
             replace_shader_node("FP Foliage")
             socket_mappings = foliage_mappings
             material.use_sss_translucency = True
+        
+        if self.type == "LegoOutfit":
+            replace_shader_node("FP Lego")
+            socket_mappings = lego_mappings
+        
+        if self.type == "LegoProp" or "Lego" in material_name:
+            replace_shader_node("FP Lego Default Stud LUT" if material_name == "MI_Lego_CommonParts"
+                                else "FP Lego Default LUT")
+            socket_mappings = MappingCollection()
             
         def setup_params(mappings, target_node, add_unused_params = False):
             for texture in textures:
@@ -1463,7 +1504,7 @@ def merge_skeletons(parts):
         data = part.get("Data")
         mesh_type = data.get("Type")
         skeleton = part.get("Skeleton")
-
+# add lego merge
         if mesh_type == "Body":
             bpy.context.view_layer.objects.active = skeleton
 

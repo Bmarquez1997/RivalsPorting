@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Avalonia.Media.TextFormatting.Unicode;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse.GameTypes.FN.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports;
@@ -9,6 +10,7 @@ using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Engine;
+using CUE4Parse.UE4.Assets.Exports.GeometryCollection;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
@@ -43,12 +45,14 @@ public class MeshExportData : ExportDataBase
                 var parts = asset.GetOrDefault("BaseCharacterParts", Array.Empty<UObject>());
                 if (asset.TryGetValue(out UObject heroDefinition, "HeroDefinition"))
                 {
-                    if (parts.Length == 0 && heroDefinition.TryGetValue(out UObject[] specializations, "Specializations"))
+                    if (parts.Length == 0 &&
+                        heroDefinition.TryGetValue(out UObject[] specializations, "Specializations"))
                     {
                         parts = specializations.First().GetOrDefault("CharacterParts", Array.Empty<UObject>());
                     }
 
-                    if (Exporter.AppExportOptions.LobbyPoses && heroDefinition.TryGetValue(out UAnimMontage montage, "FrontendAnimMontageIdleOverride"))
+                    if (Exporter.AppExportOptions.LobbyPoses &&
+                        heroDefinition.TryGetValue(out UAnimMontage montage, "FrontendAnimMontageIdleOverride"))
                     {
                         Animation = AnimExportData.From(montage, exportType);
                     }
@@ -57,7 +61,8 @@ public class MeshExportData : ExportDataBase
                 AssetsVM.ExportChunks = parts.Length;
                 foreach (var part in parts)
                 {
-                    if (Exporter.AppExportOptions.LobbyPoses && part.TryGetValue(out UAnimMontage montage, "FrontendAnimMontageIdleOverride"))
+                    if (Exporter.AppExportOptions.LobbyPoses &&
+                        part.TryGetValue(out UAnimMontage montage, "FrontendAnimMontageIdleOverride"))
                     {
                         Animation = AnimExportData.From(montage, exportType);
                     }
@@ -66,14 +71,18 @@ public class MeshExportData : ExportDataBase
                     AssetsVM.ExportProgress++;
                 }
 
-                if (Animation is null && Exporter.AppExportOptions.LobbyPoses && Meshes.FirstOrDefault(part => part is ExportPart { CharacterPartType: EFortCustomPartType.Body }) is ExportPart foundPart)
+                if (Animation is null && Exporter.AppExportOptions.LobbyPoses &&
+                    Meshes.FirstOrDefault(part => part is ExportPart
+                    {
+                        CharacterPartType: EFortCustomPartType.Body
+                    }) is ExportPart foundPart)
                 {
                     var montage = foundPart.GenderPermitted switch
                     {
                         EFortCustomGender.Male => CUE4ParseVM.MaleLobbyMontages.Random(),
                         EFortCustomGender.Female => CUE4ParseVM.FemaleLobbyMontages.Random(),
                     };
-                    
+
                     if (montage is not null) Animation = AnimExportData.From(montage, exportType);
                 }
 
@@ -83,35 +92,25 @@ public class MeshExportData : ExportDataBase
             {
                 List<UObject> parts = new List<UObject>();
                 List<UTexture2D> textures = new List<UTexture2D>();
-                String characterName = "BuffCatA";
-                if (TryExportLegoPart(out UObject body, "_Figure_Core/SkeletalMesh/SKM_Figure_PreviewA"))
+                var assetName = asset.Name;
+                if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema"))
                 {
-                    parts.Add(body);
-                }
-                if (TryExportLegoPart(out UObject head, "_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" + characterName))
-                {
-                    parts.Add(head);
-                }
-                if (TryExportLegoPart(out UObject headAcc, "_Figure_SharedParts/HeadAcc_" + characterName + "/SKM_HeadAcc_" + characterName))
-                {
-                    parts.Add(headAcc);
-                }
-                if (TryExportLegoPart(out UObject hipAcc, "_Figure_SharedParts/HipAcc_" + characterName + "/SKM_HipAcc_" + characterName))
-                {
-                    parts.Add(hipAcc);
-                }
-                if (TryExportLegoPart(out UObject tail, "_Figure_SharedParts/HipAcc_15504/SKM_HipAcc_15504"))
-                {
-                    parts.Add(tail);
-                }
-                if (TryExportLegoPart(out UObject neckAcc, "_Figure_SharedParts/NeckAcc" + characterName + "/SKM_NeckAcc_" + characterName))
-                {
-                    parts.Add(neckAcc);
+                    assetName = ams.Name;
                 }
 
+                String characterName = assetName.Substring(assetName.IndexOf("AMS_Figure_") + 11);
+
+                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "Head")));
+                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "HeadAcc")));
+                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "NeckAcc")));
+                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "HipAcc")));
+                parts.AddIfNotNull(ExportLegoPart("_Figure_Core/SkeletalMesh/SKM_Figure_PreviewA"));
+                parts.AddIfNotNull(ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" +
+                                                  characterName));
+
                 textures = GetLegoTextures(characterName);
-                
-                
+
+
                 // if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema") && 
                 //     ams.TryGetValue(out UObject mutable, "CustomizableObjectInstance") && 
                 //     mutable.TryGetValue(out FInstancedStruct[] descriptors, "Descriptor"))
@@ -134,19 +133,24 @@ public class MeshExportData : ExportDataBase
                 //          */
                 //     }
                 // }
-                
+
                 AssetsVM.ExportChunks = parts.Count() + textures.Count();
                 foreach (var part in parts)
                 {
-                    Meshes.AddIfNotNull(Exporter.Mesh(part as USkeletalMesh));
+                    ExportMesh mesh = Exporter.Mesh(part as USkeletalMesh);
+                    // Build materials or override materials?
+                    // Process each one during load, instead of looping through loaded props
+                    Meshes.AddIfNotNull(mesh);
                     AssetsVM.ExportProgress++;
                 }
+
                 foreach (var texture in textures)
                 {
+                    // Move to asset loading above, only try to export when asset is loaded successfully
                     TexturePaths.AddIfNotNull(Exporter.Export(texture));
                     AssetsVM.ExportProgress++;
                 }
-                
+
                 break;
             }
             case EAssetType.Backpack:
@@ -172,7 +176,8 @@ public class MeshExportData : ExportDataBase
                 if (part is null) break;
 
                 var overrideMaterials = asset.GetOrDefault("MaterialOverrides", Array.Empty<FStructFallback>());
-                foreach (var overrideMaterial in overrideMaterials) part.OverrideMaterials.AddIfNotNull(Exporter.OverrideMaterial(overrideMaterial));
+                foreach (var overrideMaterial in overrideMaterials)
+                    part.OverrideMaterials.AddIfNotNull(Exporter.OverrideMaterial(overrideMaterial));
 
                 Meshes.Add(part);
                 break;
@@ -186,8 +191,11 @@ public class MeshExportData : ExportDataBase
                 // pet mesh
                 var petAsset = asset.Get<UObject>("DefaultPet");
                 var blueprintPath = petAsset.Get<FSoftObjectPath>("PetPrefabClass");
-                var blueprintExports = CUE4ParseVM.Provider.LoadAllObjects(blueprintPath.AssetPathName.Text.SubstringBeforeLast("."));
-                var meshComponent = blueprintExports.FirstOrDefault(export => export.Name.Equals("PetMesh0")) as USkeletalMeshComponentBudgeted;
+                var blueprintExports =
+                    CUE4ParseVM.Provider.LoadAllObjects(blueprintPath.AssetPathName.Text.SubstringBeforeLast("."));
+                var meshComponent =
+                    blueprintExports.FirstOrDefault(export => export.Name.Equals("PetMesh0")) as
+                        USkeletalMeshComponentBudgeted;
                 var mesh = meshComponent?.GetSkeletalMesh().Load<USkeletalMesh>();
                 if (mesh is not null) Meshes.AddIfNotNull(Exporter.Mesh(mesh));
 
@@ -208,7 +216,8 @@ public class MeshExportData : ExportDataBase
                 UStaticMeshComponent? GetComponent(UBlueprintGeneratedClass? blueprint)
                 {
                     if (blueprint is null) return null;
-                    if (!blueprint.TryGetValue(out UObject internalComponentHandler, "InheritableComponentHandler")) return null;
+                    if (!blueprint.TryGetValue(out UObject internalComponentHandler, "InheritableComponentHandler"))
+                        return null;
 
                     var records = internalComponentHandler.GetOrDefault("Records", Array.Empty<FStructFallback>());
                     foreach (var record in records)
@@ -235,9 +244,10 @@ public class MeshExportData : ExportDataBase
                 {
                     Meshes.AddRange(Exporter.LevelSaveRecord(baseSaveRecord));
                 }
-                
+
                 var recordCollectionLazy = asset.GetOrDefault<FPackageIndex?>("PlaysetPropLevelSaveRecordCollection");
-                if (recordCollectionLazy is null || recordCollectionLazy.IsNull || !recordCollectionLazy.TryLoad(out var recordCollection) || recordCollection is null) break;
+                if (recordCollectionLazy is null || recordCollectionLazy.IsNull ||
+                    !recordCollectionLazy.TryLoad(out var recordCollection) || recordCollection is null) break;
 
                 var props = recordCollection.GetOrDefault<FStructFallback[]>("Items");
                 AssetsVM.ExportChunks = props.Length;
@@ -322,12 +332,138 @@ public class MeshExportData : ExportDataBase
 
                 break;
             }
+            //case EAssetType.LegoWildlife:
+                // if (asset.TryGetValue(out USkeletalMesh legoSkelMesh, "SkeletalMesh"))
+                // {
+                //     var exportMesh = Exporter.Mesh(legoSkelMesh);
+                //     if (exportMesh is not null && asset.TryGetValue(out FStructFallback[] overrideMats, "OverrideMaterials"))
+                //     {
+                //         foreach (var mat in overrideMats)
+                //         {
+                //             if (mat.TryGetValue(out UMaterialInterface overrideMat, "Material"))
+                //                 exportMesh.OverrideMaterials.AddIfNotNull(Exporter.Material(overrideMat, 0));
+                //         }
+                //     }
+                
+                    
+                    //Meshes.AddIfNotNull(exportMesh);
+                //}
+                //break;
             case EAssetType.Wildlife:
             {
                 var wildlifeMesh = (USkeletalMesh) asset;
                 Meshes.AddIfNotNull(Exporter.Mesh(wildlifeMesh));
                 break;
             }
+            case EAssetType.LegoProp:
+                var blueprintObject = asset.Get<UBlueprintGeneratedClass>("ActorClassToBuild");
+                if (blueprintObject is null) break;
+
+                var length = 0;
+                FPackageIndex[] allNodes = [];
+                IPropertyHolder[] records = [];
+                if (blueprintObject.TryGetValue(out FPackageIndex simpleConstructionScript,
+                        "SimpleConstructionScript") &&
+                    simpleConstructionScript.TryLoad(out var scs) && scs.TryGetValue(out allNodes, "AllNodes"))
+                {
+                    length = allNodes.Length;
+                }
+                else if (blueprintObject.TryGetValue(out FPackageIndex inheritableComponentHandler,
+                             "InheritableComponentHandler") &&
+                         inheritableComponentHandler.TryLoad(out var ich) && ich.TryGetValue(out records, "Records"))
+                {
+                    length = records.Length;
+                }
+                
+                AssetsVM.ExportChunks = length;
+                AssetsVM.ExportProgress = 0;
+                var exportMeshes = new List<ExportMesh>();
+                for (var i = 0; i < length; i++)
+                {
+                    IPropertyHolder actor;
+                    if (allNodes is {Length: > 0} && allNodes[i].TryLoad(out UObject node))
+                    {
+                        actor = node;
+                    }
+                    else if (records is {Length: > 0})
+                    {
+                        actor = records[i];
+                    }
+                    else continue;
+
+                    if (actor.TryGetValue(out FPackageIndex componentTemplate, "ComponentTemplate") &&
+                        componentTemplate.TryLoad(out UObject compTemplate))
+                    {
+                        UGeometryCollection geometryCollection = null;
+                        if (!compTemplate.TryGetValue(out UStaticMesh m, "StaticMesh") &&
+                            compTemplate.TryGetValue(out FPackageIndex restCollection, "RestCollection") &&
+                            restCollection.TryLoad(out geometryCollection))
+                        {
+                            if (geometryCollection.RootProxyData is { ProxyMeshes.Length: > 0 } rootProxyData)
+                            {
+                                rootProxyData.ProxyMeshes[0].TryLoad(out m);
+                            }
+                        }
+
+                        if (m is { Materials.Length: > 0 })
+                        {
+                            // Uncomment to change vertex color directly instead of using LUT Material in blender
+                            // OverrideJunoVertexColors(m, geometryCollection);
+                            ExportMesh exportMesh = new ExportMesh { IsEmpty = true };
+                            if (componentTemplate.TryLoad(out UStaticMeshComponent meshComp))
+                            {
+                                Log.Information(compTemplate.ToString());
+                                exportMesh = Exporter.MeshComponent(meshComp) ?? new ExportMesh { IsEmpty = true };
+                                exportMesh.Name = m.Name;
+                                exportMesh.Location = meshComp.GetOrDefault("RelativeLocation", FVector.ZeroVector);
+                                exportMesh.Rotation = meshComp.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
+                                exportMesh.Scale = meshComp.GetOrDefault("RelativeScale3D", FVector.OneVector);
+                            }
+                            else
+                            {
+                                exportMesh = Exporter.Mesh(m);
+                            }
+
+                            exportMeshes.AddIfNotNull(exportMesh);
+                            //ProcessMesh(actor, compTemplate, m, CalculateTransform(compTemplate, transform), forceShow);
+                        }
+                    }
+                    else if (actor.TryGetValue(out FPackageIndex staticMeshComponent, "StaticMeshComponent", "ComponentTemplate", "StaticMesh", "Mesh", "LightMesh") &&
+                             staticMeshComponent.TryLoad(out UStaticMeshComponent staticMeshComp) &&
+                             staticMeshComp.GetStaticMesh().TryLoad(out UStaticMesh m) && m.Materials.Length > 0)
+                    {
+                        Log.Information(staticMeshComp.ToString());
+                        var exportMesh = Exporter.MeshComponent(staticMeshComp) ?? new ExportMesh { IsEmpty = true };
+                        exportMesh.Name = m.Name;
+                        exportMesh.Location = staticMeshComp.GetOrDefault("RelativeLocation", FVector.ZeroVector);
+                        exportMesh.Rotation = staticMeshComp.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
+                        exportMesh.Scale = staticMeshComp.GetOrDefault("RelativeScale3D", FVector.OneVector);
+                        exportMeshes.Add(exportMesh);
+                        //ProcessMesh(actor, staticMeshComp, m, CalculateTransform(staticMeshComp, transform));
+                    }
+                    else if (actor.TryGetValue(out FPackageIndex staticMeshComponent2, "StaticMeshComponent",
+                                 "ComponentTemplate", "StaticMesh", "Mesh", "LightMesh") &&
+                             staticMeshComponent2.TryLoad(out UStaticMeshComponent staticMeshComp2) &&
+                             staticMeshComp2.GetStaticMesh().TryLoad(out UStaticMesh m2))
+                    {
+                        Log.Information("Issue with material count");
+                    }
+                    else if (actor.TryGetValue(out FPackageIndex staticMeshComponent3, "StaticMeshComponent",
+                                 "ComponentTemplate", "StaticMesh", "Mesh", "LightMesh") &&
+                             staticMeshComponent3.TryLoad(out UStaticMeshComponent staticMeshComp3))
+                    {
+                        Log.Information("Issue with UStaticMesh load");
+                    }
+                    else if (actor.TryGetValue(out FPackageIndex staticMeshComponent4, "StaticMeshComponent",
+                                 "ComponentTemplate", "StaticMesh", "Mesh", "LightMesh"))
+                    {
+                        Log.Information("Issue with UStaticMeshComponent load");
+                    }
+
+                    AssetsVM.ExportProgress++;
+                }
+                Meshes.AddRange(exportMeshes);
+                break;
             case EAssetType.WeaponMod:
             case EAssetType.Mesh:
             {
@@ -508,60 +644,153 @@ public class MeshExportData : ExportDataBase
         foreach (var parameters in variantParameters) OverrideParameters.AddIfNotNull(Exporter.OverrideParameters(parameters));
     }
 
-    private bool TryExportLegoPart(out UObject output, String filePath)
+    private String BuildPartFilePath(String characterName, String partName)
     {
-        if (CUE4ParseVM.Provider.TryLoadObject("FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/" + filePath,
-                out output))
-        {
-            return true;
-        }
-
-        return false;
+        return "_Figure_SharedParts/" + partName + "_" + characterName + "/SKM_" + partName + "_" + characterName;
     }
+
+    private UObject ExportLegoPart(String filePath)
+    {
+        CUE4ParseVM.Provider.TryLoadObject(
+            "FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/" + filePath,
+            out UObject output);
+
+        return output;
+    }
+    
+    private static String FIGURE_COSMETICS_PATH = "FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/";
 
     private List<UTexture2D> GetLegoTextures(String characterName)
     {
         List<UTexture2D> textures = new List<UTexture2D>();
         foreach (var texturePath in BuildLegoTexturePaths(characterName))
         {
-            if (CUE4ParseVM.Provider.TryLoadObject("FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/" + texturePath,
-                            out UTexture2D textureAsset))
+            Log.Information("Loading Texture: " + texturePath);
+            if (CUE4ParseVM.Provider.TryLoadObject(texturePath, out UTexture2D textureAsset))
             {
+                Log.Information("Loaded!");
                 textures.Add(textureAsset);
             }
         }
         
         return textures;
     }
-
-    //head/headAcc norms: _Figure_SharedParts/(Head/HeadAcc)_Name/T_(Head/HeadAcc)_Name_N
-    //hipAcc norms: _Figure_SharedParts/HipAcc_Name/T_HipAcc_Name_N
-    //others: Figure_Name/Texture/T_Figure_(Body/Head/HeadBack/HeadAcc/HipAcc)_Name_(Elem/Deco/DecoFG/DecoBG)_(D/M)
+    
     private List<String> BuildLegoTexturePaths(String characterName)
     {
+        // TODO: Create override materials and add to ExportMesh objects instead of just importing to file
         List<String> textureNames = new List<string>();
-        textureNames.Add("_Figure_SharedParts/Head_" + characterName + "/T_Figure_Head_" + characterName + "_N");
-        textureNames.Add("_Figure_SharedParts/Head_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
-        textureNames.Add("_Figure_SharedParts/HeadAcc_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
-        textureNames.Add("_Figure_SharedParts/HipAcc_" + characterName + "/T_Figure_HipAcc_" + characterName + "_N");
-        textureNames.Add("_Figure_SharedParts/HipAcc_" + characterName + "/T_Figure_NeckAcc_" + characterName + "_N");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Elem_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Elem_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Deco_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName + "_Deco_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Elem_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Elem_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Deco_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName + "_Deco_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Elem_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Elem_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Deco_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName + "_Deco_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Elem_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Elem_M");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Deco_D");
-        textureNames.Add("Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName + "_Deco_M");
+
+        AddFaceTextures(textureNames, characterName);
+        AddAccessoryNormalMaps(textureNames, characterName);
+        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName);
+        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName);
+        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HeadFront_" + characterName);
+        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HeadBack_" + characterName);
+        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName);
+        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName);
 
         return textureNames;
+    }
+
+    private void AddFaceTextures(List<String> texturePaths, String characterName)
+    {
+        String facePath = "FortniteGame/Plugins/GameFeatures/Juno/FigureCharacter/Content/Figure_Core/Texture/Face/";
+        texturePaths.Add(facePath + "Mouth/T_Atlas_Figure_Mouth_" + characterName);
+        texturePaths.Add(facePath + "Beards/T_Figure_Head_" + characterName + "_CharAcc");
+        texturePaths.Add(facePath + "AccentTeethTongue/T_Atlas_Figure_AccentTeethTongue_Default01");
+        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char01");
+        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char02");
+        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char03");
+        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char04");
+        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Thick01");
+        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Thin01");
+        texturePaths.Add(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Char01");
+        texturePaths.Add(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Default01");
+        texturePaths.Add(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Large01");
+        texturePaths.Add(facePath + "T_Atlas_Figure_Faces");
+    }
+
+    private void AddAccessoryNormalMaps(List<String> texturePaths, String characterName)
+    {
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/Head_" + characterName + "/T_Figure_Head_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/Head_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HeadAcc_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HipAcc_" + characterName + "/T_Figure_HipAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HipAcc_" + characterName + "/T_Figure_NeckAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/Head_" + characterName + "/T_Head_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/Head_" + characterName + "/T_HeadAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HeadAcc_" + characterName + "/T_HeadAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HipAcc_" + characterName + "/T_HipAcc_" + characterName + "_N");
+        texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HipAcc_" + characterName + "/T_NeckAcc_" + characterName + "_N");
+    }
+
+    private void AddLegoTextureLayerPaths(List<String> texturePaths, String basePath)
+    {
+        String path = FIGURE_COSMETICS_PATH + basePath;
+        texturePaths.Add(path + "_Elem_D");
+        texturePaths.Add(path + "_Elem_M");
+        texturePaths.Add(path + "_Deco_D");
+        texturePaths.Add(path + "_Deco_M");
+        texturePaths.Add(path + "_DecoBG_D");
+        texturePaths.Add(path + "_DecoBG_M");
+        texturePaths.Add(path + "_DecoFG_D");
+        texturePaths.Add(path + "_DecoFG_M");
+    }
+    
+    // TODO: Take override LUT textures into account, parse images instead of using default material definitions via ID
+    private void OverrideJunoVertexColors(UStaticMesh staticMesh, UGeometryCollection geometryCollection = null)
+    {
+        if (staticMesh.RenderData is not { LODs.Length: > 0 } || staticMesh.RenderData.LODs[0].ColorVertexBuffer == null)
+            return;
+
+        var dico = new Dictionary<byte, FColor>();
+        if (geometryCollection?.Materials is not { Length: > 0 })
+        {
+            var distinctReds = new HashSet<byte>();
+            for (int i = 0; i < staticMesh.RenderData.LODs[0].ColorVertexBuffer.Data.Length; i++)
+            {
+                ref var vertexColor = ref staticMesh.RenderData.LODs[0].ColorVertexBuffer.Data[i];
+                var indexAsByte = vertexColor.R;
+                if (vertexColor.R == 255) indexAsByte = vertexColor.A;
+                distinctReds.Add(indexAsByte);
+            }
+
+            foreach (var indexAsByte in distinctReds)
+            {
+                var path = string.Concat("/JunoAtomAssets/Materials/MI_LegoStandard_", indexAsByte, ".MI_LegoStandard_", indexAsByte);
+                if (!CUE4ParseVM.Provider.TryLoadObject(path, out UMaterialInterface unrealMaterial))
+                    continue;
+
+                var parameters = new CMaterialParams2();
+                unrealMaterial.GetParams(parameters, EMaterialFormat.FirstLayer);
+
+                if (!parameters.TryGetLinearColor(out var color, "Color"))
+                    color = FLinearColor.Gray;
+
+                dico[indexAsByte] = color.ToFColor(true);
+            }
+        }
+        else foreach (var material in geometryCollection.Materials)
+        {
+            if (!material.TryLoad(out UMaterialInterface unrealMaterial))
+                continue;
+
+            var parameters = new CMaterialParams2();
+            unrealMaterial.GetParams(parameters, EMaterialFormat.FirstLayer);
+
+            if (!byte.TryParse(material.Name.SubstringAfterLast("_"), out var indexAsByte))
+                indexAsByte = byte.MaxValue;
+            if (!parameters.TryGetLinearColor(out var color, "Color"))
+                color = FLinearColor.Gray;
+
+            dico[indexAsByte] = color.ToFColor(true);
+        }
+
+        for (int i = 0; i < staticMesh.RenderData.LODs[0].ColorVertexBuffer.Data.Length; i++)
+        {
+            ref var vertexColor = ref staticMesh.RenderData.LODs[0].ColorVertexBuffer.Data[i];
+            vertexColor = dico.TryGetValue(vertexColor.R, out var color) ? color : FColor.Gray;
+        }
     }
 }

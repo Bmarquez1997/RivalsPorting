@@ -174,6 +174,116 @@ public partial class AssetsViewModel : ViewModelBase
                     return baseItemDefinition.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
                 }
             },
+            new(EAssetType.LegoEmote)
+            {
+                Classes = new[] { "JunoAthenaDanceItemOverrideDefinition" },
+                IconHandler = asset =>
+                {
+                    var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                    if (baseItemDefinition is null) return null;
+
+                    return baseItemDefinition.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
+                },
+                DisplayNameHandler = asset =>
+                {
+                    var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                    if (baseItemDefinition is null) return new FText(asset.Name);
+
+                    return baseItemDefinition.GetAnyOrDefault<FText?>("DisplayName", "ItemName") ?? new FText(asset.Name);
+                },
+                DescriptionHandler = asset =>
+                {
+                    var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
+                    if (baseItemDefinition is null) return new FText("No description.");
+
+                    return baseItemDefinition.GetAnyOrDefault<FText?>("Description", "ItemDescription") ?? new FText("No description.");
+                }
+            },
+            new(EAssetType.LegoProp)
+            {
+                Classes = new[] { "JunoBuildingPropAccountItemDefinition", "JunoBuildInstructionsItemDefinition", "JunoBuildingSetAccountItemDefinition" }
+            },
+            new(EAssetType.LegoWildlife)
+            {
+                // TODO: determine best way to handle, including variants like chicken colors
+                Classes = new[] { "JunoWeaponCreatureItemDefinition" },
+                IncludedTerms = new[] { "CreatureGrenade" },
+                DescriptionHandler = asset =>  asset.GetAnyOrDefault<FText?>("ItemShortDescription", "ItemDescription", "Description") ??
+                                                                                    new FText("No description.")
+                // CustomLoadingHandler = async loader =>
+                // {
+                //     var entries = new[]
+                //     {
+                //         await ManualAssetItemEntry.Create("Black Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenBlack_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_B_Black"),
+                //         await ManualAssetItemEntry.Create("Blue Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenBlue_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_I_Blue"),
+                //         await ManualAssetItemEntry.Create("Brown Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenBrown_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_F_Brow"),
+                //         await ManualAssetItemEntry.Create("Gray Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenGray_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_G_Gray"),
+                //         await ManualAssetItemEntry.Create("Orange Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenOrange_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_D_Orange"),
+                //         await ManualAssetItemEntry.Create("Red Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenRed_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_C_Red"),
+                //         await ManualAssetItemEntry.Create("Tan Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenTan_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_H_Tan"),
+                //         await ManualAssetItemEntry.Create("White Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenWhite_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_A_White"),
+                //         await ManualAssetItemEntry.Create("Yellow Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/PawnCustomizations/Juno_ChickenYellow_Customization",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/Chickens/T_UI_Juno_Icon_Creature_Chicken_E_Yellow"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //         await ManualAssetItemEntry.Create("Boar",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_Chicken/Content/SkeletalMesh/SKM_Chicken",
+                //             "FortniteGame/Plugins/GameFeatures/Juno/JunoGame/Content/UI/Icons/Creatures/T_UI_Juno_Icon_Creature_Chicken"),
+                //     };
+                //
+                //     loader.Total = entries.Length;
+                //     foreach (var data in entries)
+                //     {
+                //         await TaskService.RunDispatcherAsync(() => loader.Source.Add(new AssetItem(data.Mesh, data.PreviewImage, data.Name, loader.Type, "No Description.", hideRarity: true)), DispatcherPriority.Background);
+                //         loader.Loaded++;
+                //     }
+                // }
+            },
             new(EAssetType.Backpack)
             {
                 Classes = new[] { "AthenaBackpackItemDefinition" },
@@ -573,6 +683,7 @@ public partial class AssetLoader : ObservableObject
 
     public string[] Classes = Array.Empty<string>();
     public string[] Filters = Array.Empty<string>();
+    public string[] IncludedTerms = Array.Empty<string>();
     public bool DontLoadHiddenAssets;
     public bool HideRarity;
     public Func<AssetLoader, UObject, string, bool> HidePredicate = (_, _, _) => false;
@@ -605,7 +716,7 @@ public partial class AssetLoader : ObservableObject
             return;
         }
 
-        var assets = CUE4ParseVM.AssetRegistry.Where(data => Classes.Contains(data.AssetClass.Text)).ToList();
+        var assets = CUE4ParseVM.AssetRegistry.Where(data => Classes.Contains(data.AssetClass.Text) && ContainsIncludedTerms(data.ObjectPath)).ToList();
 
         var randomAsset = assets.FirstOrDefault(x => x.AssetName.Text.EndsWith("Random", StringComparison.OrdinalIgnoreCase));
         if (randomAsset is not null) assets.Remove(randomAsset);
@@ -625,6 +736,18 @@ public partial class AssetLoader : ObservableObject
         }
 
         Loaded = Total;
+    }
+
+    private bool ContainsIncludedTerms(String objectPath)
+    {
+        if (IncludedTerms.Length == 0) return true;
+        
+        foreach (var term in IncludedTerms)
+        {
+            if (objectPath.Contains(term)) return true;
+        }
+
+        return false;
     }
 
     private async Task LoadAsset(FAssetData data)

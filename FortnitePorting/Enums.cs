@@ -24,9 +24,6 @@ public enum EAssetType
     
     [Description("Outfits"), Export(EExportType.Mesh)]
     Outfit,
-    
-    [Description("Lego Outfits"), Export(EExportType.Mesh)]
-    LegoOutfit,
 
     [Description("Backpacks"), Export(EExportType.Mesh)]
     Backpack,
@@ -103,6 +100,20 @@ public enum EAssetType
     [Description("Microphones"), Export(EExportType.Mesh)]
     FestivalMic,
     
+    // LEGO
+    
+    [Description("Lego Outfits"), Export(EExportType.Mesh)]
+    LegoOutfit,
+    
+    [Description("Lego Emote"), Export(EExportType.Animation)]
+    LegoEmote,
+
+    [Description("Wildlife"), Export(EExportType.Mesh)]
+    LegoWildlife,
+
+    [Description("Lego Props"), Export(EExportType.Mesh)]
+    LegoProp,
+
     // GENERIC
 
     [Description("Mesh"), Export(EExportType.Mesh)]

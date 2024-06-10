@@ -39,6 +39,7 @@ public class AnimExportData : ExportDataBase
                 }
                 break;
             }
+            case EAssetType.LegoEmote:
             case EAssetType.Emote:
             {
                 var montage = asset.GetOrDefault<UAnimMontage?>("Animation");
@@ -69,6 +70,8 @@ public class AnimExportData : ExportDataBase
             HandleNotify(notify);
         }
     }
+    
+    
 
     private void HandleSectionTree(List<ExportAnimSection> sections, UAnimMontage montageRef, FCompositeSection currentSection, float time = 0.0f)
     {
