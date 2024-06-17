@@ -85,10 +85,12 @@ default_mappings = MappingCollection(
     ],
     vectors=[
         SlotMapping("Skin Boost Color And Exponent", "Skin Color", alpha_slot="Skin Boost"),
+        SlotMapping("BaseColor", "Background Diffuse"),
         SlotMapping("SkinTint", "Skin Color", alpha_slot="Skin Boost"),
         SlotMapping("EmissiveMultiplier", "Emission Multiplier"),
         SlotMapping("Emissive Multiplier", "Emission Multiplier"),
-        SlotMapping("Emissive Color", "Emission Color", switch_slot="Use Emission Color")
+        SlotMapping("Emissive Color", "Emission Color", switch_slot="Use Emission Color"),
+        SlotMapping("HairColor", "Skin Color", alpha_slot="Skin Boost")
     ],
     switches=[
         SlotMapping("SwizzleRoughnessToGreen")
