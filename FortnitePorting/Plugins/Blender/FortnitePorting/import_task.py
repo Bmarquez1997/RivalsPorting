@@ -240,13 +240,29 @@ toon_mappings = MappingCollection(
 
 lego_mappings = MappingCollection(
     textures=[
-        SlotMapping("Deco_D", alpha_slot="Deco Alpha"),
-        SlotMapping("DecoFG_D", "Deco_D", alpha_slot="Deco Alpha"),
-        SlotMapping("DecoBG_D", "Deco_D", alpha_slot="Deco Alpha"),
-        SlotMapping("Elem_D"),
-        SlotMapping("Deco_M", alpha_slot="Deco Alpha"),
-        SlotMapping("Elem_M"),
+        SlotMapping("Deco_D", "Deco Background D", alpha_slot="Deco Background D Alpha", coords="UV1"),
+        SlotMapping("DecoBG_D", "Deco Background D", alpha_slot="Deco Background D Alpha"),
+        SlotMapping("Background-D", "Deco Background D", alpha_slot="Deco Background D Alpha"),
+        SlotMapping("Tex Background-D", "Deco Background D", alpha_slot="Deco Background D Alpha"),
+        SlotMapping("DecoFG_D", "Deco Foreground D", alpha_slot="Deco Foreground D Alpha"),
+        SlotMapping("Foreground-D", "Deco Foreground D", alpha_slot="Deco Foreground D Alpha"),
+        SlotMapping("Tex Foreground-D", "Deco Foreground D", alpha_slot="Deco Foreground D Alpha"),
+        SlotMapping("Char Accent", "Deco Foreground D", alpha_slot="Deco Foreground D Alpha"),
+        SlotMapping("Elem_D", "Elem D"),
+        SlotMapping("Color-D", "Elem D"),
+        SlotMapping("Tex Color-D", "Elem D"),
+        SlotMapping("Deco_M", "Deco Background M", alpha_slot="Deco Background M Alpha", coords="UV1"),
+        SlotMapping("DecoBG_M", "Deco Background M", alpha_slot="Deco Background M Alpha"),
+        SlotMapping("Background-M", "Deco Background M", alpha_slot="Deco Background M Alpha"),
+        SlotMapping("Tex Background-M", "Deco Background M", alpha_slot="Deco Background M Alpha"),
+        SlotMapping("DecoFG_M", "Deco Foreground M", alpha_slot="Deco Foreground M Alpha"),
+        SlotMapping("Foreground-M", "Deco Foreground M", alpha_slot="Deco Foreground M Alpha"),
+        SlotMapping("Tex Foreground-M", "Deco Foreground M", alpha_slot="Deco Foreground M Alpha"),
+        SlotMapping("Elem_M", "Elem M"),
+        SlotMapping("Color-M", "Elem M"),
+        SlotMapping("Tex Color-M", "Elem M"),
         SlotMapping("Normals"),
+        SlotMapping("Normal", "Normals"),
         SlotMapping("Normal_Map", "Normals"),
         SlotMapping("Tex Normal", "Normals")
     ]
@@ -510,6 +526,9 @@ class DataImportTask:
 
             if self.rig_type == ERigType.TASTY:
                 apply_tasty_rig(master_skeleton, 1 if self.options.get("ScaleDown") else 100, self.options.get("UseFingerIK"), self.options.get("CustomDynamicBoneShape"))
+                
+        if self.type == "LegoOutfit" and self.options.get("MergeSkeletons"):
+            merge_skeletons(self.imported_meshes)
                 
         if self.type == "LegoProp":
             for part in self.imported_meshes:
@@ -862,7 +881,7 @@ class DataImportTask:
             case "Head":
                 meta.update(get_meta(["MorphNames", "HatType"]))
                 shape_keys = imported_mesh.data.shape_keys
-                if (morph_name := meta.get("MorphNames").get(meta.get("HatType"))) and shape_keys is not None:
+                if  shape_keys is not None and (morph_name := meta.get("MorphNames").get(meta.get("HatType"))):
                     for key in shape_keys.key_blocks:
                         if key.name.casefold() == morph_name.casefold():
                             key.value = 1.0
@@ -1504,6 +1523,7 @@ def constraint_object(child: bpy.types.Object, parent: bpy.types.Object, bone: s
     constraint.subtarget = bone
     child.rotation_mode = 'XYZ'
     child.rotation_euler = rot
+    child.location = Vector((0, 0, 0))
     constraint.inverse_matrix = Matrix()
 
 
@@ -1587,7 +1607,7 @@ def merge_skeletons(parts):
         data = part.get("Data")
         mesh_type = data.get("Type")
         skeleton = part.get("Skeleton")
-# add lego merge
+
         if mesh_type == "Body":
             bpy.context.view_layer.objects.active = skeleton
 

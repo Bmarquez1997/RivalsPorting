@@ -90,8 +90,6 @@ public class MeshExportData : ExportDataBase
             }
             case EAssetType.LegoOutfit:
             {
-                List<UObject> parts = new List<UObject>();
-                List<UTexture2D> textures = new List<UTexture2D>();
                 var assetName = asset.Name;
                 if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema"))
                 {
@@ -100,56 +98,12 @@ public class MeshExportData : ExportDataBase
 
                 String characterName = assetName.Substring(assetName.IndexOf("AMS_Figure_") + 11);
 
-                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "Head")));
-                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "HeadAcc")));
-                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "NeckAcc")));
-                parts.AddIfNotNull(ExportLegoPart(BuildPartFilePath(characterName, "HipAcc")));
-                parts.AddIfNotNull(ExportLegoPart("_Figure_Core/SkeletalMesh/SKM_Figure_PreviewA"));
-                parts.AddIfNotNull(ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" +
-                                                  characterName));
-
-                textures = GetLegoTextures(characterName);
-
-
-                // if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema") && 
-                //     ams.TryGetValue(out UObject mutable, "CustomizableObjectInstance") && 
-                //     mutable.TryGetValue(out FInstancedStruct[] descriptors, "Descriptor"))
-                // {
-                //     foreach (var descriptor in descriptors)
-                //     {
-                //         if (descriptor.NonConstStruct?.TryGetValue(out UStruct[] intParams, "IntParameters") ?? false)
-                //         {
-                //             foreach (var intParameter in intParams)
-                //             {
-                //                 Log.Information(intParameter.ToString());
-                //             }
-                //         }
-                //         
-                //         /*
-                //          * Head: Always search
-                //          * Body: Standard
-                //          * HipAcc: If not Debug, look for mesh
-                //          * Textures: fuck if I know
-                //          */
-                //     }
-                // }
-
-                AssetsVM.ExportChunks = parts.Count() + textures.Count();
-                foreach (var part in parts)
-                {
-                    ExportMesh mesh = Exporter.Mesh(part as USkeletalMesh);
-                    // Build materials or override materials?
-                    // Process each one during load, instead of looping through loaded props
-                    Meshes.AddIfNotNull(mesh);
-                    AssetsVM.ExportProgress++;
-                }
-
-                foreach (var texture in textures)
-                {
-                    // Move to asset loading above, only try to export when asset is loaded successfully
-                    TexturePaths.AddIfNotNull(Exporter.Export(texture));
-                    AssetsVM.ExportProgress++;
-                }
+                AssetsVM.ExportChunks = 6;
+                Meshes.AddIfNotNull(ExportLegoBody(characterName));
+                Meshes.AddIfNotNull(ExportLegoHead(characterName));
+                Meshes.AddIfNotNull(ExportLegoPart(characterName, "HeadAcc"));
+                Meshes.AddIfNotNull(ExportLegoPart(characterName, "NeckAcc"));
+                Meshes.AddIfNotNull(ExportLegoPart(characterName, "HipAcc"));
 
                 break;
             }
@@ -409,7 +363,7 @@ public class MeshExportData : ExportDataBase
                         {
                             // Uncomment to change vertex color directly instead of using LUT Material in blender
                             // OverrideJunoVertexColors(m, geometryCollection);
-                            ExportMesh exportMesh = new ExportMesh { IsEmpty = true };
+                            ExportMesh exportMesh = new() { IsEmpty = true };
                             if (componentTemplate.TryLoad(out UStaticMeshComponent meshComp))
                             {
                                 Log.Information(compTemplate.ToString());
@@ -644,75 +598,176 @@ public class MeshExportData : ExportDataBase
         foreach (var parameters in variantParameters) OverrideParameters.AddIfNotNull(Exporter.OverrideParameters(parameters));
     }
 
+    private static String FIGURE_CORE_PATH = "FortniteGame/Plugins/GameFeatures/Juno/FigureCharacter/Content/Figure_Core/";
+    private static String FIGURE_COSMETICS_PATH = "FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/";
+
+    private ExportMesh? ExportLegoHead(String characterName)
+    {
+        bool baseHead = false;
+        var mesh = ExportLegoPart(BuildPartFilePath(characterName, "Head"));
+        if (mesh is null)
+            mesh = ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" + characterName);
+        if (mesh is null)
+        {
+            mesh = ExportLegoPart("_Figure_SharedParts/HeadAcc_3626/SKM_HeadAcc_3626");
+            baseHead = true;
+        }
+
+        if (mesh is not null)
+        {
+            ExportMaterial headMaterial = null;
+            if (CUE4ParseVM.Provider.TryLoadObject(
+                    FIGURE_COSMETICS_PATH + "Figure_" + characterName + "/Material/MI_Figure_Head_" + characterName,
+                    out UMaterialInstanceConstant material))
+            {
+                headMaterial = Exporter.Material(material, 0);
+            }
+
+            headMaterial ??= new ExportMaterial();
+            headMaterial.Name = characterName + "_Head";
+            headMaterial.Hash = headMaterial.Name.GetHashCode();
+            headMaterial.Textures = BuildPartTextureParameters(characterName, "Head", !baseHead);
+            // TODO: Only backfill missing slots with HeadAcc textures, don't add all HeadAcc textures
+            headMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "HeadAcc", !baseHead));
+            headMaterial.Textures.AddRange(BuildFaceTextureParameters(characterName));
+            if (mesh.Materials.Count > 0)
+                mesh.Materials[0] = headMaterial;
+            else
+                mesh.Materials.AddIfNotNull(headMaterial);
+            mesh.CharacterPartType = EFortCustomPartType.Body;
+        }
+        return mesh;
+    }
+
+    private ExportMesh? ExportLegoBody(String characterName)
+    {
+        var mesh = ExportLegoPart("SkeletalMesh/SKM_Figure_Mutable", true);
+        if (mesh is not null)
+        {
+            mesh.Name = "SKM_" + characterName;
+            
+            ExportMaterial bodyMaterial = mesh.Materials[0];
+            bodyMaterial.Name = characterName + "_Body";
+            bodyMaterial.Hash = bodyMaterial.Name.GetHashCode();
+            bodyMaterial.Slot = 0;
+            bodyMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "Body"));
+            mesh.CharacterPartType = EFortCustomPartType.Body;
+        }
+        return mesh;
+    }
+
+    private ExportMesh? ExportLegoPart(String characterName, String partName)
+    {
+        var mesh = ExportLegoPart(BuildPartFilePath(characterName, partName));
+        if (mesh is not null)
+        {
+            ExportMaterial partMaterial = null;
+            if (CUE4ParseVM.Provider.TryLoadObject(
+                    FIGURE_COSMETICS_PATH + "Figure_" + characterName + "/Material/MI_Figure_" + partName + "_" +
+                    characterName, out UMaterialInstanceConstant material))
+            {
+                partMaterial = Exporter.Material(material, 0);
+            }
+            partMaterial ??= new ExportMaterial();
+            partMaterial.Name = characterName + "_" + partName;
+            partMaterial.Hash = partMaterial.Name.GetHashCode();
+            partMaterial.Textures = BuildPartTextureParameters(characterName, partName);
+            partMaterial.Slot = 0;
+            if (mesh.Materials.Count > 0)
+                mesh.Materials[0] = partMaterial;
+            else
+                mesh.Materials.AddIfNotNull(partMaterial);
+            mesh.CharacterPartType = EFortCustomPartType.Body;
+        }
+
+        return mesh;
+    }
+
+    private ExportPart? ExportLegoPart(String filePath, bool corePath = false)
+    {
+        ExportPart exportMesh = null;
+        if (CUE4ParseVM.Provider.TryLoadObject((corePath ? FIGURE_CORE_PATH : FIGURE_COSMETICS_PATH) + filePath, out UObject output))
+        {
+            exportMesh = Exporter.Mesh<ExportPart>(output as USkeletalMesh);
+        }
+        AssetsVM.ExportProgress++;
+        return exportMesh;
+    }
+
+    private List<TextureParameter> BuildFaceTextureParameters(String characterName)
+    {
+        List<TextureParameter> textureParams = new();
+        String facePath = FIGURE_CORE_PATH + "Texture/Face/";
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Mouth/T_Atlas_Figure_Mouth_" + characterName, "Custom Mouth"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Beards/T_Figure_Head_" + characterName + "_CharAcc", "Custom Head"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "AccentTeethTongue/T_Atlas_Figure_AccentTeethTongue_Default01", "AccentTeethTongue"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Brow/T_Atlas_Figure_Brow_Char01", "Eyebrow_Char01"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Brow/T_Atlas_Figure_Brow_Char02", "Eyebrow_Char02"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Brow/T_Atlas_Figure_Brow_Char03", "Eyebrow_Char03"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Brow/T_Atlas_Figure_Brow_Char04", "Eyebrow_Char04"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Brow/T_Atlas_Figure_Brow_Thick01", "Eyebrow_Thick"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "Brow/T_Atlas_Figure_Brow_Thin01", "Eyebrow_Thin"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Char01", "EyeAndLash_Char01"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Char02", "EyeAndLash_Char02"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Default01", "EyeAndLash_Default01"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Large01", "EyeAndLash_Large01"));
+        textureParams.AddIfNotNull(BuildTextureParameter(facePath + "T_Atlas_Figure_Faces", "Atlas Figure Faces"));
+        return textureParams;
+    }
+
+    private List<TextureParameter> BuildPartTextureParameters(String characterName, String partName, bool includeNormals = true)
+    {
+        List<TextureParameter> textureParams = new();
+        String path = FIGURE_COSMETICS_PATH + "Figure_" + characterName + "/Texture/T_Figure_" + partName + "_" + characterName + "_";
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "Elem_D", "Elem_D"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "Elem_M", "Elem_M"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "Deco_D", "Deco_D"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "Deco_M", "Deco_M"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "DecoBG_D", "DecoBG_D"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "DecoBG_M", "DecoBG_M"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "DecoFG_D", "DecoFG_D"));
+        textureParams.AddIfNotNull(BuildTextureParameter(path + "DecoFG_M", "DecoFG_M"));
+        if (includeNormals)
+            textureParams.AddRange(BuildPartNormalTextureParameters(characterName, partName));
+        return textureParams;
+    }
+
+    private List<TextureParameter> BuildPartNormalTextureParameters(string characterName, string part)
+    {
+        List<TextureParameter> textureParams = new List<TextureParameter>();
+        foreach (var path in GetAccessoryNormalMaps(characterName))
+        {
+            if (path.Contains(part))
+                textureParams.AddIfNotNull(BuildTextureParameter(path, "Normal"));
+        }
+
+        return textureParams;
+    }
+
+    private TextureParameter? BuildTextureParameter(string path, string name)
+    {
+        TextureParameter parameter = null;
+        if (CUE4ParseVM.Provider.TryLoadObject(path, out UTexture2D textureAsset))
+        {
+            parameter = new(name, Exporter.Export(textureAsset), textureAsset.SRGB,
+                textureAsset.CompressionSettings);
+        }
+        else if (CUE4ParseVM.Provider.TryLoadObject(path, out UTexture2DArray textureArrayAsset))
+        {
+            parameter = new(name, Exporter.Export(textureArrayAsset), textureArrayAsset.SRGB,
+                textureArrayAsset.CompressionSettings);
+        }
+        return parameter;
+    }
+    
     private String BuildPartFilePath(String characterName, String partName)
     {
         return "_Figure_SharedParts/" + partName + "_" + characterName + "/SKM_" + partName + "_" + characterName;
     }
 
-    private UObject ExportLegoPart(String filePath)
+    private List<String> GetAccessoryNormalMaps(String characterName)
     {
-        CUE4ParseVM.Provider.TryLoadObject(
-            "FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/" + filePath,
-            out UObject output);
-
-        return output;
-    }
-    
-    private static String FIGURE_COSMETICS_PATH = "FortniteGame/Plugins/GameFeatures/Juno/FigureCosmetics/Content/Figure/";
-
-    private List<UTexture2D> GetLegoTextures(String characterName)
-    {
-        List<UTexture2D> textures = new List<UTexture2D>();
-        foreach (var texturePath in BuildLegoTexturePaths(characterName))
-        {
-            Log.Information("Loading Texture: " + texturePath);
-            if (CUE4ParseVM.Provider.TryLoadObject(texturePath, out UTexture2D textureAsset))
-            {
-                Log.Information("Loaded!");
-                textures.Add(textureAsset);
-            }
-        }
-        
-        return textures;
-    }
-    
-    private List<String> BuildLegoTexturePaths(String characterName)
-    {
-        // TODO: Create override materials and add to ExportMesh objects instead of just importing to file
-        List<String> textureNames = new List<string>();
-
-        AddFaceTextures(textureNames, characterName);
-        AddAccessoryNormalMaps(textureNames, characterName);
-        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_Body_" + characterName);
-        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_Head_" + characterName);
-        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HeadFront_" + characterName);
-        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HeadBack_" + characterName);
-        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HeadAcc_" + characterName);
-        AddLegoTextureLayerPaths(textureNames, "Figure_" + characterName + "/Texture/T_Figure_HipAcc_" + characterName);
-
-        return textureNames;
-    }
-
-    private void AddFaceTextures(List<String> texturePaths, String characterName)
-    {
-        String facePath = "FortniteGame/Plugins/GameFeatures/Juno/FigureCharacter/Content/Figure_Core/Texture/Face/";
-        texturePaths.Add(facePath + "Mouth/T_Atlas_Figure_Mouth_" + characterName);
-        texturePaths.Add(facePath + "Beards/T_Figure_Head_" + characterName + "_CharAcc");
-        texturePaths.Add(facePath + "AccentTeethTongue/T_Atlas_Figure_AccentTeethTongue_Default01");
-        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char01");
-        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char02");
-        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char03");
-        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Char04");
-        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Thick01");
-        texturePaths.Add(facePath + "Brow/T_Atlas_Figure_Brow_Thin01");
-        texturePaths.Add(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Char01");
-        texturePaths.Add(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Default01");
-        texturePaths.Add(facePath + "EyeAndLash/TA_Atlas_Figure_EyeAndLash_Large01");
-        texturePaths.Add(facePath + "T_Atlas_Figure_Faces");
-    }
-
-    private void AddAccessoryNormalMaps(List<String> texturePaths, String characterName)
-    {
+        List<String> texturePaths = new List<string>();
         texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/Head_" + characterName + "/T_Figure_Head_" + characterName + "_N");
         texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/Head_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
         texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HeadAcc_" + characterName + "/T_Figure_HeadAcc_" + characterName + "_N");
@@ -723,19 +778,8 @@ public class MeshExportData : ExportDataBase
         texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HeadAcc_" + characterName + "/T_HeadAcc_" + characterName + "_N");
         texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HipAcc_" + characterName + "/T_HipAcc_" + characterName + "_N");
         texturePaths.Add(FIGURE_COSMETICS_PATH + "_Figure_SharedParts/HipAcc_" + characterName + "/T_NeckAcc_" + characterName + "_N");
-    }
 
-    private void AddLegoTextureLayerPaths(List<String> texturePaths, String basePath)
-    {
-        String path = FIGURE_COSMETICS_PATH + basePath;
-        texturePaths.Add(path + "_Elem_D");
-        texturePaths.Add(path + "_Elem_M");
-        texturePaths.Add(path + "_Deco_D");
-        texturePaths.Add(path + "_Deco_M");
-        texturePaths.Add(path + "_DecoBG_D");
-        texturePaths.Add(path + "_DecoBG_M");
-        texturePaths.Add(path + "_DecoFG_D");
-        texturePaths.Add(path + "_DecoFG_M");
+        return texturePaths;
     }
     
     // TODO: Take override LUT textures into account, parse images instead of using default material definitions via ID
