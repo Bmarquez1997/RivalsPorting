@@ -1219,6 +1219,8 @@ class DataImportTask:
         if self.type == "LegoOutfit":
             replace_shader_node("FP Lego")
             socket_mappings = lego_mappings
+            material.blend_method = "HASHED"
+            material.shadow_method = "HASHED"
         
         if self.type == "LegoProp" or "Lego" in material_name:
             replace_shader_node("FP Lego Default Stud LUT" if material_name == "MI_Lego_CommonParts"

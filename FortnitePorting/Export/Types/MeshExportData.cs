@@ -98,9 +98,10 @@ public class MeshExportData : ExportDataBase
 
                 String characterName = assetName.Substring(assetName.IndexOf("AMS_Figure_") + 11);
 
-                AssetsVM.ExportChunks = 6;
+                AssetsVM.ExportChunks = 7;
                 Meshes.AddIfNotNull(ExportLegoBody(characterName));
                 Meshes.AddIfNotNull(ExportLegoHead(characterName));
+                Meshes.AddIfNotNull(ExportLegoPart(characterName, "Piece"));
                 Meshes.AddIfNotNull(ExportLegoPart(characterName, "HeadAcc"));
                 Meshes.AddIfNotNull(ExportLegoPart(characterName, "NeckAcc"));
                 Meshes.AddIfNotNull(ExportLegoPart(characterName, "HipAcc"));
@@ -604,9 +605,13 @@ public class MeshExportData : ExportDataBase
     private ExportMesh? ExportLegoHead(String characterName)
     {
         bool baseHead = false;
+        bool headMeshHeadAccName = false;
         var mesh = ExportLegoPart(BuildPartFilePath(characterName, "Head"));
         if (mesh is null)
+        {
             mesh = ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" + characterName);
+            headMeshHeadAccName = true;
+        }
         if (mesh is null)
         {
             mesh = ExportLegoPart("_Figure_SharedParts/HeadAcc_3626/SKM_HeadAcc_3626");
@@ -626,9 +631,9 @@ public class MeshExportData : ExportDataBase
             headMaterial ??= new ExportMaterial();
             headMaterial.Name = characterName + "_Head";
             headMaterial.Hash = headMaterial.Name.GetHashCode();
-            headMaterial.Textures = BuildPartTextureParameters(characterName, "Head", !baseHead);
-            // TODO: Only backfill missing slots with HeadAcc textures, don't add all HeadAcc textures
-            headMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "HeadAcc", !baseHead));
+            headMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "Head", !baseHead));
+            if (headMeshHeadAccName)
+                headMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "HeadAcc", !baseHead));
             headMaterial.Textures.AddRange(BuildFaceTextureParameters(characterName));
             if (mesh.Materials.Count > 0)
                 mesh.Materials[0] = headMaterial;
