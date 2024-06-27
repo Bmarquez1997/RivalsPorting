@@ -27,6 +27,7 @@ using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Application;
 using FortnitePorting.Extensions;
+using FortnitePorting.Framework.Extensions;
 using FortnitePorting.ViewModels;
 using Serilog;
 using SkiaSharp;
@@ -302,7 +303,7 @@ public class ExporterInstance
             }
             else
             {
-                var components = CUE4ParseVM.Provider.LoadAllObjects(actor.GetPathName().SubstringBeforeLast("."));
+                var components = CUE4ParseVM.Provider.LoadAllObjects(StringUtils.SubstringBeforeLast(actor.GetPathName(), "."));
                 foreach (var component in components)
                 {
                     exportMeshes.AddIfNotNull(component switch
@@ -567,7 +568,7 @@ public class ExporterInstance
         var exportMaterial = Material<ExportOverrideMaterial>(materialObject, overrideData.Get<int>("MaterialOverrideIndex"));
         if (exportMaterial is null) return null;
 
-        exportMaterial.MaterialNameToSwap = overrideData.GetOrDefault<FSoftObjectPath>("MaterialToSwap").AssetPathName.Text.SubstringAfterLast(".");
+        exportMaterial.MaterialNameToSwap = StringUtils.SubstringAfterLast(overrideData.GetOrDefault<FSoftObjectPath>("MaterialToSwap").AssetPathName.Text, ".");
         return exportMaterial;
     }
     
@@ -577,7 +578,7 @@ public class ExporterInstance
         if (materialToAlter.AssetPathName.IsNone) return null; 
 
         var exportParams = new ExportOverrideParameters();
-        exportParams.MaterialNameToAlter = materialToAlter.AssetPathName.Text.SubstringAfterLast(".");
+        exportParams.MaterialNameToAlter = StringUtils.SubstringAfterLast(materialToAlter.AssetPathName.Text, ".");
         AccumulateParameters(overrideData, ref exportParams);
         exportParams.Hash = exportParams.GetHashCode();
         return exportParams;
@@ -807,16 +808,23 @@ public class ExporterInstance
             {
                 int layers = texture.PlatformData.Mips[texture.PlatformData.FirstMipToSerialize].SizeZ;
 
-                if (layers > 1)
+                if (texture is UTexture2DArray textureArray)
                 {
-                    for (int i = 0; i < layers; i++)
+                    var textureBitmaps = textureArray.DecodeTextureArray();
+                    if (textureBitmaps is null) return;
+                    
+                    var counter = 0;
+                    foreach (var textureBitmap in textureBitmaps)
                     {
-                        var newExportPath = exportPath.Replace(".png", "_" + i + ".png");
-                        ExportTexture(texture, newExportPath, i);
+                        var newExportPath = exportPath.Replace(".png", "_" + counter++ + ".png");
+                        ExportTexture(textureBitmap, newExportPath);
                     }
                 }
                 else
-                    ExportTexture(texture, exportPath);
+                {
+                    var textureBitmap = texture.Decode();
+                    ExportTexture(textureBitmap, exportPath);
+                }
 
                 break;
             }
@@ -829,10 +837,9 @@ public class ExporterInstance
         }
     }
 
-    private void ExportTexture(UTexture texture, string exportPath, int layer = 0)
+    private void ExportTexture(SKBitmap textureBitmap, string exportPath)
     {
         using var fileStream = File.OpenWrite(exportPath);
-        var textureBitmap = texture.Decode(zLayer: layer);
         switch (AppExportOptions.ImageType)
         {
             case EImageType.PNG:
@@ -841,7 +848,8 @@ public class ExporterInstance
                 break;
             }
             case EImageType.TGA:
-                throw new NotImplementedException("TARGA (.tga) export not currently supported.");
+            default:
+                throw new NotImplementedException($"{AppExportOptions.ImageType.GetDescription()} export not currently supported.");
         }
         fileStream.Close();
     }
@@ -849,11 +857,11 @@ public class ExporterInstance
     public static string GetExportPath(UObject obj, string ext, string extra = "")
     {
         var path = obj.Owner != null ? obj.Owner.Name : string.Empty;
-        path = path.SubstringBeforeLast('.');
+        path = StringUtils.SubstringBeforeLast(path, '.');
         if (path.StartsWith("/")) path = path[1..];
 
         var directory = Path.Combine(AppSettings.Current.GetExportPath(), path);
-        Directory.CreateDirectory(directory.SubstringBeforeLast("/"));
+        Directory.CreateDirectory(StringUtils.SubstringBeforeLast(directory, "/"));
 
         var finalPath = directory + $"{extra}.{ext.ToLower()}";
         return finalPath;
