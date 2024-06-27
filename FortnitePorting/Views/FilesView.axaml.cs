@@ -50,11 +50,12 @@ public partial class FilesView : ViewBase<FilesViewModel>
         if (listBox.SelectedItem is not FlatViewItem item) return;
         ViewModel.TreeViewJumpTo(item.Path);
     }
-
-    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    
+    private void OnSearchKeyDown(object? sender, KeyEventArgs e)
     {
-        ViewModel.SelectedExportItems.Clear();
-        ViewModel.SelectedFlatViewItem = null;
-        ViewModel.SelectedTreeItem = null;
+        if (e.Key != Key.Enter) return;
+        if (sender is not TextBox textBox) return;
+
+        ViewModel.SearchFilter = textBox.Text ?? string.Empty;
     }
 }

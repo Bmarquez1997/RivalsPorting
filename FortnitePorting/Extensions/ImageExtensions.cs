@@ -14,7 +14,7 @@ namespace FortnitePorting.Extensions;
 
 public static class ImageExtensions
 {
-    public static Image<Rgba32>? DecodeImageSharp(this UTexture texture)
+    public static Image<Rgba32>? DecodeImageSharp(this UTexture texture, int zLayer = 1)
     {
         if (texture is UVirtualTexture2D virtualTexture)
         {
@@ -26,11 +26,14 @@ public static class ImageExtensions
         if (mip is null) return null;
 
         TextureDecoder.DecodeTexture(mip, mip.SizeX, mip.SizeY, mip.SizeZ, texture.Format, texture.IsNormalMap, ETexturePlatform.DesktopMobile, out var data, out var colorType);
-        
+
+        var offset = mip.SizeX * mip.SizeY * 4;
+        var startIndex = offset * zLayer;
+        var endIndex = startIndex + offset;
         return colorType switch
         {
-            SKColorType.Rgba8888 => Image.LoadPixelData<Rgba32>(data, mip.SizeX, mip.SizeY),
-            SKColorType.Bgra8888 => Image.LoadPixelData<Bgra32>(data, mip.SizeX, mip.SizeY).CloneAs<Rgba32>(),
+            SKColorType.Rgba8888 => Image.LoadPixelData<Rgba32>(data.AsSpan()[startIndex..endIndex], mip.SizeX, mip.SizeY),
+            SKColorType.Bgra8888 => Image.LoadPixelData<Bgra32>(data.AsSpan()[startIndex..endIndex], mip.SizeX, mip.SizeY).CloneAs<Rgba32>(),
             _ => throw new ArgumentException($"Invalid Pixel Type: {colorType}")
         };
     }

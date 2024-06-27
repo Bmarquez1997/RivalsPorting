@@ -386,6 +386,29 @@ public partial class AssetsViewModel : ViewModelBase
                 DontLoadHiddenAssets = true,
                 HideRarity = true
             },
+            new(EAssetType.Graffiti)
+            {
+                CustomLoadingHandler = async loader =>
+                {
+                    HashSet<string> graffitiFiles = new HashSet<string>();
+                    CUE4ParseVM.Provider.Files.Where(file =>
+                        file.Key.Contains("/Textures/", StringComparison.OrdinalIgnoreCase)
+                        && file.Key.Contains("/Environments/", StringComparison.OrdinalIgnoreCase)
+                        && (file.Key.Contains("_Graffiti_", StringComparison.OrdinalIgnoreCase)
+                            || file.Key.Contains("/Graffiti/", StringComparison.OrdinalIgnoreCase))).ToList()
+                        .ForEach(file => graffitiFiles.Add(file.Value.PathWithoutExtension));
+
+                    loader.Total = graffitiFiles.Count;
+                    await Parallel.ForEachAsync(graffitiFiles, async (textureFile, token) =>
+                    {
+                        if (CUE4ParseVM.Provider.TryLoadObject(textureFile, out UTexture2D texture))
+                            await TaskService.RunDispatcherAsync(() => 
+                                loader.Source.Add(new AssetItem(texture, texture, texture.Name, loader.Type,
+                                    "No Description.", hideRarity: true, useMip: true)), DispatcherPriority.Background);
+                        loader.Loaded++;
+                    });
+                }
+            },
             new(EAssetType.Item)
             {
                 Classes = new[] { "AthenaGadgetItemDefinition", "FortWeaponRangedItemDefinition", "FortWeaponMeleeItemDefinition", "FortCreativeWeaponMeleeItemDefinition", "FortCreativeWeaponRangedItemDefinition", "FortWeaponMeleeDualWieldItemDefinition" },

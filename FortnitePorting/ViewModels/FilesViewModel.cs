@@ -26,6 +26,8 @@ using FortnitePorting.Framework.Controls;
 using FortnitePorting.Framework.Extensions;
 using FortnitePorting.Services;
 using FortnitePorting.Framework.Services;
+using FortnitePorting.Windows;
+using Newtonsoft.Json;
 using ReactiveUI;
 using Serilog;
 using TexturePreviewWindow = FortnitePorting.Windows.TexturePreviewWindow;
@@ -124,7 +126,6 @@ public partial class FilesViewModel : ViewModelBase
         Started = true;
         AssetFilter = this
             .WhenAnyValue(x => x.SearchFilter)
-            .Throttle(TimeSpan.FromMilliseconds(250))
             .Select(CreateAssetFilter);
 
         AssetItemsSource.Connect()
@@ -274,6 +275,19 @@ public partial class FilesViewModel : ViewModelBase
             }
         }
         
+    }
+    
+    [RelayCommand]
+    public async Task Json()
+    {
+        var selectedItem = SelectedExportItems.FirstOrDefault();
+        if (selectedItem is null) return;
+        
+        var asset = await CUE4ParseVM.Provider.LoadObjectAsync(FixPath(selectedItem.Path));
+        var name = asset.Name;
+
+        var assetJson = JsonConvert.SerializeObject(asset, Formatting.Indented);
+        JsonPreviewWindow.Preview(name, assetJson);
     }
 
     public void TreeViewJumpTo(string directory)

@@ -29,7 +29,6 @@ namespace FortnitePorting.Export.Types;
 
 public class MeshExportData : ExportDataBase
 {
-    public readonly List<String> TexturePaths = [];
     public readonly List<ExportMesh> Meshes = [];
     public readonly List<ExportMesh> OverrideMeshes = [];
     public readonly List<ExportOverrideMaterial> OverrideMaterials = [];

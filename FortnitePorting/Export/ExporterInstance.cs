@@ -805,18 +805,18 @@ public class ExporterInstance
             }
             case UTexture texture:
             {
-                using var fileStream = File.OpenWrite(exportPath);
-                var textureBitmap = texture.Decode();
-                switch (AppExportOptions.ImageType)
+                int layers = texture.PlatformData.Mips[texture.PlatformData.FirstMipToSerialize].SizeZ;
+
+                if (layers > 1)
                 {
-                    case EImageType.PNG:
+                    for (int i = 0; i < layers; i++)
                     {
-                        textureBitmap?.Encode(SKEncodedImageFormat.Png, 100).SaveTo(fileStream); 
-                        break;
+                        var newExportPath = exportPath.Replace(".png", "_" + i + ".png");
+                        ExportTexture(texture, newExportPath, i);
                     }
-                    case EImageType.TGA:
-                        throw new NotImplementedException("TARGA (.tga) export not currently supported.");
                 }
+                else
+                    ExportTexture(texture, exportPath);
 
                 break;
             }
@@ -827,6 +827,23 @@ public class ExporterInstance
                 break;
             }
         }
+    }
+
+    private void ExportTexture(UTexture texture, string exportPath, int layer = 0)
+    {
+        using var fileStream = File.OpenWrite(exportPath);
+        var textureBitmap = texture.Decode(zLayer: layer);
+        switch (AppExportOptions.ImageType)
+        {
+            case EImageType.PNG:
+            {
+                textureBitmap?.Encode(SKEncodedImageFormat.Png, 100).SaveTo(fileStream);
+                break;
+            }
+            case EImageType.TGA:
+                throw new NotImplementedException("TARGA (.tga) export not currently supported.");
+        }
+        fileStream.Close();
     }
 
     public static string GetExportPath(UObject obj, string ext, string extra = "")

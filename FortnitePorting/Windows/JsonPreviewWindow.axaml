@@ -1,0 +1,87 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:viewmodels="clr-namespace:FortnitePorting.ViewModels"
+         xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+         xmlns:framework="clr-namespace:FortnitePorting.Framework;assembly=FortnitePorting.Framework"
+         xmlns:ext="clr-namespace:FortnitePorting.Framework.Extensions;assembly=FortnitePorting.Framework"
+         x:Class="FortnitePorting.Windows.JsonPreviewWindow"
+         x:DataType="viewmodels:JsonPreviewViewModel"
+         Width="960" Height="1080" RequestedThemeVariant="Dark" FontFamily="Segoe UI" SizeToContent="Width" MinWidth="540"
+         Background="{x:Null}" TransparencyLevelHint="{Binding Theme.TransparencyLevels}"
+         ExtendClientAreaToDecorationsHint="True" ExtendClientAreaChromeHints="NoChrome"
+         ExtendClientAreaTitleBarHeightHint="0" WindowStartupLocation="CenterOwner"
+         Icon="avares://FortnitePorting.Framework/Assets/Logo/FortnitePortingLogoEnhancedV2.ico"
+         Title="Json Viewer">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <ExperimentalAcrylicBorder Grid.Row="0" Grid.RowSpan="4" IsVisible="{Binding !Theme.UseMicaBackground}" IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial BackgroundSource="Digger" MaterialOpacity="1.1" TintColor="{Binding Theme.BackgroundColor}" TintOpacity="1"/>
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+        
+        <Grid Grid.Row="0" PointerPressed="OnPointerPressed" Background="Transparent" HorizontalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{ext:Space 1}" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{ext:Space 0.25}" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{ext:Space 0.25}" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="1" Text="Json Viewer" FontWeight="SemiBold" FontSize="16"
+                       HorizontalAlignment="Left" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3" Text="{Binding FileName}" Opacity="0.5" FontSize="13" Margin="0 2 0 0"
+                       HorizontalAlignment="Left" VerticalAlignment="Center" />
+            <Grid Grid.Column="5" ColumnDefinitions="* 4 * 4 *" HorizontalAlignment="Right" Margin="{ext:Space 0.5}">
+                <Button Grid.Column="0" Content="{material:MaterialIconExt Kind=Minimize}" Click="OnMinimizeClicked"
+                        CornerRadius="2" Classes="MinimizeMaximize" Width="24" Height="24" HorizontalAlignment="Center"
+                        VerticalAlignment="Center" />
+                <Button Grid.Column="2" Content="{material:MaterialIconExt Kind=Maximize}" Click="OnMaximizeClicked"
+                        CornerRadius="2" Classes="MinimizeMaximize" Width="24" Height="24" HorizontalAlignment="Center"
+                        VerticalAlignment="Center" />
+                <Button Grid.Column="4" Content="{material:MaterialIconExt Kind=Close}" Click="OnCloseClicked"
+                        CornerRadius="2" Classes="CloseWindow" Width="24" Height="24" HorizontalAlignment="Center"
+                        VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+        
+        <Grid Grid.Row="1" HorizontalAlignment="Right">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="{ext:Space 10}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{ext:Space 1}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{ext:Space 1}"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Grid.Column="2" HorizontalAlignment="Center" Command="{Binding CopyCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <material:MaterialIcon Kind="ContentCopy" Margin="{ext:Space 0, 0, 1, 0}"/>
+                    <TextBlock Text="Copy"/>
+                </StackPanel>
+            </Button>
+                
+            <Button Grid.Column="4" HorizontalAlignment="Center" Command="{Binding SaveCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <material:MaterialIcon Kind="Code" Margin="{ext:Space 0, 0, 1, 0}"/>
+                    <TextBlock Text="Save"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+        
+        <Grid Grid.Row="2" Margin="{ext:Space 1}">
+            <Border Background="Gray" Opacity="0.1" CornerRadius="10"/>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <TextPresenter Text="{Binding FileContent}"/>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>

@@ -22,6 +22,9 @@ public partial class TexturePreviewViewModel : ViewModelBase
     [ObservableProperty] private bool useGreenChannel = true;
     [ObservableProperty] private bool useBlueChannel = true;
     [ObservableProperty] private bool useAlphaChannel = true;
+    [ObservableProperty] private int layer = 1;
+    [ObservableProperty] private int layerCount = 1;
+    
     
     [ObservableProperty] private ThemedViewModelBase theme;
     [ObservableProperty] private UTexture texture;
@@ -30,8 +33,8 @@ public partial class TexturePreviewViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(ClampedTextureHeight))]
     [NotifyPropertyChangedFor(nameof(ClampedTextureWidth))]
     private Bitmap textureSource;
-    public int ClampedTextureWidth => Math.Clamp(TextureSource.PixelSize.Width, 640, 1280);
-    public int ClampedTextureHeight => Math.Clamp(TextureSource.PixelSize.Height + 30, 360, 720);
+    public int ClampedTextureWidth => Math.Clamp(TextureSource.PixelSize.Width, 640, 2560);
+    public int ClampedTextureHeight => Math.Clamp(TextureSource.PixelSize.Height + 30, 360, 1440);
 
     public TexturePreviewViewModel()
     {
@@ -46,7 +49,7 @@ public partial class TexturePreviewViewModel : ViewModelBase
 
     public Image<Rgba32> GetBitmap()
     {
-        var decodedTexture = Texture.DecodeImageSharp();
+        var decodedTexture = Texture.DecodeImageSharp(Layer - 1);
         if (decodedTexture is null) return null;
 
         if (Texture is UTextureCube)
@@ -108,6 +111,7 @@ public partial class TexturePreviewViewModel : ViewModelBase
             case nameof(UseGreenChannel):
             case nameof(UseBlueChannel):
             case nameof(UseAlphaChannel):
+            case nameof(Layer):
             {
                 UpdateChannels();
                 break;

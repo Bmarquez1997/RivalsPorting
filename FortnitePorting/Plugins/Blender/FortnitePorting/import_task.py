@@ -456,10 +456,6 @@ class DataImportTask:
                 if not any(meshes, lambda override_mesh: override_mesh.get("Type") == mesh.get("Type")):
                     meshes.append(mesh)
 
-        if self.type == "LegoOutfit":
-            for texture_path in data.get("TexturePaths"):
-                self.import_image(texture_path)
-
         self.meshes = meshes
         for mesh in meshes:
             self.import_model(mesh, collection=self.collection, allow_3d_cursor_spawn=True)

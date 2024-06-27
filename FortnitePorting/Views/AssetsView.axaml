@@ -129,6 +129,7 @@
                         </ItemsControl.ItemsPanel>
                         <assets:AssetTypePicker Type="Prop" Image="/Assets/FN/Prop.png"/>
                         <assets:AssetTypePicker Type="Prefab" Image="/Assets/FN/Prefab.png"/>
+                        <assets:AssetTypePicker Type="Graffiti" Image="/Assets/FN/Spray.png"/>
                     </ItemsControl>
                 </Expander>
 

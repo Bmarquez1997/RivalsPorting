@@ -62,6 +62,9 @@ public enum EAssetType
 
     [Description("Prefabs"), Export(EExportType.Mesh)]
     Prefab,
+
+    [Description("Graffiti"), Export(EExportType.Texture)]
+    Graffiti,
     
     // GAMEPLAY
 
