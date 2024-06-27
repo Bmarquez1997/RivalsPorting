@@ -52,7 +52,7 @@ public partial class AssetItem : UserControl
     public float DisplayHeight { get; set; }
     
 
-    public AssetItem(UObject asset, UTexture2D icon, string displayName, EAssetType type, string description, bool isHidden = false, bool hideRarity = false, EFortRarity? rarityOverride = null, bool useTitleCase = true, bool useMip = false)
+    public AssetItem(UObject asset, UTexture2D icon, string displayName, EAssetType type, string description, bool isHidden = false, bool hideRarity = false, EFortRarity? rarityOverride = null, bool useTitleCase = true)
     {
         DataContext = this;
         InitializeComponent();
@@ -89,7 +89,7 @@ public partial class AssetItem : UserControl
         var series = Asset.GetOrDefault<UObject?>("Series");
         Series = series?.GetAnyOrDefault<FText>("DisplayName", "ItemName").Text ?? string.Empty;
 
-        var iconBitmap = useMip ? icon.Decode(icon.PlatformData.Mips[icon.PlatformData.FirstMipToSerialize])! : icon.Decode()!;
+        var iconBitmap = icon.Decode()!;
         IconBitmap = new Bitmap(iconBitmap.Encode(SKEncodedImageFormat.Png, 100).AsStream());
 
         var fullBitmap = new SKBitmap(128, 160, iconBitmap.ColorType, iconBitmap.AlphaType);

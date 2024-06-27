@@ -17,7 +17,7 @@ public partial class TexturePreviewWindow : WindowBase<TexturePreviewViewModel>
     {
         InitializeComponent();
 
-        ViewModel.LayerCount = texture.PlatformData.Mips[texture.PlatformData.FirstMipToSerialize].SizeZ;
+        ViewModel.LayerCount = texture.IsNormalMap ? 1 : texture.GetFirstMip().SizeZ;
         ViewModel.SetTexture(texture);
     }
     

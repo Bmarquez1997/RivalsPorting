@@ -806,9 +806,7 @@ public class ExporterInstance
             }
             case UTexture texture:
             {
-                int layers = texture.PlatformData.Mips[texture.PlatformData.FirstMipToSerialize].SizeZ;
-
-                if (texture is UTexture2DArray textureArray)
+                if (texture is UTexture2DArray textureArray && !texture.IsNormalMap)
                 {
                     var textureBitmaps = textureArray.DecodeTextureArray();
                     if (textureBitmaps is null) return;

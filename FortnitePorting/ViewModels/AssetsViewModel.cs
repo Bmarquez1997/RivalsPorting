@@ -404,7 +404,7 @@ public partial class AssetsViewModel : ViewModelBase
                         if (CUE4ParseVM.Provider.TryLoadObject(textureFile, out UTexture2D texture))
                             await TaskService.RunDispatcherAsync(() => 
                                 loader.Source.Add(new AssetItem(texture, texture, texture.Name, loader.Type,
-                                    "No Description.", hideRarity: true, useMip: true)), DispatcherPriority.Background);
+                                    "No Description.", hideRarity: true)), DispatcherPriority.Background);
                         loader.Loaded++;
                     });
                 }
