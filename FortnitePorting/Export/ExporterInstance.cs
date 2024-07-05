@@ -814,8 +814,9 @@ public class ExporterInstance
                     var counter = 0;
                     foreach (var textureBitmap in textureBitmaps)
                     {
-                        var newExportPath = exportPath.Replace(".png", "_" + counter++ + ".png");
+                        var newExportPath = counter == 0 ? exportPath : exportPath.Replace(".png", "_" + counter + ".png");
                         ExportTexture(textureBitmap, newExportPath);
+                        counter++;
                     }
                 }
                 else

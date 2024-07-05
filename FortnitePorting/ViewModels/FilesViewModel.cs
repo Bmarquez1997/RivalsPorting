@@ -72,8 +72,6 @@ public partial class FilesViewModel : ViewModelBase
         // Prefixes
         "/PID_",
         "/PPID_",
-        "/MI_",
-        "/MF_",
         "/NS_",
         "/P_",
         "/TD_",

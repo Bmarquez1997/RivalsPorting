@@ -90,9 +90,19 @@ public class MeshExportData : ExportDataBase
             case EAssetType.LegoOutfit:
             {
                 var assetName = asset.Name;
+                Dictionary<string, string> partMap = null;
                 if (asset.TryGetValue(out UObject ams, "AssembledMeshSchema"))
                 {
                     assetName = ams.Name;
+                    if (ams.TryGetValue(out UObject coi, "CustomizableObjectInstance")
+                        && coi.TryGetValue(out FStructFallback descriptor, "Descriptor")
+                        && descriptor.TryGetValue(out FStructFallback[] intParams, "IntParameters"))
+                    {
+                        var paramName = intParams[0].Get<string>("ParameterName");
+                        var paramValue = intParams[0].Get<string>("ParameterValueName");
+                        partMap = intParams.ToDictionary(param => param.Get<string>("ParameterName"), 
+                                                         param => param.Get<string>("ParameterValueName"));
+                    }
                 }
 
                 String characterName = assetName.Substring(assetName.IndexOf("AMS_Figure_") + 11);
@@ -606,6 +616,11 @@ public class MeshExportData : ExportDataBase
         bool baseHead = false;
         bool headMeshHeadAccName = false;
         var mesh = ExportLegoPart(BuildPartFilePath(characterName, "Head"));
+        if (mesh is null)
+        {
+            mesh = ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_Head_" + characterName + "_LP");
+            headMeshHeadAccName = true;
+        }
         if (mesh is null)
         {
             mesh = ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_HeadAcc_" + characterName);
