@@ -619,7 +619,6 @@ public class MeshExportData : ExportDataBase
         if (mesh is null)
         {
             mesh = ExportLegoPart("_Figure_SharedParts/Head_" + characterName + "/SKM_Head_" + characterName + "_LP");
-            headMeshHeadAccName = true;
         }
         if (mesh is null)
         {
