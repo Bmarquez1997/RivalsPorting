@@ -185,7 +185,7 @@ public partial class FilesViewModel : ViewModelBase
         foreach (var item in SelectedExportItems)
         {
             var asset = await CUE4ParseVM.Provider.LoadObjectAsync(FixPath(item.Path));
-            if (asset is UVirtualTextureBuilder vtBuilder) asset = vtBuilder.Texture;
+            if (asset is UVirtualTextureBuilder vtBuilder) asset = vtBuilder.Texture.Load<UVirtualTexture2D>();
             
             var assetType = asset switch
             {
@@ -253,7 +253,7 @@ public partial class FilesViewModel : ViewModelBase
     {
         var item = SelectedExportItems.FirstOrDefault();
         var asset = await CUE4ParseVM.Provider.LoadObjectAsync(FixPath(item.Path));
-        if (asset is UVirtualTextureBuilder vtBuilder) asset = vtBuilder.Texture;
+        if (asset is UVirtualTextureBuilder vtBuilder) asset = vtBuilder.Texture.Load<UVirtualTexture2D>();;
 
         switch (asset)
         {

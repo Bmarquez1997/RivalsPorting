@@ -103,6 +103,11 @@ public enum EAssetType
     [Description("Microphones"), Export(EExportType.Mesh)]
     FestivalMic,
     
+    // FALL GUYS
+    
+    [Description("Fall Guys Outfits"), Export(EExportType.Mesh)]
+    FallGuysOutfit,
+    
     // LEGO
     
     [Description("Lego Outfits"), Export(EExportType.Mesh)]
