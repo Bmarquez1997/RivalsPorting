@@ -54,10 +54,13 @@ public static class ExportService
             }
 
             var exportDatas = exports.Select(export => CreateExportData(export.AssetItem.DisplayName, export.AssetItem.Asset, export.GetSelectedStyles(), export.AssetItem.Type, exportType)).ToArray();
-            foreach (var exportData in exportDatas) exportData.WaitForExports();
+            if (exportDatas.Length > 0)
+            {
+                foreach (var exportData in exportDatas) exportData.WaitForExports();
 
-            var exportResponse = CreateExportResponse(exportDatas, exportType);
-            exportService.SendExport(JsonConvert.SerializeObject(exportResponse));
+                var exportResponse = CreateExportResponse(exportDatas, exportType);
+                exportService.SendExport(JsonConvert.SerializeObject(exportResponse));
+            }
         });
     }
 

@@ -741,6 +741,7 @@ public class MeshExportData : ExportDataBase
         {
             mesh = ExportLegoPart("_Figure_SharedParts/HeadAcc_3626/SKM_HeadAcc_3626");
             baseHead = true;
+            headMeshHeadAccName = false;
         }
 
         if (mesh is not null)
@@ -756,6 +757,7 @@ public class MeshExportData : ExportDataBase
             headMaterial ??= new ExportMaterial();
             headMaterial.Name = characterName + "_Head";
             headMaterial.Hash = headMaterial.Name.GetHashCode();
+            headMaterial.AbsoluteParent ??= "None";
             headMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "Head", !baseHead));
             if (headMeshHeadAccName)
                 headMaterial.Textures.AddRange(BuildPartTextureParameters(characterName, "HeadAcc", !baseHead));
