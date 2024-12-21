@@ -57,7 +57,7 @@ public class LandscapeProcessor
         
         var width = maxX - minX + 1;
         var height = maxY - minY + 1;
-        var uvScale = new FVector2D(1f, 1f) / new FVector2D(width, height);
+        var uvScale = new FVector2D(1 / width, 1 / height);
 
         var vertexCountPerComponent = (int) Math.Pow(componentSize + 1, 2);
         var vertexCount = Components.Length * vertexCountPerComponent;
@@ -86,9 +86,9 @@ public class LandscapeProcessor
                 accessor.GetLocalTangentVectors(vertX, vertY, out var tangent, out var binormal, out var normal, accessor.HeightMipData);
 
                 var globalUV = new FVector2D(vertX + component.SectionBaseX, vertY + component.SectionBaseY);
-                var sectionUV = (globalUV - new FVector2D(minX, minY)) * uvScale;
+                var sectionUV = new FVector2D((globalUV.X - minX) * uvScale.X, (globalUV.Y - minY) * uvScale.Y);
 
-                var vertex = new CMeshVertex(position, new FVector4(normal), new FVector4(tangent), new FMeshUVFloat(globalUV.X, globalUV.Y));
+                var vertex = new CMeshVertex(position, new FPackedNormal(normal), new FPackedNormal(tangent), new FMeshUVFloat(globalUV.X, globalUV.Y));
                 lod.Verts[baseVertexIndex + vertexIndex] = vertex;
                 lod.ExtraUV.Value[0][baseVertexIndex + vertexIndex] = new FMeshUVFloat(sectionUV.X, sectionUV.Y);
 

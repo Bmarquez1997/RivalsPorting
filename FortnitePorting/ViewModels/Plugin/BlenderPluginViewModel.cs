@@ -90,7 +90,7 @@ public partial class BlenderPluginViewModel : ViewModelBase
             if (File.Exists(installation.BlenderPath)) {
                 
                 RemovePlugin("io_scene_ueformat", installation.BlenderPath);
-                RemovePlugin("fortnite_porting", installation.BlenderPath);
+                RemovePlugin("rivals_porting", installation.BlenderPath);
             }
 
             var selectedIndexToRemove = SelectedInstallationIndex;
@@ -145,10 +145,10 @@ public partial class BlenderPluginViewModel : ViewModelBase
         await TaskService.Run(() =>
         {
             var ueFormatZip = BuildPlugin(installation, "io_scene_ueformat", installation.BlenderPath);
-            var fnPortingZip = BuildPlugin(installation, "fortnite_porting", installation.BlenderPath);
+            var rivalsPortingZip = BuildPlugin(installation, "rivals_porting", installation.BlenderPath);
 
             InstallPlugin(installation, ueFormatZip, installation.BlenderPath);
-            InstallPlugin(installation, fnPortingZip, installation.BlenderPath);
+            InstallPlugin(installation, rivalsPortingZip, installation.BlenderPath);
 
             installation.SyncExtensionVersion();
         });

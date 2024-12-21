@@ -45,7 +45,8 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
             {
                 
                 ViewModel.AssetLoaderCollection.ActiveLoader.SelectedAssetInfos.Add(
-                    ViewModel.AssetLoaderCollection.ActiveLoader.StyleDictionary.TryGetValue(asset.CreationData.DisplayName,
+                    assetItem.AssetInfo != null ? assetItem.AssetInfo 
+                        : ViewModel.AssetLoaderCollection.ActiveLoader.StyleDictionary.TryGetValue(asset.CreationData.DisplayName,
                         out var stylePaths)
                         ? new AssetInfo(assetItem, stylePaths.OrderBy(x => x))
                         : new AssetInfo(assetItem));

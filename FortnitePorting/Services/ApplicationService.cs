@@ -67,7 +67,7 @@ public static class ApplicationService
         Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 
         ViewModelRegistry.New<ConsoleViewModel>();
-        LogFilePath = Path.Combine(LogsFolder.FullName, $"FortnitePorting-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log");
+        LogFilePath = Path.Combine(LogsFolder.FullName, $"RivalsPorting-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log");
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console(theme: AnsiConsoleTheme.Literate)
             .WriteTo.Sink(ConsoleVM)

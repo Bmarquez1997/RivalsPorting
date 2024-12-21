@@ -52,7 +52,7 @@ public partial class LeaderboardViewModel : ViewModelBase
 
     public Bitmap GetMedalBitmap(int ranking = -1)
     {
-        return ImageExtensions.AvaresBitmap($"avares://FortnitePorting/Assets/FN/{ranking switch {
+        return ImageExtensions.AvaresBitmap($"avares://RivalsPorting/Assets/FN/{ranking switch {
             1 => "GoldMedal",
             2 => "SilverMedal",
             3 => "BronzeMedal",

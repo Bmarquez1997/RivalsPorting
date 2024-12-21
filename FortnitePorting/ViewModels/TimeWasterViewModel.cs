@@ -77,19 +77,19 @@ public partial class TimeWasterViewModel : ViewModelBase
 
     public static void LoadResources()
     { 
-        AmbientBackground = new LoopStream(new VorbisWaveReader(AssetLoader.Open(new Uri("avares://FortnitePorting/Assets/TimeWaster/Music/Ambient_Music.ogg"))));
-        GameBackground = new LoopStream(new VorbisWaveReader(AssetLoader.Open(new Uri("avares://FortnitePorting/Assets/TimeWaster/Music/Game_Music.ogg"))));
-        Spawn = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_Spawn_01.ogg");
-        Shoot = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_Shoot_01.ogg");
-        Explode = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_Explo_01.ogg");
-        Death = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_Death_01.ogg");
-        BossAppear = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_BossAppear_01.ogg");
-        BossHit = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_BossHit_01.ogg");
-        Win = new CachedSound("avares://FortnitePorting/Assets/TimeWaster/SFX/PMB_Win_01.ogg");
+        AmbientBackground = new LoopStream(new VorbisWaveReader(AssetLoader.Open(new Uri("avares://RivalsPorting/Assets/TimeWaster/Music/Ambient_Music.ogg"))));
+        GameBackground = new LoopStream(new VorbisWaveReader(AssetLoader.Open(new Uri("avares://RivalsPorting/Assets/TimeWaster/Music/Game_Music.ogg"))));
+        Spawn = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_Spawn_01.ogg");
+        Shoot = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_Shoot_01.ogg");
+        Explode = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_Explo_01.ogg");
+        Death = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_Death_01.ogg");
+        BossAppear = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_BossAppear_01.ogg");
+        BossHit = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_BossHit_01.ogg");
+        Win = new CachedSound("avares://RivalsPorting/Assets/TimeWaster/SFX/PMB_Win_01.ogg");
 
         for (var index = 1; index <= 8; index++)
         {
-            PianoSnippets.Add(new CachedSound($"avares://FortnitePorting/Assets/TimeWaster/Music/PianoSnippets/NightNight_Music_PianoSnip_{index:D2}.ogg"));
+            PianoSnippets.Add(new CachedSound($"avares://RivalsPorting/Assets/TimeWaster/Music/PianoSnippets/NightNight_Music_PianoSnip_{index:D2}.ogg"));
         }
     }
     

@@ -51,7 +51,11 @@ public class MeshExport : BaseExport
         {
             foreach (var objectStyle in objectStyles)
             {
-                Export(objectStyle.StyleData, exportType);
+                if (objectStyle.StyleData.TryGetValue(out UBlueprintGeneratedClass actorClass, "ShowActorClass")
+                    && actorClass.ClassDefaultObject.TryLoad(out UObject showActorClass))
+                {
+                    Export(showActorClass, exportType);
+                }
             }
             
             return;
@@ -59,15 +63,15 @@ public class MeshExport : BaseExport
 
         Export(asset, exportType);
         
-        var assetStyles = styles.OfType<AssetStyleData>();
-        ExportStyles(asset, assetStyles);
+        // var assetStyles = styles.OfType<AssetStyleData>();
+        // ExportStyles(asset, assetStyles);
     }
 
     public MeshExport(CustomAsset customAsset, EExportType exportType, ExportDataMeta metaData) : base(customAsset.Name, exportType, metaData)
     {
         string ExportCustom(string path)
         {
-            var stream = Avalonia.Platform.AssetLoader.Open(new Uri($"avares://FortnitePorting/{path}"));
+            var stream = Avalonia.Platform.AssetLoader.Open(new Uri($"avares://RivalsPorting/{path}"));
             
             var outPathPortion = path.SubstringAfter("Assets/");
             var outPath = Path.Combine(metaData.AssetsRoot, outPathPortion);
@@ -111,38 +115,11 @@ public class MeshExport : BaseExport
         {
             case EExportType.Outfit:
             {
-                UAnimMontage? montage = null;
-                var parts = asset.GetOrDefault("BaseCharacterParts", Array.Empty<UObject>());
-                if (asset.TryGetValue(out UObject heroDefinition, "HeroDefinition"))
+                if (asset.TryGetValue(out UObject characterMesh, "Mesh1"))
                 {
-                    if (parts.Length == 0 && heroDefinition.TryGetValue(out UObject[] specializations, "Specializations"))
-                    {
-                        parts = specializations.First().GetOrDefault("CharacterParts", Array.Empty<UObject>());
-                    }
-
-                    montage ??= heroDefinition.GetOrDefault<UAnimMontage?>("FrontendAnimMontageIdleOverride");
+                    Meshes.AddIfNotNull(Exporter.MeshComponent(characterMesh));
                 }
-                
-                foreach (var part in parts)
-                {
-                    Meshes.AddIfNotNull(Exporter.CharacterPart(part));
-                    
-                    montage ??= part.GetOrDefault<UAnimMontage?>("FrontendAnimMontageIdleOverride");
-                }
-
-                if (Meshes.FirstOrDefault(mesh => mesh is ExportPart { Type: EFortCustomPartType.Body }) is ExportPart bodyPart)
-                {
-                    montage ??= bodyPart.GenderPermitted switch
-                    {
-                        EFortCustomGender.Female => CUE4ParseVM.FemaleLobbyMontages.Random()!,
-                        _ => CUE4ParseVM.MaleLobbyMontages.Random()!
-                    };
-                }
-                
-                if (Exporter.Meta.Settings.ImportLobbyPoses && montage is not null)
-                {
-                    Animation = new AnimExport(montage.Name, montage, [], EExportType.Animation, Exporter.Meta);
-                }
+                // Weapon meshes?
                 
                 break;
             }

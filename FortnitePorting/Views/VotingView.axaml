@@ -170,7 +170,7 @@
                     <Ellipse Height="104" Width="104" 
                              StrokeThickness="5" Stroke="#00000000">
                         <Ellipse.Fill>
-                            <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding OnlineRef.ProfilePictureURL, TargetNullValue='avares://FortnitePorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
+                            <ImageBrush asyncImageLoader:ImageBrushLoader.Source="{Binding OnlineRef.ProfilePictureURL, TargetNullValue='avares://RivalsPorting/Assets/DefaultProfile.png'}" Stretch="UniformToFill"/>
                         </Ellipse.Fill>
                     </Ellipse>
                 </Grid>

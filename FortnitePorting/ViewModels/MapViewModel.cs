@@ -221,7 +221,7 @@ public partial class MapViewModel : ViewModelBase
 public partial class WorldPartitionMap : ObservableObject
 {
     [ObservableProperty] private MapInfo _info;
-    [ObservableProperty] private Bitmap _mapBitmap = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/Transparent1x1.png");
+    [ObservableProperty] private Bitmap _mapBitmap = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/Transparent1x1.png");
     [ObservableProperty] private Bitmap _maskBitmap;
     [ObservableProperty] private string _worldName = string.Empty;
     [ObservableProperty] private bool _dataLoaded = false;

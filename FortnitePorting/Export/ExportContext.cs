@@ -238,39 +238,39 @@ public class ExportContext
                 }
             }
         }
-        else
-        {
-            /* Add poses by name first in order they appear */
-            for (var i = 0; i < poses.Length; i++)
-            {
-                var pose = poses[i];
-                var poseName = poseNames[i];
-                var poseData = new PoseData(poseName, pose.CurveData);
-                meta.PoseData.Add(poseData);
-            }
-
-            /* Discover connection between bone name and relative location. */
-            for (var i = 0; i < poses.Length; i++)
-            {
-                var poseData = poses[i];
-
-                foreach (var (trackIndex, bufferIndex) in poseData.TrackToBufferIndex)
-                {
-                    var transform = poseData.LocalSpacePose[bufferIndex];
-                    if (!transform.Rotation.IsNormalized)
-                        transform.Rotation.Normalize();
-
-                    meta.PoseData[i].Keys.Add(new PoseKey(
-                        poseTracks[trackIndex].PlainText, /* Bone name to move */
-                        transform.Translation,
-                        transform.Rotation,
-                        transform.Scale3D,
-                        trackIndex,
-                        bufferIndex
-                    ));
-                }
-            }
-        }
+        // else
+        // {
+        //     /* Add poses by name first in order they appear */
+        //     for (var i = 0; i < poses.Length; i++)
+        //     {
+        //         var pose = poses[i];
+        //         var poseName = poseNames[i];
+        //         var poseData = new PoseData(poseName, pose.CurveData);
+        //         meta.PoseData.Add(poseData);
+        //     }
+        //
+        //     /* Discover connection between bone name and relative location. */
+        //     for (var i = 0; i < poses.Length; i++)
+        //     {
+        //         var poseData = poses[i];
+        //
+        //         foreach (var (trackIndex, bufferIndex) in poseData.TrackToBufferIndex)
+        //         {
+        //             var transform = poseData.LocalSpacePose[bufferIndex];
+        //             if (!transform.Rotation.IsNormalized)
+        //                 transform.Rotation.Normalize();
+        //
+        //             meta.PoseData[i].Keys.Add(new PoseKey(
+        //                 poseTracks[trackIndex].PlainText, /* Bone name to move */
+        //                 transform.Translation,
+        //                 transform.Rotation,
+        //                 transform.Scale3D,
+        //                 trackIndex,
+        //                 bufferIndex
+        //             ));
+        //         }
+        //     }
+        // }
     }
     
     public List<ExportMesh> WeaponDefinition(UObject weaponDefinition)
@@ -469,7 +469,7 @@ public class ExportContext
         foreach (var streamingLevelLazy in world.StreamingLevels)
         {
             if (streamingLevelLazy.Load() is not ULevelStreaming levelStreaming) continue;
-            if (levelStreaming.WorldAsset.Load() is not UWorld worldAsset) continue;
+            if (TryLoadWorldAsset(levelStreaming) is not { } worldAsset) continue;
             if (worldAsset.PersistentLevel.Load() is not ULevel streamingLevel) continue;
             
             actors.AddRangeIfNotNull(Level(streamingLevel));
@@ -524,6 +524,12 @@ public class ExportContext
         }
 
         return actors;
+    }
+
+    private UWorld? TryLoadWorldAsset(ULevelStreaming levelStreaming)
+    {
+        if (levelStreaming.WorldAsset.Owner != null && levelStreaming.WorldAsset.Load() is UWorld worldAsset) return worldAsset;
+        return levelStreaming.TryGetValue(out UWorld propertyWorldAsset, "WorldAsset") ? propertyWorldAsset : null;
     }
 
     public List<ExportMesh> Level(ULevel level)
@@ -586,7 +592,7 @@ public class ExportContext
                 }
             }
             
-            if (actor.TryGetValue(out UStaticMeshComponent staticMeshComponent, "StaticMeshComponent", "StaticMesh", "Mesh", "LightMesh"))
+            if (actor.TryGetValue(out UStaticMeshComponent staticMeshComponent, "StaticMeshComponent", "StaticMesh", "Mesh", "LightMesh", "MeshComponent"))
             {
                 var exportMesh = MeshComponent(staticMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
@@ -631,7 +637,7 @@ public class ExportContext
                 meshes.Add(exportMesh);
             }
             
-            if (actor.TryGetValue(out USkeletalMeshComponent skeletalMeshComponent, "SkeletalMeshComponent", "SkeletalMesh"))
+            if (actor.TryGetValue(out USkeletalMeshComponent skeletalMeshComponent, "SkeletalMeshComponent", "SkeletalMesh", "MeshComponent"))
             {
                 var exportMesh = MeshComponent(skeletalMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
@@ -789,13 +795,26 @@ public class ExportContext
     
     public ExportMesh? MeshComponent(USkeletalMeshComponent meshComponent)
     {
-        var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
-        if (mesh is null) return null;
-
-        var exportMesh = Mesh(mesh);
+        ExportMesh exportMesh = null;
+        if (meshComponent.TryGetValue(out FSoftObjectPath objPath, "SkeletalMeshAsset_SoftPtr")
+            && objPath.TryLoad(out UObject loadedMesh))
+        {
+            var mesh = loadedMesh;
+            exportMesh = Mesh(mesh);
+        }
+        else if (meshComponent.Template != null && meshComponent.Template.TryLoad(out UObject baseMesh))
+        {
+            exportMesh = MeshComponent(baseMesh);
+        }
+        else if (meshComponent.GetSkeletalMesh() != null)
+        {
+            var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
+            exportMesh = Mesh(mesh);
+        }
+        
         if (exportMesh is null) return null;
         
-        var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
+        var overrideMaterials = meshComponent.GetOrDefault("Materials_SoftPtr", Array.Empty<UMaterialInterface?>());
         for (var idx = 0; idx < overrideMaterials.Length; idx++)
         {
             var material = overrideMaterials[idx];

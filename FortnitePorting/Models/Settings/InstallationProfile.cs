@@ -32,12 +32,12 @@ public partial class InstallationProfile : ObservableValidator
     [ArchiveDirectory]
     [ObservableProperty] private string _archiveDirectory;
     
-    [ObservableProperty] private EGame _unrealVersion = EGame.GAME_UE5_LATEST;
+    [ObservableProperty] private EGame _unrealVersion = EGame.GAME_MarvelRivals;
     
     [NotifyDataErrorInfo]
     [EncryptionKey]
     [ObservableProperty] 
-    private FileEncryptionKey _mainKey = FileEncryptionKey.Empty;
+    private FileEncryptionKey _mainKey = new("0x0C263D8C22DCB085894899C3A3796383E9BF9DE0CBFB08C9BF2DEF2E84F29D74");
     
     [ObservableProperty] private int _selectedExtraKeyIndex;
     [ObservableProperty] private ObservableCollection<FileEncryptionKey> _extraKeys = [];
@@ -47,7 +47,7 @@ public partial class InstallationProfile : ObservableValidator
     [NotifyPropertyChangedFor(nameof(MappingsFileEnabled))]
     private bool _useMappingsFile;
     
-    [ObservableProperty] private string _mappingsFile = string.Empty;
+    [ObservableProperty] private string _mappingsFile = "avares://RivalsPorting/Assets/Mappings/5.3.2-1400244+++depot_marvel+S0_release-Marvel.usmap";
     [ObservableProperty, JsonIgnore] private string _fetchMappingsVersion = string.Empty;
     
     [ObservableProperty] private ELanguage _gameLanguage = ELanguage.English;

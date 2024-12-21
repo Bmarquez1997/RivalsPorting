@@ -140,7 +140,8 @@
                                                 <ui:FABorder Width="{Binding DisplayWidth}" 
                                                              Height="{Binding DisplayHeight}"/>
                                                 <ui:FABorder Width="{Binding DisplayWidth}" 
-                                                             Height="{Binding DisplayHeight}">
+                                                             Height="{Binding DisplayHeight}"
+                                                             CornerRadius="12">
                                                     <ui:FABorder.Background>
                                                         <ImageBrush Stretch="UniformToFill" Source="{Binding DisplayImage}" />
                                                     </ui:FABorder.Background>
@@ -183,7 +184,7 @@
                                         
                                         <ui:FABorder Grid.Row="0">
                                             <Grid RowDefinitions="* 2*" ColumnDefinitions="* 0.15* 2.5*" Margin="{ext:Space 0, 0.5}">
-                                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" CornerRadius="4">
+                                                <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" CornerRadius="12">
                                                     <Border.Background>
                                                         <ImageBrush Stretch="Uniform" Source="{Binding Asset.IconDisplayImage}" />
                                                     </Border.Background>
@@ -229,14 +230,15 @@
                                                                 <ListBox.ItemTemplate>
                                                                     <DataTemplate DataType="assets:BaseStyleData">
                                                                         <ContentControl Padding="8" ToolTip.Tip="{Binding StyleName}">
-                                                                            <Grid MaxWidth="48" RowDefinitions="*, Auto">
-                                                                                <Border Grid.Row="0" Width="48" Height="48">
+                                                                            <Grid MaxWidth="64" RowDefinitions="*, Auto">
+                                                                                <Border Grid.Row="0" Width="64" Height="64" CornerRadius="12">
                                                                                     <Border.Background>
                                                                                         <ImageBrush Source="{Binding StyleDisplayImage}" />
                                                                                     </Border.Background>
                                                                                 </Border>
                                                                                 <TextBlock Grid.Row="1" Text="{Binding StyleName}" HorizontalAlignment="Center" 
-                                                                                           Classes="CaptionTextBlockStyle" TextTrimming="CharacterEllipsis"
+                                                                                           Classes="CaptionTextBlockStyle" TextWrapping="Wrap" 
+                                                                                           TextTrimming="CharacterEllipsis" TextAlignment="Center"
                                                                                            IsVisible="{Binding ShowName}"/>
                                                                             </Grid>
                                                                         </ContentControl>

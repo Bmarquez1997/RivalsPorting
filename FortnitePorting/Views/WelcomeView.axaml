@@ -31,7 +31,7 @@
                     </LinearGradientBrush>
                 </Image.OpacityMask>
             </Image>
-            <TextBlock Text="Welcome to FortnitePorting!" Classes="TitleLargeTextBlockStyle" HorizontalAlignment="Center"
+            <TextBlock Text="Welcome to RivalsPorting!" Classes="TitleLargeTextBlockStyle" HorizontalAlignment="Center"
                        VerticalAlignment="Center">
                 <TextBlock.Effect>
                     <DropShadowEffect BlurRadius="15" Color="#5F000000" OffsetX="0" OffsetY="0" />
@@ -165,7 +165,7 @@
                         <StackPanel Orientation="Horizontal">
                             <CheckBox IsChecked="{Binding Profile.UseMappingsFile}"/>
                             <TextBox Text="{Binding Profile.MappingsFile}" 
-                                     Watermark="Ex. C:/Users/FortnitePorting/Downloads/Mappings.usmap" 
+                                     Watermark="Ex. C:/Users/RivalsPorting/Downloads/Mappings.usmap" 
                                      IsEnabled="{Binding Profile.UseMappingsFile}"
                                      MaxWidth="500"/>
                             <Button Margin="4 0 0 0" Command="{Binding Profile.BrowseMappingsFile}" IsEnabled="{Binding Profile.UseMappingsFile}">

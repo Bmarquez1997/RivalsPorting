@@ -37,18 +37,16 @@ public partial class AssetStyleInfo : ObservableObject
         
         foreach (var style in styles)
         {
-            if (style.GetOrDefault<FText?>("VariantName") is not { } variantNameText 
-                || variantNameText.Text.Equals("Empty", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
             var previewBitmap = fallbackPreviewImage;
-            if (style.TryGetValue(out UTexture2D previewTexture, "PreviewImage"))
+            if (style.TryGetValue(out string skinId, "SkinItemID"))
             {
-                previewBitmap = previewTexture.Decode()!.ToWriteableBitmap();
+                var stylePreviewPath = "Marvel/Content/Marvel/UI/Textures/Item/Skin/item_skin_" + skinId;
+                if (CUE4ParseVM.Provider.TryLoadObject(stylePreviewPath, out UTexture2D previewTexture))
+                {
+                    previewBitmap = previewTexture.Decode()!.ToWriteableBitmap();
+                }
             }
-
+            
             StyleDatas.Add(new AssetStyleData(style, previewBitmap));
         }
 

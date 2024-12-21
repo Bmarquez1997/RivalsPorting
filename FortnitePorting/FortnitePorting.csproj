@@ -6,7 +6,8 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>Application/app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-        <ApplicationIcon>Assets/LogoV3.ico</ApplicationIcon>
+        <AssemblyName>RivalsPorting</AssemblyName>
+        <ApplicationIcon>Assets/LogoMR.ico</ApplicationIcon>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>

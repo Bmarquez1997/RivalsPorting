@@ -75,12 +75,12 @@
                      </ui:NavigationViewItem.IconSource>
                  </ui:NavigationViewItem>
                  <ui:NavigationViewItemSeparator/>
-                 <ui:NavigationViewItem Content="Radio" Tag="Radio" IsEnabled="{Binding GameBasedTabsAreReady}">
+                 <ui:NavigationViewItem Content="Radio" Tag="Radio" IsEnabled="False">
                      <ui:NavigationViewItem.IconSource>
                          <ui:PathIconSource Data="{ext:MaterialKindToGeometry Radio}"/>
                      </ui:NavigationViewItem.IconSource>
                  </ui:NavigationViewItem>
-                 <ui:NavigationViewItem Content="Map" Tag="Map" IsEnabled="{Binding GameBasedTabsAreReady}">
+                 <ui:NavigationViewItem Content="Map" Tag="Map" IsEnabled="False">
                      <ui:NavigationViewItem.IconSource>
                          <ui:PathIconSource Data="{ext:MaterialKindToGeometry Map}"/>
                      </ui:NavigationViewItem.IconSource>
@@ -114,7 +114,7 @@
                      </ui:NavigationViewItem.IconSource>
                  </ui:NavigationViewItem>
                  
-                 <ui:NavigationViewItem Content="Update" Tag="Update" SelectsOnInvoked="False" PointerPressed="OnUpdatePressed" IsEnabled="{Binding !SetupTabsAreVisible}">
+                 <ui:NavigationViewItem Content="Update" Tag="Update" SelectsOnInvoked="False" PointerPressed="OnUpdatePressed" IsEnabled="False">
                      <ui:NavigationViewItem.IconSource>
                          <ui:PathIconSource Data="{ext:MaterialKindToGeometry Download}"/>
                      </ui:NavigationViewItem.IconSource>
@@ -202,7 +202,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="1" Text="FortnitePorting" FontWeight="SemiBold" FontSize="16"
+            <TextBlock Grid.Column="1" Text="RivalsPorting" FontWeight="SemiBold" FontSize="16"
                        HorizontalAlignment="Left" VerticalAlignment="Center" />
             <TextBlock Grid.Column="3" Text="{Binding VersionString}" Classes="TextFillColorTertiaryBrush" FontSize="13" Margin="-2 2 0 0"
                        HorizontalAlignment="Left" VerticalAlignment="Center" />

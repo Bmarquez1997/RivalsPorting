@@ -37,6 +37,7 @@ public partial class AssetItem : Base.BaseAssetItem
     public EFortRarity Rarity { get; set; }
     public int Season { get; set; }
     public UFortItemSeriesDefinition? Series { get; set; }
+    public AssetInfo? AssetInfo { get; set; }
     
 
     private static SKColor InnerBackgroundColor = SKColor.Parse("#50C8FF");
@@ -49,18 +50,9 @@ public partial class AssetItem : Base.BaseAssetItem
         Id = Guid.NewGuid();
         CreationData = args;
 
-        IsFavorite = AppSettings.Current.FavoriteAssets.Contains(CreationData.Object.GetPathName());
+        IsFavorite = AppSettings.Current.FavoriteAssets.Contains(CreationData.ID);
 
-        Rarity = CreationData.Object.GetOrDefault("Rarity", EFortRarity.Uncommon);
-        
-        var seasonTag = CreationData.GameplayTags?.GetValueOrDefault("Cosmetics.Filter.Season.")?.Text;
-        Season = int.TryParse(seasonTag?.SubstringAfterLast("."), out var seasonNumber) ? seasonNumber : int.MaxValue;
-
-        if (CreationData.Object.GetDataListItem<FPackageIndex>("Series") is { } seriesPackage)
-        {
-            Series = SeriesCache!.GetOrAdd(seriesPackage.Name,
-                () => seriesPackage.Load<UFortItemSeriesDefinition>());
-        }
+        // Role handling?
         
         var iconBitmap = CreationData.Icon.Decode()!;
         IconDisplayImage = iconBitmap.ToWriteableBitmap();
@@ -72,7 +64,7 @@ public partial class AssetItem : Base.BaseAssetItem
         var bitmap = new SKBitmap(128, 160, iconBitmap.ColorType, SKAlphaType.Opaque);
         using (var canvas = new SKCanvas(bitmap))
         {
-            var colors = Series?.Colors ?? CUE4ParseVM.RarityColors[(int) Rarity];
+            //var colors = Series?.Colors ?? CUE4ParseVM.RarityColors[(int) Rarity];
             // background
             var backgroundRect = new SKRect(0, 0, bitmap.Width, bitmap.Height);
             if (Series?.BackgroundTexture.LoadOrDefault<UTexture2D>() is { } seriesBackground)
@@ -81,7 +73,7 @@ public partial class AssetItem : Base.BaseAssetItem
             }
             else if (!CreationData.HideRarity)
             {
-                var backgroundPaint = new SKPaint { Shader = SkiaExtensions.RadialGradient(bitmap.Height, colors.Color1, colors.Color3) };
+                var backgroundPaint = new SKPaint { Shader = SkiaExtensions.RadialGradient(bitmap.Height, CreationData.MainColor, CreationData.SecondaryColor) };
                 canvas.DrawRect(backgroundRect, backgroundPaint);
             }
             else
@@ -101,7 +93,7 @@ public partial class AssetItem : Base.BaseAssetItem
 
             if (!CreationData.HideRarity)
             {
-                var coolRectPaint = new SKPaint { Shader = SkiaExtensions.LinearGradient(bitmap.Width, true, colors.Color1, colors.Color2) };
+                var coolRectPaint = new SKPaint { Shader = SkiaExtensions.LinearGradient(bitmap.Width, true, CreationData.MainColor, CreationData.SecondaryColor) };
                 coolRectPaint.Color = coolRectPaint.Color.WithAlpha((byte) (0.75 * byte.MaxValue));
 
                 canvas.RotateDegrees(-4);

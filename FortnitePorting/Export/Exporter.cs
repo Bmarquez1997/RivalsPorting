@@ -99,6 +99,13 @@ public static class Exporter
                 var styles = metaData.ExportLocation.IsFolder() ? assetInfo.GetAllStyles() : assetInfo.GetSelectedStyles();
                 var exportType = asset.CreationData.ExportType;
 
+                var styleData = (AssetStyleData)styles[0];
+                if (styleData.StyleData.TryGetValue(out UBlueprintGeneratedClass actorClass, "ShowActorClass")
+                    && actorClass.ClassDefaultObject.TryLoad(out UObject showActorClass))
+                {
+                    asset.CreationData.Object = showActorClass;
+                }
+
                 return CreateExport(asset.CreationData.DisplayName, asset.CreationData.Object, exportType, styles,
                     metaData);
             }

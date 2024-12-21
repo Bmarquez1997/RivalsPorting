@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,6 +12,7 @@ using CUE4Parse.UE4.AssetRegistry.Objects;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Core.i18N;
+using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.GameplayTags;
 using DynamicData;
 using DynamicData.Binding;
@@ -34,6 +36,7 @@ public partial class AssetLoader : ObservableObject
 
     public string[] ClassNames = [];
     public string[] AllowNames = [];
+    public string[] AssetNames = [];
     public string[] HideNames = [];
     public string[] DisallowedNames = [];
     public ManuallyDefinedAsset[] ManuallyDefinedAssets = [];
@@ -43,6 +46,7 @@ public partial class AssetLoader : ObservableObject
     public Func<AssetLoader, UObject, string, bool> HidePredicate = (loader, asset, name) => false;
     public Action<AssetLoader, UObject, string> AddStyleHandler = (loader, asset, name) => {};
     public string PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Generic";
+    public Func<AssetLoader, Task>? AssetHandler;
     public Func<UObject, UTexture2D?> IconHandler = GetIcon;
     public Func<UObject, string?> DisplayNameHandler = asset => asset.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text;
     public Func<UObject, string?> DescriptionHandler = asset => asset.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text;
@@ -195,8 +199,22 @@ public partial class AssetLoader : ObservableObject
         if (BeganLoading) return;
         BeganLoading = true;
 
+        var classDict = new Dictionary<string, string>();
+
+        CUE4ParseVM.AssetRegistry.ForEach(asset => classDict.TryAdd(asset.AssetClass.Text, asset.ObjectPath));
+        
+        Log.Information("Start Classes");
+        classDict.ForEach(entry => Log.Information("{0} : {1}", entry.Key, entry.Value));
+        Log.Information("End Classes");
+
+        if (AssetHandler != null)
+        {
+            await AssetHandler(this);
+            return;
+        }
+
         Assets = CUE4ParseVM.AssetRegistry
-            .Where(data => ClassNames.Contains(data.AssetClass.Text))
+            .Where(data => ClassNames.Contains(data.AssetClass.Text) && HasAssetName(data.AssetName.Text))
             .ToList();
         Assets.RemoveAll(data => data.AssetName.Text.EndsWith("Random", StringComparison.OrdinalIgnoreCase));
 
@@ -263,10 +281,25 @@ public partial class AssetLoader : ObservableObject
         await TaskService.RunDispatcherAsync(() => SearchAutoComplete.AddRange(Source.Items.Select(asset => asset.CreationData.DisplayName).Distinct()));
     }
 
+    private void AddIfNotPresent(Dictionary<string, string> classDict, string className, string assetPath)
+    {
+        classDict.TryAdd(className, assetPath);
+    }
+
+    private bool HasAssetName(string assetName)
+    {
+        return AssetNames.Any(assetName.Contains);
+    }
+
     private async Task LoadAsset(FAssetData data)
     {
-        var asset = await CUE4ParseVM.Provider.TryLoadObjectAsync(data.ObjectPath);
-        if (asset is null) return;
+        // var asset = await CUE4ParseVM.Provider.LoadAllObjectsAsync(data.PackageName.Text);
+        var asset = await CUE4ParseVM.Provider.TryLoadObjectAsync(data.ObjectPath + "_C");
+        if (asset is UBlueprintGeneratedClass @class)
+        {
+            asset = await @class.ClassDefaultObject.TryLoadAsync();
+        }
+        if (asset == null) return;
 
         /*data.TagsAndValues.TryGetValue("DisplayName", out var displayName);
         displayName ??= data.AssetName.Text;*/
@@ -374,7 +407,7 @@ public partial class AssetLoader : ObservableObject
         IsPaused = false;
     }
 
-    private async Task WaitIfPausedAsync()
+    public async Task WaitIfPausedAsync()
     {
         while (IsPaused) await Task.Delay(1);
     }
@@ -405,7 +438,7 @@ public partial class AssetLoader : ObservableObject
             EAssetSortType.AZ => asset => asset.CreationData.DisplayName,
             EAssetSortType.Season => asset => asset is AssetItem assetItem ? assetItem.Season + (double) assetItem.Rarity * 0.01 : asset.CreationData.DisplayName,
             EAssetSortType.Rarity => asset => asset is AssetItem assetItem ? assetItem.Series?.DisplayName.Text + (int) assetItem.Rarity : asset.CreationData.DisplayName,
-            _ => asset => asset is AssetItem assetItem ? assetItem.CreationData.Object?.Name ?? string.Empty : asset.CreationData.DisplayName
+            _ => asset => asset.CreationData.ID
         };
 
         return descending

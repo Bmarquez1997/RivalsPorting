@@ -24,7 +24,7 @@ public partial class RadioPlaylist : ObservableObject
     public RadioPlaylist(bool isDefault)
     {
         IsDefault = isDefault;
-        PlaylistCover = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/FN/DefaultPlaylistImage.png");
+        PlaylistCover = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/FN/DefaultPlaylistImage.png");
         PlaylistName = isDefault ? "Default Playlist" : "New Playlist";
     }
     
@@ -46,7 +46,7 @@ public partial class RadioPlaylist : ObservableObject
         }
         else
         {
-            playlist.PlaylistCover = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/FN/DefaultPlaylistImage.png");
+            playlist.PlaylistCover = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/FN/DefaultPlaylistImage.png");
         }
 
         return playlist;

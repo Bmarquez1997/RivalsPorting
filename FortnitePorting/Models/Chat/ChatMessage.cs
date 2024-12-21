@@ -32,6 +32,6 @@ public partial class ChatMessage : ObservableObject
     [ObservableProperty, NotifyPropertyChangedFor(nameof(YeahImageSource))] private bool _reactedTo;
     public Bitmap YeahImageSource => ReactedTo ? YeahOn : YeahOff;
 
-    private static Bitmap YeahOff = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/YeahOff.png");
-    private static Bitmap YeahOn = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/YeahOn.png");
+    private static Bitmap YeahOff = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/YeahOff.png");
+    private static Bitmap YeahOn = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/YeahOn.png");
 }

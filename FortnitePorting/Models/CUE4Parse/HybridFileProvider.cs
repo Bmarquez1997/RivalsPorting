@@ -58,12 +58,7 @@ public class HybridFileProvider : AbstractVfsFileProvider
         {
             var extension = file.Extension.SubstringAfter('.').ToLower();
             if (extension is not ("pak" or "utoc")) continue;
-
-            if (file.Name.Contains("global") || IsOptionalLoader && file.Name.Contains(".o.") || !IsOptionalLoader && !file.Name.Contains(".o."))
-            {
-                RegisterVfs(file.FullName, [ file.OpenRead() ], it => new FStreamArchive(it, File.OpenRead(it), Versions));
-            }
-
+            RegisterVfs(file.FullName, [ file.OpenRead() ], it => new FStreamArchive(it, File.OpenRead(it), Versions));
         }
     }
 }

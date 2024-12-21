@@ -5,15 +5,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
+using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.GameplayTags;
 using CUE4Parse.UE4.Objects.UObject;
+using DynamicData;
+using FluentAvalonia.Core;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
 using FortnitePorting.Export.Custom;
 using FortnitePorting.Export.Types;
+using FortnitePorting.Models.Assets.Asset;
 using FortnitePorting.Models.Assets.Custom;
 using FortnitePorting.Services;
 using FortnitePorting.Shared;
@@ -37,49 +42,113 @@ public partial class AssetLoaderCollection : ObservableObject
             [
                 new AssetLoader(EExportType.Outfit)
                 {
-                    ClassNames = ["AthenaCharacterItemDefinition"],
-                    HideNames = ["_NPC", "_TBD", "CID_VIP", "_Creative", "_SG"],
-                    DisallowedNames = ["Bean_", "BeanCharacter"],
-                    PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Item_Outfit",
+                    //Marvel/Content/Marvel/Data/DataTable/MarvelHeroSkinTable.uasset - Styles and base meshes
+                    //Marvel/Content/Marvel/Data/DataTable/MarvelHeroBaseAttributeTable.uasset - Translations?
+                    
+                    //Marvel/Content/Marvel/Data/DataTable/HeroGallery/UIHeroTable.uasset - UI Definitions: Name, Description, icon
+                    //Marvel/Content/Marvel/Data/DataTable/HeroGallery/UISkinTable.uasset - Skin definitions: Link to actor, skin names
+                    
+                    ClassNames = ["Blueprint"],
+                    AssetNames = ["001_ShowBP"],
+                    PlaceholderIconPath = "Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
                     LoadHiddenAssets = true,
                     IconHandler = asset =>
                     {
-                        var previewImage = AssetLoader.GetIcon(asset);
-                        if (previewImage is null && asset.TryGetValue(out UObject hero, "HeroDefinition"))
-                            previewImage = AssetLoader.GetIcon(hero);
+                        var iconName = "Marvel/Content/Marvel/UI/Textures/HeroPortrait/SelectHero/img_selecthero_" +
+                                       asset.Name.Substring(9, 7);
+                        CUE4ParseVM.Provider.TryLoadObject(iconName, out UTexture2D previewImage);
 
                         return previewImage;
-                    }
-                },
-                new AssetLoader(EExportType.Backpack)
-                {
-                    ClassNames = ["AthenaBackpackItemDefinition"],
-                    HideNames = ["_STWHeroNoDefaultBackpack", "_TEST", "Dev_", "_NPC", "_TBD"]
-                },
-                new AssetLoader(EExportType.Pickaxe)
-                {
-                    ClassNames = ["AthenaPickaxeItemDefinition"],
-                    HideNames = ["Dev_", "TBD_"],
-                    IconHandler = asset =>
+                    },
+                    AssetHandler = async loader =>
                     {
-                        var previewImage = AssetLoader.GetIcon(asset);
-                        if (previewImage is null && asset.TryGetValue(out UObject hero, "WeaponDefinition"))
-                            previewImage = AssetLoader.GetIcon(hero);
+                        async Task<UTexture2D> GetDataTableIcon(FStructFallback iconStruct)
+                        {
+                            if (iconStruct.TryGetValue(out FStructFallback icon,
+                                "HeroHeadBig_18_9ACCBB7F4F69AA4CADA5CA94E3788DB5",
+                                "HeroHeadSpuare_11_B4C0FC694F2D5538B14839BD2DCAA5B3") 
+                                && icon.TryGetValue(out FSoftObjectPath texturePath, "Image_2_BDA02B484B8F00FAFED6C0A9E2AF13EF")
+                                && texturePath.TryLoad(out UTexture2D texture))
+                            {
+                                return texture;
+                            }
+                            return await CUE4ParseVM.Provider.TryLoadObjectAsync<UTexture2D>("Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo");
+                        }
 
-                        return previewImage;
+                        async Task<Dictionary<HeroKey, List<FStructFallback>>> GetSkinMap()
+                        {
+                            var dictionary = new Dictionary<HeroKey, List<FStructFallback>>();
+                            var skinsTable = await CUE4ParseVM.Provider.TryLoadObjectAsync<UDataTable>(
+                                "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UISkinTable");
+                            if (skinsTable?.RowMap == null) return null;
+                            
+                            foreach (var skin in skinsTable.RowMap.Values)
+                            {
+                                if (skin.TryGetValue(out FStructFallback identifier, "Identifier"))
+                                {
+                                    var key = new HeroKey(identifier);
+                                    if (!dictionary.ContainsKey(key))
+                                        dictionary[key] = new List<FStructFallback>();
+                                    
+                                    dictionary[key].Add(skin);
+                                }
+                            }
+                            return dictionary;
+                        }
+                        
+                        var heroData =
+                            await CUE4ParseVM.Provider.TryLoadObjectAsync<UDataTable>(
+                                "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UIHeroTable");
+                        
+                         // put in map by hero id, add before putting in source
+                         var skinMap = await GetSkinMap();
+                         
+                        var finished = false;
+                        if (heroData?.RowMap == null) return;
+
+                        loader.TotalAssets = heroData.RowMap.Count();
+                        foreach (var (key, value) in heroData.RowMap)
+                        {
+                            var heroBasic = value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
+                            var heroIcon = value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
+                            
+                            var assetArgs = new AssetItemCreationArgs()
+                            {
+                                ID = key.Text,
+                                DisplayName = heroBasic.GetOrDefault("TName_10_93EE6AC745A8786CA1DF5A83B5253AC4", new FText(key.Text)).Text.ToLower().TitleCase(),
+                                Description = heroBasic.GetOrDefault("Desc_63_F34334EF45CD2DCEF0F5CEB7B7893F3F", new FText("No Description")).Text,
+                                MainColor = heroBasic.GetOrDefault("HeroInfoMainColor_60_DF3A9B7B49FBF4A7F47FDCB06DADE676", new FLinearColor(1, 1, 1, 1)),
+                                SecondaryColor = heroBasic.GetOrDefault("HeroInfoMainColor_60_DF3A9B7B49FBF4A7F47FDCB06DADE676", new FLinearColor(0, 0, 0, 1)),
+                                Icon = await GetDataTableIcon(heroIcon),
+                                ExportType = EExportType.Outfit,
+                            };
+                            var assetItem = new AssetItem(assetArgs);
+                            
+                            //TODO: fix AssetInfo creation
+                            if (skinMap.ContainsKey(new HeroKey(key.Text)))
+                            {
+                                var skins = skinMap[new HeroKey(key.Text)];
+                                assetItem.AssetInfo = new AssetInfo(assetItem, skins.ToArray());
+                            }
+                            else
+                            {
+                                assetItem.AssetInfo = new AssetInfo(assetItem);
+                            }
+
+                            loader.Source.AddOrUpdate(assetItem);
+                            loader.LoadedAssets++;
+                        }
+
+                        loader.LoadedAssets = loader.TotalAssets;
+                        // HeroHeadBig_18_9ACCBB7F4F69AA4CADA5CA94E3788DB5 - Icon
+                        // HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E:
+                        // TName_10_93EE6AC745A8786CA1DF5A83B5253AC4 - Display Name
+                        // EnName_45_A241DED14FF7C14AD94F109AF1ECEF52 - Display Name
+                        // Desc_63_F34334EF45CD2DCEF0F5CEB7B7893F3F - Description
+                        // HeroInfoMainColor_60_DF3A9B7B49FBF4A7F47FDCB06DADE676 - Primary color
+                        // HeroInfoSecondaryColor_66_9A43BF184D53A7114048DBA131305FFB - Secondary color
+
                     }
-                },
-                new AssetLoader(EExportType.Glider)
-                {
-                    ClassNames = ["AthenaGliderItemDefinition"]
-                },
-                new AssetLoader(EExportType.Pet)
-                {
-                    ClassNames = ["AthenaPetCarrierItemDefinition"]
-                },
-                new AssetLoader(EExportType.Toy)
-                {
-                    ClassNames = ["AthenaToyItemDefinition"]
                 },
                 new AssetLoader(EExportType.Emoticon)
                 {
@@ -107,44 +176,6 @@ public partial class AssetLoaderCollection : ObservableObject
                 }
             ]
         },
-        new AssetLoaderCategory(EAssetCategory.Creative)
-        {
-            Loaders = 
-            [
-                new AssetLoader(EExportType.Prop)
-                {
-                    ClassNames = ["FortPlaysetPropItemDefinition"],
-                    HideRarity = true,
-                    HidePredicate = (loader, asset, name) =>
-                    {
-                        if (loader.FilteredAssetBag.Contains(name)) return true;
-                        loader.FilteredAssetBag.Add(name);
-                        return false;
-                    },
-                    AddStyleHandler = (loader, asset, name) =>
-                    {
-                        var path = asset.GetPathName();
-                        loader.StyleDictionary.TryAdd(name, []);
-                        loader.StyleDictionary[name].Add(path);
-                    }
-                },
-                new AssetLoader(EExportType.Prefab)
-                {
-                    ClassNames = ["FortPlaysetItemDefinition"],
-                    HideNames = ["Device", "PID_Playset", "PID_MapIndicator", "SpikyStadium", "PID_StageLight", "PID_Temp_Island",
-                                "PID_LimeEmptyPlot", "PID_Townscaper", "JunoPlotPlaysetItemDefintion", "LME",
-                                "PID_ObstacleCourse", "MW_"],
-                    HideRarity = true,
-                    GameplayTagHandler = asset =>
-                    {
-                        var tagsHelper = asset.GetOrDefault<FStructFallback?>("CreativeTagsHelper");
-                        var tags = tagsHelper?.GetOrDefault<FName[]>("CreativeTags") ?? [];
-                        var gameplayTags = tags.Select(tag => new FGameplayTag(tag)).ToArray();
-                        return new FGameplayTagContainer(gameplayTags);
-                    }
-                }
-            ]
-        },
         new AssetLoaderCategory(EAssetCategory.Gameplay)
         {
             Loaders = 
@@ -168,237 +199,7 @@ public partial class AssetLoaderCollection : ObservableObject
                         loader.StyleDictionary[name].Add(path);
                     }
                 },
-                new AssetLoader(EExportType.Resource)
-                {
-                    ClassNames = ["FortIngredientItemDefinition", "FortResourceItemDefinition"],
-                    HideNames = ["SurvivorItemData", "OutpostUpgrade_StormShieldAmplifier"]
-                },
-                new AssetLoader(EExportType.Trap)
-                {
-                    ClassNames = ["FortTrapItemDefinition"],
-                    HideNames = ["TID_Creative", "TID_Floor_Minigame_Trigger_Plate"],
-                    HidePredicate = (loader, asset, name) =>
-                    {
-                        if (loader.FilteredAssetBag.Contains(name)) return true;
-                        loader.FilteredAssetBag.Add(name);
-                        return false;
-                    }
-                    
-                },
-                new AssetLoader(EExportType.Vehicle)
-                {
-                    ClassNames = ["FortVehicleItemDefinition"],
-                    IconHandler = asset => asset.GetVehicleMetadata<UTexture2D>("Icon", "SmallPreviewImage", "LargePreviewImage"),
-                    DisplayNameHandler = asset => asset.GetVehicleMetadata<FText>("DisplayName", "ItemName")?.Text,
-                    HideRarity = true,
-                    
-                },
-                new AssetLoader(EExportType.Wildlife)
-                {
-                    ManuallyDefinedAssets = 
-                    [
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Llama",
-                            AssetPath = "/Labrador/Meshes/Labrador_Mammal",
-                            IconPath = "FortniteGame/Content/UI/Foundation/Textures/Icons/Athena/T-T-Icon-BR-SM-Athena-SupplyLlama-01"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Boar",
-                            AssetPath = "/Irwin/AI/Prey/Burt/Meshes/Burt_Mammal",
-                            IconPath = "/Irwin/Icons/T-Icon-Fauna-Boar"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Chicken",
-                            AssetPath = "/Irwin/AI/Prey/Nug/Meshes/Nug_Bird",
-                            IconPath = "/Irwin/Icons/T-Icon-Fauna-Chicken"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Zombie Chicken",
-                            AssetPath = "/NugZ/Meshes/Chicken_Zombie_Bird",
-                            IconPath = "/NugZ/Icons/T-T-Icon-BR-ChickenZombieFauna"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Klombo",
-                            AssetPath = "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_ButterCakeMamma/Content/SkeletalMesh/Butter_Cake_Mammal",
-                            IconPath = "FortniteGame/Plugins/GameFeatures/Juno/JunoCreature_ButterCakeMamma/Content/Textures/T-T-Icon-BR-ButterCake"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Frog",
-                            AssetPath = "/Irwin/AI/Simple/Smackie/Meshes/Smackie_Amphibian",
-                            IconPath = "/Irwin/Icons/T-Icon-Fauna-Frog"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Crow",
-                            AssetPath = "/Irwin/AI/Prey/Crow/Meshes/Crow_Bird",
-                            IconPath = "/Irwin/Icons/T-Icon-Fauna-Crow"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Raptor",
-                            AssetPath = "/Irwin/AI/Predators/Robert/Meshes/Jungle_Raptor_Fauna",
-                            IconPath = "/Irwin/Icons/T-Icon-Fauna-JungleRaptor"
-                        },
-                        new ManuallyDefinedAsset
-                        {
-                            Name = "Wolf",
-                            AssetPath = "/Irwin/AI/Predators/Grandma/Meshes/Grandma_Mammal",
-                            IconPath = "/Irwin/Icons/T-Icon-Fauna-Wolf"
-                        }
-                    ],
-                    CustomAssets = 
-                    [
-                        new CustomAsset
-                        {
-                            Name = "Oshawott",
-                            Description = "No Description.",
-                            IconBitmap = SKBitmap.Decode(Avalonia.Platform.AssetLoader.Open(new Uri("avares://FortnitePorting/Assets/Custom/Oshawott/T_Oshawott-L.png"))),
-                            Mesh = new MeshDefinition
-                            {
-                                Path = "Assets/Custom/Oshawott/Oshawott.uemodel",
-                                Materials = 
-                                [
-                                    new MaterialDefinition
-                                    {
-                                        Name = "MijumaruEyeNl",
-                                        Textures = 
-                                        [
-                                            new TextureDefinition
-                                            {
-                                                Path = "Assets/Custom/Oshawott/MijumaruEyeNl.png",
-                                                Slot = "Diffuse"
-                                            }
-                                        ]
-                                    },
-                                    new MaterialDefinition
-                                    {
-                                        Name = "MijumaruBodyNl",
-                                        Textures = 
-                                        [
-                                            new TextureDefinition
-                                            {
-                                                Path = "Assets/Custom/Oshawott/MijumaruBodyNl.png",
-                                                Slot = "Diffuse"
-                                            }
-                                        ]
-                                    },
-                                    new MaterialDefinition
-                                    {
-                                        Name = "MijumaruMouthNl",
-                                        Textures = 
-                                        [
-                                            new TextureDefinition
-                                            {
-                                                Path = "Assets/Custom/Oshawott/MijumaruMouthNl.png",
-                                                Slot = "Diffuse"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    ],
-                    HideRarity = true
-                }
-            ]
-        },
-        new AssetLoaderCategory(EAssetCategory.Festival)
-        {
-            Loaders = 
-            [
-                new AssetLoader(EExportType.FestivalGuitar)
-                {
-                    ClassNames = ["SparksGuitarItemDefinition"]
-                },
-                new AssetLoader(EExportType.FestivalBass)
-                {
-                    ClassNames = ["SparksBassItemDefinition"]
-                },
-                new AssetLoader(EExportType.FestivalKeytar)
-                {
-                    ClassNames = ["SparksKeyboardItemDefinition"]
-                },
-                new AssetLoader(EExportType.FestivalDrum)
-                {
-                    ClassNames = ["SparksDrumItemDefinition"]
-                },
-                new AssetLoader(EExportType.FestivalMic)
-                {
-                    ClassNames = ["SparksMicItemDefinition"]
-                },
-            ]
-        },
-        /*new AssetLoaderCategory(EAssetCategory.Lego)
-        {
-            Loaders = 
-            [
-                new AssetLoader(EExportType.LegoOutfit)
-                {
-                    ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
-                    IconHandler = asset =>
-                    {
-                        var meshSchema = asset.GetAnyOrDefault<UObject?>("AssembledMeshSchema", "LowDetailsAssembledMeshSchema");
-                        if (meshSchema is null) return null;
-
-                        var additionalDatas = meshSchema.GetOrDefault("AdditionalData", Array.Empty<FInstancedStruct>());
-                        foreach (var additionalData in additionalDatas)
-                        {
-                            var previewImage = additionalData.NonConstStruct?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
-                            if (previewImage is not null) return previewImage;
-                        }
-
-                        return null;
-                    },
-                    DisplayNameHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text ?? asset.Name;
-                    },
-                    DescriptionHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaCharacterItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
-                    }
-                },
-                new AssetLoader(EExportType.LegoEmote)
-                {
-                    ClassNames = ["JunoAthenaCharacterItemOverrideDefinition"],
-                    IconHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<UTexture2D?>("SmallPreviewImage", "LargePreviewImage");
-                    },
-                    DisplayNameHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("DisplayName", "ItemName")?.Text ?? asset.Name;
-                    },
-                    DescriptionHandler = asset =>
-                    {
-                        var baseItemDefinition = asset.GetOrDefault<UObject?>("BaseAthenaDanceItemDefinition");
-                        return baseItemDefinition?.GetAnyOrDefault<FText?>("Description", "ItemDescription")?.Text ?? "No description.";
-                    }
-                }
-            ]
-        }*/
-        new AssetLoaderCategory(EAssetCategory.FallGuys)
-        {
-            Loaders = 
-            [
-                new AssetLoader(EExportType.FallGuysOutfit)
-                {
-                    ClassNames = ["AthenaCharacterItemDefinition"],
-                    AllowNames = ["Bean_"],
-                    PlaceholderIconPath = "FortniteGame/Content/Athena/Prototype/Textures/T_Placeholder_Item_Outfit",
-                    HideRarity = true
-                }
-            ]
+            ],
         }
     ];
     
@@ -423,7 +224,7 @@ public partial class AssetLoaderCollection : ObservableObject
                     SelectsOnInvoked = false,
                     IconSource = new ImageIconSource
                     {
-                        Source = ImageExtensions.AvaresBitmap($"avares://FortnitePorting/Assets/FN/{category.Category.ToString()}.png")
+                        Source = ImageExtensions.AvaresBitmap($"avares://RivalsPorting/Assets/FN/{category.Category.ToString()}.png")
                     },
                     MenuItemsSource = category.Loaders.Select(loader => new NavigationViewItem
                     {
@@ -431,7 +232,7 @@ public partial class AssetLoaderCollection : ObservableObject
                         Content = loader.Type.GetDescription(), 
                         IconSource = new ImageIconSource
                         {
-                            Source = ImageExtensions.AvaresBitmap($"avares://FortnitePorting/Assets/FN/{loader.Type.ToString()}.png")
+                            Source = ImageExtensions.AvaresBitmap($"avares://RivalsPorting/Assets/FN/{loader.Type.ToString()}.png")
                         },
                     })
                 });
@@ -464,5 +265,33 @@ public partial class AssetLoaderCollection : ObservableObject
         }
 
         return null!; // if this happens it's bc im stupid
+    }
+    
+    private class HeroKey
+    {
+        private string _heroID { get; }
+        private string _shapeID { get; }
+
+        public HeroKey(FStructFallback identifier)
+        {
+            _heroID = identifier.Get<string>("HeroID");
+            _shapeID = identifier.Get<string>("ShapeID");
+        }
+
+        public HeroKey(string heroID)
+        {
+            _heroID = heroID.Substring(0, 4);
+            _shapeID = heroID.Substring(4, 1);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj != null && _heroID.Equals(((HeroKey)obj)._heroID) && _shapeID.Equals(((HeroKey)obj)._shapeID);
+        }
+
+        public override int GetHashCode()
+        {
+            return (_heroID + _shapeID).GetHashCode();
+        }
     }
 }

@@ -66,7 +66,7 @@ public partial class InstallViewModel : ViewModelBase
             }
         }
         
-        MainTitle = $"Installing: FortnitePorting {IntroVM.ReleaseInfo.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)}";
+        MainTitle = $"Installing: RivalsPorting {IntroVM.ReleaseInfo.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)}";
         SubTitle = $"Downloading {IntroVM.ReleaseInfo.Download}";
 
         var installationDirectory = new DirectoryInfo(IntroVM.InstallationPath);

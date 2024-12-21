@@ -19,8 +19,8 @@ public partial class TWObstacleExplosion : TWActor
 
     public Bitmap ImageBitmap => IsKetchup ? Ketchup : Mustard;
     
-    private static Bitmap Ketchup = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/TimeWaster/Sprites/T_Ketchup.png");
-    private static Bitmap Mustard = ImageExtensions.AvaresBitmap("avares://FortnitePorting/Assets/TimeWaster/Sprites/T_Mustard.png");
+    private static Bitmap Ketchup = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/TimeWaster/Sprites/T_Ketchup.png");
+    private static Bitmap Mustard = ImageExtensions.AvaresBitmap("avares://RivalsPorting/Assets/TimeWaster/Sprites/T_Mustard.png");
     private static Color Color1 = Color.Parse("#63e0e4");
     private static Color Color2 = Color.Parse("#eddf76");
 

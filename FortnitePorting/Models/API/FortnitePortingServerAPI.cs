@@ -13,7 +13,7 @@ public class FortnitePortingServerAPI(RestClient client) : APIBase(client)
         if (serverType == EExportServerType.None) return;
         
         var port = (int) serverType;
-        var serverUrl = $"http://127.0.0.1:{port}/fortnite-porting/data";
+        var serverUrl = $"http://127.0.0.1:{port}/rivals-porting/data";
         await ExecuteAsync(serverUrl, method: Method.Post, verbose: false, parameters: new BodyParameter(data, ContentType.Json));
     }
     
@@ -22,7 +22,7 @@ public class FortnitePortingServerAPI(RestClient client) : APIBase(client)
         if (serverType == EExportServerType.None) return false;
         
         var port = (int) serverType;
-        var serverUrl = $"http://127.0.0.1:{port}/fortnite-porting/ping";
+        var serverUrl = $"http://127.0.0.1:{port}/rivals-porting/ping";
         var response = await ExecuteAsync(serverUrl, method: Method.Get, verbose: false);
         return response.IsSuccessful;
     }
@@ -32,7 +32,7 @@ public enum EExportServerType
 {
     None = -1,
     
-    Blender = 20000,
+    Blender = 20025,
     Unreal = 20001,
     Unity = 20002
 }

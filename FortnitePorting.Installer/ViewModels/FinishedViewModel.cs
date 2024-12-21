@@ -24,13 +24,13 @@ public partial class FinishedViewModel : ViewModelBase
     [RelayCommand]
     public async Task Finish()
     {
-        var executablePath = Path.Combine(IntroVM.InstallationPath, "FortnitePorting.exe");
+        var executablePath = Path.Combine(IntroVM.InstallationPath, "RivalsPorting.exe");
         
         if (CreateDesktopShortcut)
         {
             var desktopDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             
-            await using var writer = new StreamWriter(Path.Combine(desktopDirectory, "FortnitePorting.url"));
+            await using var writer = new StreamWriter(Path.Combine(desktopDirectory, "RivalsPorting.url"));
             await writer.WriteLineAsync("[InternetShortcut]");
             await writer.WriteLineAsync($"URL=file:///{executablePath}");
             await writer.WriteLineAsync("IconIndex=0");

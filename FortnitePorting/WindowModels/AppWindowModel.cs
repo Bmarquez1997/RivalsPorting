@@ -54,7 +54,7 @@ public partial class AppWindowModel : WindowModelBase
 
         OnlineStatus = await ApiVM.FortnitePorting.GetOnlineStatusAsync();
 
-        await CheckForUpdate(isAutomatic: true);
+        //await CheckForUpdate(isAutomatic: true);
     }
 
     public async Task CheckForUpdate(bool isAutomatic = false)

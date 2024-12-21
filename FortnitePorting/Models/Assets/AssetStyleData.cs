@@ -22,7 +22,7 @@ public partial class AssetStyleData : BaseStyleData
     {
         StyleData = styleData;
         
-        var name = StyleData.GetOrDefault("VariantName", new FText("Unnamed")).Text.ToLower().TitleCase();
+        var name = StyleData.GetOrDefault("SkinName", new FText("Unnamed")).Text.ToLower().TitleCase();
         if (string.IsNullOrWhiteSpace(name)) name = "Unnamed";
         StyleName = name;
         

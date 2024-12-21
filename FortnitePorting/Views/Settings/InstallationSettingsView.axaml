@@ -164,7 +164,7 @@
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding CurrentProfile.UseMappingsFile}"/>
                         <TextBox Text="{Binding CurrentProfile.MappingsFile, Mode=TwoWay}" 
-                                 Watermark="Ex. C:/Users/FortnitePorting/Downloads/Mappings.usmap" 
+                                 Watermark="Ex. C:/Users/RivalsPorting/Downloads/Mappings.usmap" 
                                  IsEnabled="{Binding CurrentProfile.UseMappingsFile}"
                                  MaxWidth="500"/>
                         <Button Margin="4 0 0 0" Command="{Binding CurrentProfile.BrowseMappingsFile}" IsEnabled="{Binding CurrentProfile.UseMappingsFile}">

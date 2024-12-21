@@ -28,7 +28,7 @@ public partial class PropertiesPreviewWindowModel : WindowModelBase
 
     static PropertiesPreviewWindowModel()
     {
-        using var stream = AssetLoader.Open(new Uri("avares://FortnitePorting/Assets/Highlighters/Json.xshd"));
+        using var stream = AssetLoader.Open(new Uri("avares://RivalsPorting/Assets/Highlighters/Json.xshd"));
         using var reader = new XmlTextReader(stream);
         JsonHighlighter = HighlightingLoader.Load(reader, HighlightingManager.Instance);
     }
