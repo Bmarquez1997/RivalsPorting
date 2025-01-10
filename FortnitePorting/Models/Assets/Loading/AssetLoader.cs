@@ -199,14 +199,6 @@ public partial class AssetLoader : ObservableObject
         if (BeganLoading) return;
         BeganLoading = true;
 
-        var classDict = new Dictionary<string, string>();
-
-        CUE4ParseVM.AssetRegistry.ForEach(asset => classDict.TryAdd(asset.AssetClass.Text, asset.ObjectPath));
-        
-        Log.Information("Start Classes");
-        classDict.ForEach(entry => Log.Information("{0} : {1}", entry.Key, entry.Value));
-        Log.Information("End Classes");
-
         if (AssetHandler != null)
         {
             await AssetHandler(this);
@@ -279,11 +271,6 @@ public partial class AssetLoader : ObservableObject
 
         LoadedAssets = TotalAssets; 
         await TaskService.RunDispatcherAsync(() => SearchAutoComplete.AddRange(Source.Items.Select(asset => asset.CreationData.DisplayName).Distinct()));
-    }
-
-    private void AddIfNotPresent(Dictionary<string, string> classDict, string className, string assetPath)
-    {
-        classDict.TryAdd(className, assetPath);
     }
 
     private bool HasAssetName(string assetName)

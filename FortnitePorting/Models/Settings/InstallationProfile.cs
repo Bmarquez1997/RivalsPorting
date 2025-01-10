@@ -8,6 +8,7 @@ using CUE4Parse.UE4.Versions;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
 using FortnitePorting.Models.CUE4Parse;
+using FortnitePorting.Services;
 using FortnitePorting.Shared;
 using FortnitePorting.Shared.Validators;
 using Newtonsoft.Json;
@@ -19,12 +20,8 @@ public partial class InstallationProfile : ObservableValidator
     [ObservableProperty] private string _profileName = "Unnammed";
     
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ArchiveDirectoryEnabled))]
-    [NotifyPropertyChangedFor(nameof(UnrealVersionEnabled))]
     [NotifyPropertyChangedFor(nameof(EncryptionKeyEnabled))]
     [NotifyPropertyChangedFor(nameof(MappingsFileEnabled))]
-    [NotifyPropertyChangedFor(nameof(TextureStreamingEnabled))]
-    [NotifyPropertyChangedFor(nameof(LoadCreativeMapsEnabled))]
     [NotifyPropertyChangedFor(nameof(IsCustom))]
     private EFortniteVersion _fortniteVersion = EFortniteVersion.LatestInstalled;
     
@@ -40,27 +37,24 @@ public partial class InstallationProfile : ObservableValidator
     private FileEncryptionKey _mainKey = new("0x0C263D8C22DCB085894899C3A3796383E9BF9DE0CBFB08C9BF2DEF2E84F29D74");
     
     [ObservableProperty] private int _selectedExtraKeyIndex;
-    [ObservableProperty] private ObservableCollection<FileEncryptionKey> _extraKeys = [];
-    [ObservableProperty, JsonIgnore] private string _fetchKeysVersion = string.Empty;
+    [ObservableProperty] private ObservableCollection<FileEncryptionKey> _extraKeys = [
+        new("0xF959B39D10C93808116F4D0C5583E1D11CBCCD428E737A48B75D40EC87FBF9D8"),
+        new("0xFCFC4D709BC395492703482C50DC423744B5931272587ACCD78B0E57D7215BDD"),
+        new("0x9F3F11DA58B6DD43266CE124F60E955C4A6BE7D5E4B23B69E63EFB0718DA952B"),
+        new("0xD7BA72F24C18357A2384399D98ACF9DB40DD03A55ED4128A396D3D7697930FB5"),
+    ];
     
     [ObservableProperty] 
     [NotifyPropertyChangedFor(nameof(MappingsFileEnabled))]
-    private bool _useMappingsFile;
+    private bool _useMappingsFile = true;
     
-    [ObservableProperty] private string _mappingsFile = "avares://RivalsPorting/Assets/Mappings/5.3.2-1400244+++depot_marvel+S0_release-Marvel.usmap";
-    [ObservableProperty, JsonIgnore] private string _fetchMappingsVersion = string.Empty;
+    [ObservableProperty] private string _mappingsFile = DependencyService.MappingsFile.FullName;
     
     [ObservableProperty] private ELanguage _gameLanguage = ELanguage.English;
-    [ObservableProperty] private bool _useTextureStreaming = true;
-    [ObservableProperty] private bool _loadCreativeMaps = true;
 
     [JsonIgnore] public bool IsCustom => FortniteVersion is EFortniteVersion.Custom;
-    [JsonIgnore] public bool ArchiveDirectoryEnabled => FortniteVersion is not EFortniteVersion.LatestOnDemand;
-    [JsonIgnore] public bool UnrealVersionEnabled => IsCustom;
     [JsonIgnore] public bool EncryptionKeyEnabled => IsCustom;
     [JsonIgnore] public bool MappingsFileEnabled => IsCustom;
-    [JsonIgnore] public bool TextureStreamingEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
-    [JsonIgnore] public bool LoadCreativeMapsEnabled => FortniteVersion is EFortniteVersion.LatestInstalled;
     
     public async Task BrowseArchivePath()
     {
@@ -76,55 +70,6 @@ public partial class InstallationProfile : ObservableValidator
         {
             MappingsFile = path;
         }
-    }
-
-    public async Task FetchKeys()
-    {
-        var keys = await ApiVM.FortniteCentral.GetKeysAsync(FetchKeysVersion);
-        if (keys is null)  
-        {
-            AppWM.Message("Fetch Keys", $"Unsuccessfully fetched keys for v{FetchKeysVersion}", InfoBarSeverity.Error);
-            return;
-        }
-
-        MainKey = FileEncryptionKey.Empty;
-        ExtraKeys.Clear();
-
-        MainKey = new FileEncryptionKey(keys.MainKey);
-        foreach (var dynamicKey in keys.DynamicKeys)
-        {
-            ExtraKeys.Add(new FileEncryptionKey(dynamicKey.Key));
-        }
-        
-        AppWM.Message("Fetch Keys", $"Successfully fetched {keys.DynamicKeys.Count + 1} keys for v{FetchKeysVersion}", InfoBarSeverity.Success);
-    }
-    
-    public async Task FetchMappings()
-    {
-        var mappings = await ApiVM.FortniteCentral.GetMappingsAsync(FetchMappingsVersion);
-        var targetMappings = mappings?.FirstOrDefault();
-        if (targetMappings is null)
-        {
-            AppWM.Message("Fetch Mappings", $"Unsuccessfully fetched mappings for v{FetchMappingsVersion}", InfoBarSeverity.Error);
-            return;
-        }
-
-        var mappingsFilePath = Path.Combine(DataFolder.FullName, targetMappings.Filename);
-        if (!File.Exists(mappingsFilePath))
-        {
-            var downloadedMappingsInfo = await ApiVM.DownloadFileAsync(targetMappings.URL, mappingsFilePath);
-            if (!downloadedMappingsInfo.Exists)
-            {
-                AppWM.Message("Fetch Mappings", $"Unsuccessfully downloaded mappings for v{FetchMappingsVersion}", InfoBarSeverity.Error);
-                return;
-            }
-        }
-        
-        MappingsFile = mappingsFilePath;
-        UseMappingsFile = true;
-        File.SetCreationTime(mappingsFilePath, targetMappings.Uploaded);
-        
-        AppWM.Message("Fetch Mappings", $"Successfully fetched mappings for v{FetchMappingsVersion}", InfoBarSeverity.Success);
     }
     
     public async Task AddEncryptionKey()

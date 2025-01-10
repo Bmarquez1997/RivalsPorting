@@ -36,7 +36,7 @@ public partial class WelcomeViewModel : ViewModelBase
     
     public override async Task Initialize()
     {
-        await CheckForInstallation();
+        //await CheckForInstallation();
     }
 
     private async Task CheckForInstallation()

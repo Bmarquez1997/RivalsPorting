@@ -11,9 +11,6 @@ public enum EFortniteVersion
     [Description("Latest (Installed)")]
     LatestInstalled,
     
-    [Description("Latest (On-Demand)")]
-    LatestOnDemand,
-    
     [Description("Custom")]
     Custom
     

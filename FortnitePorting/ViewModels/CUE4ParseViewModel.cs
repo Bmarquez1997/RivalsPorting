@@ -140,9 +140,6 @@ public class CUE4ParseViewModel : ViewModelBase
 
     private async Task InitializeTextureStreaming()
     {
-        if (AppSettings.Current.Installation.CurrentProfile.FortniteVersion is not (EFortniteVersion.LatestInstalled or EFortniteVersion.LatestOnDemand)) return;
-        if (AppSettings.Current.Installation.CurrentProfile.FortniteVersion == EFortniteVersion.LatestInstalled && !AppSettings.Current.Installation.CurrentProfile.TextureStreamingEnabled) return;
-
         try
         {
             var tocPath = await GetTocPath(AppSettings.Current.Installation.CurrentProfile.FortniteVersion);
@@ -183,12 +180,6 @@ public class CUE4ParseViewModel : ViewModelBase
             {
                 var onDemandPath = Path.Combine(AppSettings.Current.Installation.CurrentProfile.ArchiveDirectory, @"..\..\..\Cloud\IoStoreOnDemand.ini");
                 if (File.Exists(onDemandPath)) onDemandText = await File.ReadAllTextAsync(onDemandPath);
-                break;
-            }
-            case EFortniteVersion.LatestOnDemand:
-            {
-                var onDemandFile = LiveManifest?.Files.FirstOrDefault(x => x.FileName.Equals("Cloud/IoStoreOnDemand.ini", StringComparison.OrdinalIgnoreCase));
-                if (onDemandFile is not null) onDemandText = onDemandFile.GetStream().ReadToEnd().BytesToString();
                 break;
             }
         }

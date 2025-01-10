@@ -101,7 +101,6 @@ public static class ApplicationService
         {
             Log.Information($"Install Mode: {AppSettings.Current.Installation.CurrentProfile.FortniteVersion.GetDescription()}");
             Log.Information($"Archive Path: {AppSettings.Current.Installation.CurrentProfile.ArchiveDirectory}");
-            Log.Information($"Texture Streaming: {AppSettings.Current.Installation.CurrentProfile.UseTextureStreaming}");
         }
     }
     
