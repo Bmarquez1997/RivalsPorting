@@ -695,14 +695,6 @@ class ImportContext:
 
             set_param("Is Transparent", override_blend_mode is not EBlendMode.BLEND_Opaque)
 
-        if get_param_multiple(textures, toon_texture_names) or get_param_multiple(vectors, toon_vector_names):
-            replace_shader_node("FP Toon")
-            socket_mappings = toon_mappings
-
-        if "M_FN_Valet_Master" in base_material_path:
-            replace_shader_node("FP Valet")
-            socket_mappings = valet_mappings
-
         is_glass = material_data.get("PhysMaterialName") == "Glass" or any(glass_master_names, lambda x: x in base_material_path) or (base_blend_mode is EBlendMode.BLEND_Translucent and translucency_lighting_mode in [ETranslucencyLightingMode.TLM_SurfacePerPixelLighting, ETranslucencyLightingMode.TLM_VolumetricPerVertexDirectional])
         if is_glass:
             replace_shader_node("FP Glass")
@@ -711,30 +703,32 @@ class ImportContext:
             material.surface_render_method = "BLENDED"
             material.show_transparent_back = False
 
-        is_trunk = get_param(switches, "IsTrunk")
-        if is_trunk:
-            socket_mappings = trunk_mappings
+        if "Common_Body" in base_material_path or "Common_Skin" in base_material_path:
+            replace_shader_node("MR Hero")
+            socket_mappings = hero_mappings
 
-        is_foliage = base_blend_mode is EBlendMode.BLEND_Masked and shading_model in [EMaterialShadingModel.MSM_TwoSidedFoliage, EMaterialShadingModel.MSM_Subsurface]
-        if is_foliage and not is_trunk:
-            replace_shader_node("FP Foliage")
-            socket_mappings = foliage_mappings
+        if "Common_Hair" in base_material_path:
+            replace_shader_node("MR Hair")
+            socket_mappings = hair_mappings
 
-        if "MM_BeanCharacter_Body" in base_material_path:
-            replace_shader_node("FP Bean Base")
-            socket_mappings = bean_base_mappings
-            
-        if "MM_BeanCharacter_Costume" in base_material_path:
-            replace_shader_node("FP Bean Costume")
-            socket_mappings = bean_head_costume_mappings if meta.get("IsHead") else bean_costume_mappings
+        if "Common_Translucent" in base_material_path:
+            replace_shader_node("MR Translucent")
+            socket_mappings = translucent_mappings
+
+        if "Common_Eye" in base_material_path:
+            replace_shader_node("MR Eye")
+            socket_mappings = eye_mappings
+
+        if "EyeHighlight" in base_material_path:
+            replace_shader_node("MR Eye Glass")
+            socket_mappings = eye_glass_mappings
+
+        if "RimOnly" in base_material_path:
+            replace_shader_node("MR Rim")
 
         if "M_Eyes_Parent" in base_material_path or get_param(scalars, "Eye Cornea IOR") is not None:
             replace_shader_node("FP 3L Eyes")
             socket_mappings = eye_mappings
-
-        if "M_HairParent_2023" in base_material_path or get_param(textures, "Hair Mask") is not None:
-            replace_shader_node("FP Hair")
-            socket_mappings = hair_mappings
 
         setup_params(socket_mappings, shader_node, True)
 

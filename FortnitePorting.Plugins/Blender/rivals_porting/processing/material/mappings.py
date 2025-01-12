@@ -225,6 +225,99 @@ default_mappings = MappingCollection(
     ]
 )
 
+hero_mappings = MappingCollection(
+    textures=[
+        SlotMapping("BaseColor"),
+        SlotMapping("ORM"),
+        SlotMapping("Normal"),
+        SlotMapping("SpecularTexture"),
+        SlotMapping("Emissive")
+    ],
+    scalars=[
+        SlotMapping("AOIntensity"),
+        SlotMapping("RoughnessPower"),
+        SlotMapping("Metallic"),
+        SlotMapping("NormalIntensity"),
+        SlotMapping("EmissiveStrength")
+    ],
+    vectors=[
+        SlotMapping("ExtraSpecularTint"),
+    ]
+)
+
+hair_mappings = MappingCollection(
+    textures=[
+        SlotMapping("BaseColor"),
+        SlotMapping("ShadowColor(UV1)", coords="UV1"),
+        SlotMapping("Normal"),
+        SlotMapping("SpecularShift"),
+        SlotMapping("AnisotropyBrightness", coords="UV1"),
+        SlotMapping("OpacityMask"),
+    ],
+    scalars=[
+        SlotMapping("Color Boost"),
+        SlotMapping("RoughnessPower"),
+        SlotMapping("NormalIntensity"),
+        SlotMapping("ExtraSpecularShift"),
+        SlotMapping("SpecularShiftPower"),
+        SlotMapping("Anisotropy Direction"),
+    ],
+    vectors=[
+        SlotMapping("Tangent"),
+    ]
+)
+
+translucent_mappings = MappingCollection(
+    textures=[
+        SlotMapping("BaseColor"),
+        SlotMapping("OpacityMask"),
+    ],
+    scalars=[
+        SlotMapping("OpacityMultiplier"),
+    ],
+    vectors=[
+        SlotMapping("BaseTint"),
+    ]
+)
+
+eye_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Diffuse"),
+        SlotMapping("DiffuseMap", "Diffuse", alpha_slot="MaskTexture"),
+        SlotMapping("Normals"),
+        SlotMapping("NormalMap", "Normals"),
+        SlotMapping("MaskTexture"),
+    ],
+    scalars=[
+        SlotMapping("Roughness Leafs", "Roughness"),
+        SlotMapping("Specular_Leafs", "Specular")
+    ],
+    vectors=[
+        SlotMapping("Color1_Base"),
+        SlotMapping("Color2_Lit"),
+        SlotMapping("Color3_Shadows")
+    ]
+)
+
+eye_glass_mappings = MappingCollection(
+    textures=[
+        SlotMapping("Diffuse"),
+        SlotMapping("DiffuseMap", "Diffuse", alpha_slot="MaskTexture"),
+        SlotMapping("Normals"),
+        SlotMapping("NormalMap", "Normals"),
+        SlotMapping("MaskTexture"),
+    ],
+    scalars=[
+        SlotMapping("Roughness Leafs", "Roughness"),
+        SlotMapping("Specular_Leafs", "Specular")
+    ],
+    vectors=[
+        SlotMapping("Color1_Base"),
+        SlotMapping("Color2_Lit"),
+        SlotMapping("Color3_Shadows")
+    ]
+)
+
 layer_mappings = MappingCollection(
     textures=[
         SlotMapping("Diffuse", alpha_slot="MaskTexture"),
@@ -572,133 +665,5 @@ gmap_material_mappings = MappingCollection(
         SlotMapping("Uses 2+ Color Masks"),
         SlotMapping("Uses 3 Color Masks"),
         SlotMapping("Uses ColorVariety/Scratch/Dirt Mask")
-    ]
-)
-
-eye_mappings = MappingCollection(
-    textures=[
-        SlotMapping("Diffuse"),
-        SlotMapping("Normal"),
-        SlotMapping("SpecularMasks"),
-        SlotMapping("SRM", "SpecularMasks"),
-        SlotMapping("Emissive"),
-    ],
-    vectors=[
-        SlotMapping("Eye Right UV Position"),
-        SlotMapping("Eye Left UV Position"),
-
-        SlotMapping("Eye Camera Light Vector"),
-        SlotMapping("Eye UV Highlight Pos"),
-
-        SlotMapping("EyeTintColor")
-    ],
-    scalars=[
-        SlotMapping("Eye Roughness Min"),
-        SlotMapping("Eye Metallic Mult"),
-
-        SlotMapping("Emissive Mult"),
-        SlotMapping("Eye Texture AspectRatio"),
-        SlotMapping("Eye Cornea Radius (UV)"),
-
-        SlotMapping("Eye UV Highlight Size"),
-
-        SlotMapping("Eye Iris Normal Flatten"),
-        SlotMapping("EyeTintMask_Radius"),
-
-        SlotMapping("Eye Cornea Mask Hardness"),
-        SlotMapping("Eye Iris UV Radius"),
-        SlotMapping("Eye Refraction Mix"),
-        SlotMapping("Eye Refraction Mult"),
-        SlotMapping("Eye Iris Depth Scale"),
-        SlotMapping("Eye Cornea IOR"),
-    ],
-    switches=[
-        SlotMapping("SwizzleRoughnessToGreen"),
-        SlotMapping("Eye Use Sun Highlight"),
-        SlotMapping("Eye Use UV Highlight"),
-        SlotMapping("UseEyeColorTinting")
-    ]
-)
-
-hair_mappings = MappingCollection(
-    textures=[
-        SlotMapping("Diffuse"),
-        SlotMapping("M"),
-        SlotMapping("Mask", "M"),
-        SlotMapping("Hair Mask"),
-        SlotMapping("SpecularMasks"),
-        SlotMapping("SRM", "SpecularMasks"),
-        SlotMapping("AnisotropicTangentWeight", alpha_slot="AnisotropicTangentWeight Alpha"),
-        SlotMapping("Normals"),
-        SlotMapping("Strands Normal"),
-        SlotMapping("Emissive"),
-        SlotMapping("Emission", "Emissive")
-    ],
-    vectors=[
-        SlotMapping("Hair_Color_Variation"),
-        SlotMapping("Paint_Hair_Color_Darkness"),
-        SlotMapping("Paint_Hair_Color_Brightness")
-    ],
-    scalars=[
-        SlotMapping("AmbientOcclusion_Black"),
-        SlotMapping("BaseColor_Fresnel_Brightness"),
-        SlotMapping("Basecolor_Fresnel_Exponent"),
-        SlotMapping("Fresnel_Brightness_Multiple"),
-
-        SlotMapping("Paint_Hair_Contrast"),
-        SlotMapping("Gmap_intensity"),
-
-        SlotMapping("Specular_POWER"),
-        SlotMapping("Specular _POWER", "Specular_POWER"),
-        SlotMapping("Hair_Specular_MIN"),
-        SlotMapping("Hair_Specular_MAX"),
-        SlotMapping("Hair_Metallic"),
-        SlotMapping("Roughness_power"),
-        SlotMapping("Roughness Min"),
-        SlotMapping("Roughness Max"),
-        SlotMapping("Roughness_Noise_Tiling"),
-        SlotMapping("Hair_Noise_Roughness_Min"),
-
-        SlotMapping("Emissive_Brightness"),
-        SlotMapping("EmissiveBrightness"),
-
-        SlotMapping("AnisotropyMaxWeight"),
-        SlotMapping("Hair_Anisotropy_Min"),
-        SlotMapping("Hair_Anisotropy_Max"),
-        SlotMapping("Scraggle"),
-
-        SlotMapping("Hair_Mesh_Normal_Flatness"),
-        SlotMapping("Paint_Hair_Normal_Flatness"),
-    ],
-    switches=[
-        SlotMapping("UseAnisotropicShading"),
-        SlotMapping("Eye Use Sun Highlight"),
-        SlotMapping("Eye Use UV Highlight"),
-        SlotMapping("UseEyeColorTinting")
-    ]
-)
-
-superhero_mappings = MappingCollection(
-    textures=[
-        SlotMapping("Pattern"),
-        SlotMapping("Normals"),
-        SlotMapping("PrimaryNormal"),
-        SlotMapping("SecondaryNormal"),
-        SlotMapping("ZE_SecondaryNormal", "SecondaryNormal"),
-        SlotMapping("SpecularMasks")
-    ],
-    vectors=[
-        SlotMapping("PrimaryColor"),
-        SlotMapping("SecondaryColor"),
-        SlotMapping("AccessoryColor"),
-        SlotMapping("PrimaryMaterial"),
-        SlotMapping("SecondaryMaterial"),
-        SlotMapping("AccessoryMaterial"),
-        SlotMapping("Sticker MSRE")
-    ],
-    scalars=[
-        SlotMapping("PrimaryCloth"),
-        SlotMapping("SecondaryCloth"),
-        SlotMapping("ElasticStickerMult")
     ]
 )

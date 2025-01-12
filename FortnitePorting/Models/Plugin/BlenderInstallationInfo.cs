@@ -24,7 +24,7 @@ public partial class BlenderInstallationInfo : ObservableObject
         BlenderVersion.ToString(2), 
         "extensions", 
         "user_default",
-        "fortnite_porting",
+        "rivals_porting",
         "blender_manifest.toml");
 
     public BlenderInstallationInfo(string blenderPath)
