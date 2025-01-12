@@ -215,7 +215,9 @@ public class CUE4ParseViewModel : ViewModelBase
     
     private async Task LoadMappings()
     {
-        var mappingsPath = File.Exists(AppSettings.Current.Installation.CurrentProfile.MappingsFile)
+        var mappingsPath = !AppSettings.Current.Installation.CurrentProfile.IsCustom ?
+            DependencyService.MappingsFile.FullName
+            : File.Exists(AppSettings.Current.Installation.CurrentProfile.MappingsFile)
             ? AppSettings.Current.Installation.CurrentProfile.MappingsFile
             : null;
         
