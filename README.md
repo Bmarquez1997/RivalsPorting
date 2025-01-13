@@ -12,9 +12,9 @@ RivalsPorting - Automation of the Marvel Rivals Porting Process
 
 ![image](https://github.com/user-attachments/assets/960d0dc5-695f-43b6-be0c-db74efdf1a17)
 
-## Building FortnitePorting
+## Building RivalsPorting
 
-To build FortnitePorting from source, first clone the repository and all of its submodules.
+To build RivalsPorting from source, first clone the repository and all of its submodules.
 
 ```
 git clone -b v3 https://github.com//bmarquez1997/RivalsPorting --recursive
