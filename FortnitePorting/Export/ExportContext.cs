@@ -672,7 +672,7 @@ public class ExportContext
 
         }
 
-        if (Meta.WorldFlags.HasFlag(EWorldFlags.Landscape) && actor is ALandscapeProxy landscapeProxy)
+        if (Meta.WorldFlags.HasFlag(EWorldFlags.Landscape) && actor is ALandscapeProxy landscapeProxy && landscapeProxy.ExportType != "Landscape")
         {
             var transform = landscapeProxy.GetAbsoluteTransformFromRootComponent();
             
@@ -847,10 +847,6 @@ public class ExportContext
         {
             exportMesh.OverrideVertexColors = overrideVertexColors.Data;
         }
-
-        exportMesh.Location = meshComponent.RelativeLocation;
-        exportMesh.Rotation = meshComponent.RelativeRotation;
-        exportMesh.Scale = meshComponent.RelativeScale3D;
 
         return exportMesh;
     }
