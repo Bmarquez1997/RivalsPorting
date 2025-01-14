@@ -736,12 +736,12 @@ class ImportContext:
             replace_shader_node("MR Hero")
             socket_mappings = hero_mappings
 
-        if "Common_Hair" in base_material_path:
+        if "Hair" in base_material_path:
             replace_shader_node("MR Hair")
             socket_mappings = hair_mappings
 
-        # TODO: Come back to FakeEyeShadow
-        if "Common_Translucent" in base_material_path or "FakeEyeShadow" in base_material_path:
+        # TODO: Come back to FakeEyeShadow, verify translucent coverage
+        if "Translucent" in base_material_path or "FakeEyeShadow" in base_material_path:
             replace_shader_node("MR Translucent")
             socket_mappings = translucent_mappings
 
@@ -749,12 +749,14 @@ class ImportContext:
             replace_shader_node("MR Eye")
             socket_mappings = eye_mappings
 
-        if "EyeHighlight" in base_material_path or "EyesHighLight" in base_material_path:
+        if "EyeHighlight" in base_material_path or "EyesHighLight" in base_material_path or (self.type == EExportType.OUTFIT and "SimpleGlass" in base_material_path):
             replace_shader_node("MR Eye Glass")
             socket_mappings = eye_glass_mappings
 
         if "RimOnly" in base_material_path:
             replace_shader_node("MR Rim")
+        
+        # TODO: Common_Cape, Symbiote (1035)
 
         setup_params(socket_mappings, shader_node, True)
 
@@ -790,28 +792,28 @@ class ImportContext:
             case "MR Eye":
                 pre_eye_node = nodes.new(type="ShaderNodeGroup")
                 pre_eye_node.node_tree = bpy.data.node_groups.get("MR Pre Eye")
-                pre_eye_node.location = -600, 100
+                pre_eye_node.location = -600, -100
                 setup_params(pre_eye_mappings, pre_eye_node, False)
 
                 if node := get_node(shader_node, "ScleraBaseColor"):
                     links.new(pre_eye_node.outputs["Sclera UV"], node.inputs[0])
                 else:
-                    add_default_texture("T_EyeSclera_D", "SRGB", shader_node, "ScleraBaseColor", pre_eye_node, "Sclera UV")
+                    add_default_texture("T_EyeSclera_D", "sRGB", shader_node, "ScleraBaseColor", pre_eye_node, "Sclera UV")
                     
-                if node := get_node(shader_node, "IrisBaseColor") is None:
+                if node := get_node(shader_node, "IrisBaseColor"):
                     links.new(pre_eye_node.outputs["Iris UV"], node.inputs[0])
                 else:
-                    add_default_texture("T_Common_Eyes_03_D", "SRGB", shader_node, "IrisBaseColor", pre_eye_node, "Iris UV")
+                    add_default_texture("T_Common_Eyes_03_D", "sRGB", shader_node, "IrisBaseColor", pre_eye_node, "Iris UV")
 
-                if node := get_node(shader_node, "IrisHeight") is None:
+                if node := get_node(shader_node, "IrisHeight"):
                     links.new(pre_eye_node.outputs["Iris UV"], node.inputs[0])
                 else:
                     add_default_texture("T_Iris001_01_H", "Non-Color", shader_node, "IrisHeight", pre_eye_node, "Iris UV")
 
-                if node := get_node(shader_node, "IrisBaseAO") is None:
+                if node := get_node(shader_node, "IrisBaseAO"):
                     links.new(pre_eye_node.outputs["Iris UV"], node.inputs[0])
                 else:
-                    add_default_texture("T_Iris001_01_AO", "SRGB", shader_node, "IrisBaseAO", pre_eye_node, "Iris UV")
+                    add_default_texture("T_Iris001_01_AO", "sRGB", shader_node, "IrisBaseAO", pre_eye_node, "Iris UV")
 
                 links.new(pre_eye_node.outputs["Sclera UV"], shader_node.inputs["Sclera UV"])
                 links.new(pre_eye_node.outputs["Iris UV"], shader_node.inputs["Iris UV"])
@@ -822,13 +824,13 @@ class ImportContext:
             case "MR Eye Glass":
                 pre_eye_glass_node = nodes.new(type="ShaderNodeGroup")
                 pre_eye_glass_node.node_tree = bpy.data.node_groups.get("MR Pre Eye Glass")
-                pre_eye_glass_node.location = -600, 0
+                pre_eye_glass_node.location = -500, -100
                 setup_params(pre_eye_glass_mappings, pre_eye_glass_node, False)
 
                 if node := get_node(shader_node, "HighlightMask"):
                     links.new(pre_eye_glass_node.outputs["Highlight UV"], node.inputs[0])
                 else:
-                    add_default_texture("T_Common_EyesHighLight_01_M", "SRGB", shader_node, "HighlightMask", pre_eye_glass_node, "Highlight UV")
+                    add_default_texture("T_Common_EyesHighLight_01_M", "sRGB", shader_node, "HighlightMask", pre_eye_glass_node, "Highlight UV")
 
                 if diffuse_node := get_node(shader_node, "HighlightMask"):
                     nodes.active = diffuse_node
