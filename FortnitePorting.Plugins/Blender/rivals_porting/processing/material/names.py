@@ -40,10 +40,10 @@ emissive_crop_switch_names = [
 
 texture_ignore_names = ["DefaultTexture"]
 
-vertex_crunch_names = ["MI_VertexCrunch", "M_VertexCrunch"]
+vertex_crunch_names = ["MI_VertexCrunch", "M_VertexCrunch", "MI_Hide", "M_Hide"]
 
 toon_outline_names = ["Outline", "Toon_Lines"]
 
-glass_master_names = ["M_MED_Glass_Master", "M_TranslucentGlass"]
+glass_master_names = ["M_MED_Glass_Master", "M_TranslucentGlass", "M_Common_Glass"]
 
 lite_shader_types = [EExportType.PROP, EExportType.PREFAB, EExportType.WORLD]

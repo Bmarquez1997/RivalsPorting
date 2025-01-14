@@ -684,6 +684,21 @@ class ImportContext:
 
             for switch in switches:
                 switch_param(switch, mappings, target_node, add_unused_params)
+        
+        def add_default_texture(texture_name, color_space, target_node, target_slot, pre_node=None, pre_slot=None):
+            default_texture_node = nodes.new(type="ShaderNodeTexImage")
+            default_texture_node.image = bpy.data.images.get(texture_name)
+            default_texture_node.image.alpha_mode = 'CHANNEL_PACKED'
+            default_texture_node.image.colorspace_settings.name = color_space
+            default_texture_node.interpolation = "Smart"
+            default_texture_node.hide = True
+
+            x, y = get_socket_pos(shader_node, shader_node.inputs.find(target_slot))
+            default_texture_node.location = x - 300, y
+            links.new(default_texture_node.outputs[0], target_node.inputs[target_slot])
+
+            if pre_node is not None:
+                links.new(pre_node.outputs[pre_slot], default_texture_node.inputs[0])
 
         # decide which material type and mappings to use
         socket_mappings = default_mappings
@@ -703,7 +718,7 @@ class ImportContext:
             material.surface_render_method = "BLENDED"
             material.show_transparent_back = False
 
-        if "Common_Body" in base_material_path or "Common_Skin" in base_material_path:
+        if "Common_Body" in base_material_path or "Common_Skin" in base_material_path or (self.type == EExportType.OUTFIT and "Body" in base_material_path):
             replace_shader_node("MR Hero")
             socket_mappings = hero_mappings
 
@@ -711,7 +726,8 @@ class ImportContext:
             replace_shader_node("MR Hair")
             socket_mappings = hair_mappings
 
-        if "Common_Translucent" in base_material_path:
+        # TODO: Come back to FakeEyeShadow
+        if "Common_Translucent" in base_material_path or "FakeEyeShadow" in base_material_path:
             replace_shader_node("MR Translucent")
             socket_mappings = translucent_mappings
 
@@ -719,16 +735,12 @@ class ImportContext:
             replace_shader_node("MR Eye")
             socket_mappings = eye_mappings
 
-        if "EyeHighlight" in base_material_path:
+        if "EyeHighlight" in base_material_path or "EyesHighLight" in base_material_path:
             replace_shader_node("MR Eye Glass")
             socket_mappings = eye_glass_mappings
 
         if "RimOnly" in base_material_path:
             replace_shader_node("MR Rim")
-
-        if "M_Eyes_Parent" in base_material_path or get_param(scalars, "Eye Cornea IOR") is not None:
-            replace_shader_node("FP 3L Eyes")
-            socket_mappings = eye_mappings
 
         setup_params(socket_mappings, shader_node, True)
 
@@ -742,240 +754,12 @@ class ImportContext:
 
         match shader_node.node_tree.name:
             case "FP Material":
-                # PRE FX START
-                pre_fx_node = nodes.new(type="ShaderNodeGroup")
-                pre_fx_node.node_tree = bpy.data.node_groups.get("FP Pre FX")
-                pre_fx_node.location = -600, -700
-                setup_params(socket_mappings, pre_fx_node, False)
-
-                thin_film_node = get_node(shader_node, "Thin Film Texture")
-                if get_param_multiple(switches, ["Use Thin Film", "UseThinFilm"]) or "M_ReconExpert_FNCS_Parent" in base_material_path:
-                    if thin_film_node is None:
-                        thin_film_node = nodes.new(type="ShaderNodeTexImage")
-                        thin_film_node.image = bpy.data.images.get("T_ThinFilm_Spectrum_COLOR")
-                        thin_film_node.image.alpha_mode = 'CHANNEL_PACKED'
-                        thin_film_node.image.colorspace_settings.name = "sRGB"
-                        thin_film_node.interpolation = "Smart"
-                        thin_film_node.hide = True
-                        
-                        x, y = get_socket_pos(shader_node, shader_node.inputs.find("Thin Film Texture"))
-                        thin_film_node.location = x - 300, y
-                        links.new(thin_film_node.outputs[0], shader_node.inputs["Thin Film Texture"])
-                        
-                    links.new(pre_fx_node.outputs["Thin Film UV"], thin_film_node.inputs[0])
-                elif thin_film_node is not None:
-                    nodes.remove(thin_film_node)
-
-                cloth_fuzz_node = get_node(shader_node, "ClothFuzz Texture")
-                if get_param_multiple(switches, ["Use Cloth Fuzz", "UseClothFuzz"]):
-                    if cloth_fuzz_node is None:
-                        cloth_fuzz_node = nodes.new(type="ShaderNodeTexImage")
-                        cloth_fuzz_node.image = bpy.data.images.get("T_Fuzz_MASK")
-                        cloth_fuzz_node.image.alpha_mode = 'CHANNEL_PACKED'
-                        cloth_fuzz_node.image.colorspace_settings.name = "sRGB"
-                        cloth_fuzz_node.interpolation = "Smart"
-                        cloth_fuzz_node.hide = True
-
-                        x, y = get_socket_pos(shader_node, shader_node.inputs.find("ClothFuzz Texture"))
-                        cloth_fuzz_node.location = x - 300, y
-                        links.new(cloth_fuzz_node.outputs[0], shader_node.inputs["ClothFuzz Texture"])
-
-                    links.new(pre_fx_node.outputs["Cloth UV"], cloth_fuzz_node.inputs[0])
-                elif cloth_fuzz_node is not None:
-                    nodes.remove(cloth_fuzz_node)
-
-                if flipbook_node := get_node(shader_node, "Flipbook Color"):
-                    links.new(pre_fx_node.outputs["Flipbook UV"], flipbook_node.inputs[0])
-                    links.new(pre_fx_node.outputs["Flipbook Mask"], shader_node.inputs["Flipbook Mask"])
-
-                if emissive_distance_field_node := get_node(shader_node, "EmissiveDistanceField"):
-                    links.new(pre_fx_node.outputs["Emissive Distance Field UV"], emissive_distance_field_node.inputs[0])
-
-                if ice_gradient_node := get_node(shader_node, "IceGradient"):
-                    links.new(pre_fx_node.outputs["Ice UV"], ice_gradient_node.inputs[0])
-                    links.new(pre_fx_node.outputs["Ice UV"], shader_node.inputs["Ice UV"])
-                    
-                if not any(pre_fx_node.outputs, lambda output: len(output.links) > 0):
-                    for input in pre_fx_node.inputs:
-                        if len(input.links) > 0:
-                            nodes.remove(input.links[0].from_node)
-                            
-                    nodes.remove(pre_fx_node)
-                    
-                # PRE FX END
-                
                 set_param("AO", self.options.get("AmbientOcclusion"))
                 set_param("Cavity", self.options.get("Cavity"))
                 set_param("Subsurface", self.options.get("Subsurface"))
-
-                if override_blend_mode == EBlendMode.BLEND_Masked and (diffuse_links := shader_node.inputs["Diffuse"].links) and len(diffuse_links) > 0 and (diffuse_node := diffuse_links[0].from_node):
-                    links.new(diffuse_node.outputs[1], shader_node.inputs["Alpha"])
-
-                if (skin_color := meta.get("SkinColor")) and skin_color["A"] != 0:
-                    set_param("Skin Color", (skin_color["R"], skin_color["G"], skin_color["B"], 1.0))
-                    set_param("Skin Boost", skin_color["A"])
-
-                if all(get_params(switches, emissive_toggle_names), lambda bool: bool is False):
-                    set_param("Emission Strength", 0)
-
-                if get_param(textures, "SRM"):
-                    set_param("SwizzleRoughnessToGreen", 1)
-
-                if get_param(switches, "Use Vertex Colors for Mask"):
-                    elements = {}
-                    for scalar in scalars:
-                        name = scalar.get("Name")
-                        if "Hide Element" not in name:
-                            continue
-
-                        elements[name] = scalar.get("Value")
                     
-                    self.partial_vertex_crunch_materials[material] = elements
-
-                emission_slot = shader_node.inputs["Emission"]
-                if (crop_bounds := get_param_multiple(vectors, emissive_crop_vector_names)) and get_param_multiple(switches, emissive_crop_switch_names) and len(emission_slot.links) > 0:
-                    emission_node = emission_slot.links[0].from_node
-                    emission_node.extension = "CLIP"
-    
-                    crop_texture_node = nodes.new("ShaderNodeGroup")
-                    crop_texture_node.node_tree = bpy.data.node_groups.get("FP Texture Cropping")
-                    crop_texture_node.location = emission_node.location + Vector((-200, 25))
-                    crop_texture_node.inputs["Left"].default_value = crop_bounds.get('R')
-                    crop_texture_node.inputs["Top"].default_value = crop_bounds.get('G')
-                    crop_texture_node.inputs["Right"].default_value = crop_bounds.get('B')
-                    crop_texture_node.inputs["Bottom"].default_value = crop_bounds.get('A')
-                    links.new(crop_texture_node.outputs[0], emission_node.inputs[0])
-
-                if get_param(switches, "Modulate Emissive with Diffuse"):
-                    diffuse_node = shader_node.inputs["Diffuse"].links[0].from_node
-                    links.new(diffuse_node.outputs[0], shader_node.inputs["Emission Multiplier"])
-
-                if get_param(switches, "Use Engine Colorized GMap"):
-                    gmap_node = nodes.new(type="ShaderNodeGroup")
-                    gmap_node.node_tree = bpy.data.node_groups.get(".FP GMap Material")
-                    gmap_node.location = -1100, -69
-                    if len(shader_node.inputs["Diffuse"].links) > 0:
-                        nodes.remove(shader_node.inputs["Diffuse"].links[0].from_node)
-                    links.new(gmap_node.outputs[0], shader_node.inputs[0])
-                    setup_params(gmap_material_mappings, gmap_node)
-
-                if get_param(switches, "useGmapGradientLayers"):
-                    gradient_node = nodes.new(type="ShaderNodeGroup")
-                    gradient_node.node_tree = bpy.data.node_groups.get("FP Gradient")
-                    gradient_node.location = -500, 0
-                    nodes.remove(shader_node.inputs["Diffuse"].links[0].from_node)
-                    links.new(gradient_node.outputs[0], shader_node.inputs[0])
-
-                    gmap_node = nodes.new(type="ShaderNodeGroup")
-                    gmap_node.node_tree = bpy.data.node_groups.get(".FP GMap")
-                    gmap_node.location = -1120, -240
-                    setup_params(gmap_mappings, gmap_node, False)
-
-                    setup_params(gradient_mappings, gradient_node)
-
-                    for item in gradient_node.node_tree.interface.items_tree:
-                        if item.name != "Colors":
-                            continue
-
-                        panel_items = item.interface_items
-                        for panel_item in panel_items:
-                            item_links = gradient_node.inputs[panel_item.name].links
-                            if len(item_links) == 0:
-                                continue
-                            links.new(gmap_node.outputs[0], item_links[0].from_node.inputs[0])
-
-                if eye_texture_data := get_param_info(textures, "EyeTexture"):
-                    eye_texture_node = nodes.new(type="ShaderNodeTexImage")
-                    eye_texture_node.image = self.import_image(eye_texture_data.get("Value"))
-                    eye_texture_node.image.alpha_mode = 'CHANNEL_PACKED'
-                    eye_texture_node.image.colorspace_settings.name = "sRGB" if eye_texture_data.get("sRGB") else "Non-Color"
-                    eye_texture_node.interpolation = "Smart"
-                    eye_texture_node.hide = True
-                    eye_texture_node.location = [-500, -75]
-
-                    uv_map_node = nodes.new(type="ShaderNodeUVMap")
-                    uv_map_node.location = [-700, 25]
-                    uv_map_node.uv_map = "UV1"
-
-                    links.new(uv_map_node.outputs[0], eye_texture_node.inputs[0])
-
-                    mix_node = nodes.new(type="ShaderNodeMixRGB")
-                    mix_node.location = [-200, 75]
-
-                    links.new(eye_texture_node.outputs[0], mix_node.inputs[2])
-
-                    compare_node = nodes.new(type="ShaderNodeMath")
-                    compare_node.operation = 'COMPARE'
-                    compare_node.hide = True
-                    compare_node.location = [-500, 100]
-                    compare_node.inputs[1].default_value = 0.510
-                    links.new(uv_map_node.outputs[0], compare_node.inputs[0])
-                    links.new(compare_node.outputs[0], mix_node.inputs[0])
-
-                    diffuse_node = shader_node.inputs["Diffuse"].links[0].from_node
-                    diffuse_node.location = [-500, 0]
-                    links.new(diffuse_node.outputs[0], mix_node.inputs[1])
-                    links.new(mix_node.outputs[0], shader_node.inputs["Diffuse"])
-                    
-                if diffuse_node := get_node(shader_node, "Diffuse"):
+                if diffuse_node := get_node(shader_node, "BaseColor"):
                     nodes.active = diffuse_node
-
-                if "Elastic_Master" in base_material_path and "_Head_" not in base_material_path:
-                    superhero_node = nodes.new(type="ShaderNodeGroup")
-                    superhero_node.node_tree = bpy.data.node_groups.get("FP Superhero")
-                    superhero_node.location = -600, 0
-                    setup_params(superhero_mappings, superhero_node, False)
-                    
-                    base_normal = superhero_node.inputs["Normals"].links[0].from_node
-                    if len(superhero_node.inputs["PrimaryNormal"].links) == 0:
-                        links.new(base_normal.outputs[0], superhero_node.inputs["PrimaryNormal"])
-                    if len(superhero_node.inputs["SecondaryNormal"].links) == 0:
-                        links.new(base_normal.outputs[0], superhero_node.inputs["SecondaryNormal"])
-
-                    if sticker_texture_data := get_param_info(textures, "Sticker"):
-                        if "/Game/Global/Textures/Default/Blanks/" not in sticker_texture_data.get("Value"):
-                            sticker_node = nodes.new(type="ShaderNodeTexImage")
-                            sticker_node.image = self.import_image(sticker_texture_data.get("Value"))
-                            sticker_node.image.alpha_mode = 'CHANNEL_PACKED'
-                            sticker_node.image.colorspace_settings.name = "sRGB" if sticker_texture_data.get("sRGB") else "Non-Color"
-                            sticker_node.interpolation = "Smart"
-                            sticker_node.extension = "CLIP"
-                            sticker_node.hide = True
-                            sticker_node.location = [-885, -585]
-                            
-                            back_sticker_node = nodes.new(type="ShaderNodeTexImage")
-                            back_sticker_node.image = self.import_image(sticker_texture_data.get("Value"))
-                            back_sticker_node.image.alpha_mode = 'CHANNEL_PACKED'
-                            back_sticker_node.image.colorspace_settings.name = "sRGB" if sticker_texture_data.get("sRGB") else "Non-Color"
-                            back_sticker_node.interpolation = "Smart"
-                            back_sticker_node.extension = "CLIP"
-                            back_sticker_node.hide = True
-                            back_sticker_node.location = [-885, -640]
-                        
-                            pre_superhero_node = nodes.new(type="ShaderNodeGroup")
-                            pre_superhero_node.node_tree = bpy.data.node_groups.get("FP Pre Superhero")
-                            pre_superhero_node.location = -1150, -560
-                            pre_superhero_node.inputs["StickerPosition"].default_value = get_vector_param(vectors, "StickerPosition")
-                            pre_superhero_node.inputs["StickerScale"].default_value = get_vector_param(vectors, "StickerScale")
-                            pre_superhero_node.inputs["BackStickerPosition"].default_value = get_vector_param(vectors, "BackStickerPosition")
-                            pre_superhero_node.inputs["BackStickerScale"].default_value = get_vector_param(vectors, "BackStickerScale")
-
-                            links.new(pre_superhero_node.outputs["StickerUV"], sticker_node.inputs[0])
-                            links.new(pre_superhero_node.outputs["StickerMask"], superhero_node.inputs["StickerMask"])
-                            links.new(sticker_node.outputs[0], superhero_node.inputs["Sticker"])
-                            links.new(sticker_node.outputs[1], superhero_node.inputs["StickerAlpha"])
-
-                            links.new(pre_superhero_node.outputs["BackStickerUV"], back_sticker_node.inputs[0])
-                            links.new(pre_superhero_node.outputs["BackStickerMask"], superhero_node.inputs["BackStickerMask"])
-                            links.new(back_sticker_node.outputs[0], superhero_node.inputs["BackSticker"])
-                            links.new(back_sticker_node.outputs[1], superhero_node.inputs["BackStickerAlpha"])
-
-                    shader_node.inputs["Background Diffuse Alpha"].default_value = 0.0
-                    links.new(superhero_node.outputs["Diffuse"], shader_node.inputs["Background Diffuse"])
-                    links.new(superhero_node.outputs["Normals"], shader_node.inputs["Normals"])
-                    links.new(superhero_node.outputs["SpecularMasks"], shader_node.inputs["SpecularMasks"])
-                    links.new(superhero_node.outputs["ClothFuzzChannel"], shader_node.inputs["Cloth Channel"])
-                    
 
             case "FP Glass":
                 mask_slot = shader_node.inputs["Mask"]
@@ -984,40 +768,59 @@ class ImportContext:
 
                 if color_node := get_node(shader_node, "Color"):
                     nodes.active = color_node
-            
-            case "FP Bean Costume":
-                set_param("Ambient Occlusion", self.options.get("AmbientOcclusion"))
-                mask_slot = shader_node.inputs["MaterialMasking"]
-                position = get_param(vectors, "Head_Costume_UVPatternPosition" if meta.get("IsHead") else "Costume_UVPatternPosition")
-                if position and len(mask_slot.links) > 0:
-                    mask_node = mask_slot.links[0].from_node
-                    mask_node.extension = "CLIP"
-
-                    mask_position_node = nodes.new("ShaderNodeGroup")
-                    mask_position_node.node_tree = bpy.data.node_groups.get("FP Bean Mask Position")
-                    mask_position_node.location = mask_node.location + Vector((-200, 25))
-                    mask_position_node.inputs["Costume_UVPatternPosition"].default_value = position.get('R'), position.get('G'), position.get('B')
-                    links.new(mask_position_node.outputs[0], mask_node.inputs[0])
                 
             case "FP Toon":
                 set_param("Brightness", self.options.get("ToonShadingBrightness"))
                 self.add_toon_outline = True
             
-            case "FP 3L Eyes":
+            case "MR Eye":
                 pre_eye_node = nodes.new(type="ShaderNodeGroup")
-                pre_eye_node.node_tree = bpy.data.node_groups.get("FP Pre 3L Eyes")
-                pre_eye_node.location = -600, 0
-                setup_params(socket_mappings, pre_eye_node, False)
-                
-                for texture_mapping in socket_mappings.textures:
-                    if node := get_node(shader_node, texture_mapping.slot):
-                        links.new(pre_eye_node.outputs["EyeUVs"], node.inputs[0])
+                pre_eye_node.node_tree = bpy.data.node_groups.get("MR Pre Eye")
+                pre_eye_node.location = -600, 100
+                setup_params(pre_eye_mappings, pre_eye_node, False)
 
-                if diffuse_node := get_node(shader_node, "Diffuse"):
+                if node := get_node(shader_node, "ScleraBaseColor"):
+                    links.new(pre_eye_node.outputs["Sclera UV"], node.inputs[0])
+                else:
+                    add_default_texture("T_EyeSclera_D", "SRGB", shader_node, "ScleraBaseColor", pre_eye_node, "Sclera UV")
+                    
+                if node := get_node(shader_node, "IrisBaseColor") is None:
+                    links.new(pre_eye_node.outputs["Iris UV"], node.inputs[0])
+                else:
+                    add_default_texture("T_Common_Eyes_03_D", "SRGB", shader_node, "IrisBaseColor", pre_eye_node, "Iris UV")
+
+                if node := get_node(shader_node, "IrisHeight") is None:
+                    links.new(pre_eye_node.outputs["Iris UV"], node.inputs[0])
+                else:
+                    add_default_texture("T_Iris001_01_H", "Non-Color", shader_node, "IrisHeight", pre_eye_node, "Iris UV")
+
+                if node := get_node(shader_node, "IrisBaseAO") is None:
+                    links.new(pre_eye_node.outputs["Iris UV"], node.inputs[0])
+                else:
+                    add_default_texture("T_Iris001_01_AO", "SRGB", shader_node, "IrisBaseAO", pre_eye_node, "Iris UV")
+
+                links.new(pre_eye_node.outputs["Sclera UV"], shader_node.inputs["Sclera UV"])
+                links.new(pre_eye_node.outputs["Iris UV"], shader_node.inputs["Iris UV"])
+
+                if diffuse_node := get_node(shader_node, "ScleraBaseColor"):
+                    nodes.active = diffuse_node
+            
+            case "MR Eye Glass":
+                pre_eye_glass_node = nodes.new(type="ShaderNodeGroup")
+                pre_eye_glass_node.node_tree = bpy.data.node_groups.get("MR Pre Eye Glass")
+                pre_eye_glass_node.location = -600, 0
+                setup_params(pre_eye_glass_mappings, pre_eye_glass_node, False)
+
+                if node := get_node(shader_node, "HighlightMask"):
+                    links.new(pre_eye_glass_node.outputs["Highlight UV"], node.inputs[0])
+                else:
+                    add_default_texture("T_Common_EyesHighLight_01_M", "SRGB", shader_node, "HighlightMask", pre_eye_glass_node, "Highlight UV")
+
+                if diffuse_node := get_node(shader_node, "HighlightMask"):
                     nodes.active = diffuse_node
             
             case "FP Layer":
-                if diffuse_node := get_node(shader_node, "Diffuse"):
+                if diffuse_node := get_node(shader_node, "BaseColor"):
                     nodes.active = diffuse_node
 
     def import_sound_data(self, data):

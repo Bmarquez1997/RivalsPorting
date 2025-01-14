@@ -282,39 +282,48 @@ translucent_mappings = MappingCollection(
 
 eye_mappings = MappingCollection(
     textures=[
-        SlotMapping("Diffuse"),
-        SlotMapping("DiffuseMap", "Diffuse", alpha_slot="MaskTexture"),
-        SlotMapping("Normals"),
-        SlotMapping("NormalMap", "Normals"),
-        SlotMapping("MaskTexture"),
+        SlotMapping("ScleraBaseColor"),
+        SlotMapping("IrisBaseColor"),
+        SlotMapping("IrisHeight"),
+        SlotMapping("IrisBaseAO"),
     ],
     scalars=[
-        SlotMapping("Roughness Leafs", "Roughness"),
-        SlotMapping("Specular_Leafs", "Specular")
-    ],
-    vectors=[
-        SlotMapping("Color1_Base"),
-        SlotMapping("Color2_Lit"),
-        SlotMapping("Color3_Shadows")
+        SlotMapping("ScleraRoughness"),
+        SlotMapping("IrisRoughness"),
+        SlotMapping("IrisBrightness"),
+    ]
+)
+
+pre_eye_mappings = MappingCollection(
+    scalars=[
+        SlotMapping("ScleraScale"),
+        SlotMapping("IrisUVRadius"),
+        SlotMapping("PupilScale")
     ]
 )
 
 eye_glass_mappings = MappingCollection(
     textures=[
-        SlotMapping("Diffuse"),
-        SlotMapping("DiffuseMap", "Diffuse", alpha_slot="MaskTexture"),
-        SlotMapping("Normals"),
-        SlotMapping("NormalMap", "Normals"),
-        SlotMapping("MaskTexture"),
+        SlotMapping("HighlightMask")
     ],
     scalars=[
-        SlotMapping("Roughness Leafs", "Roughness"),
-        SlotMapping("Specular_Leafs", "Specular")
+        SlotMapping("HighlightIntensity"),
+        SlotMapping("Opacity"),
+        SlotMapping("Opacity_HighLight")
+    ],
+    switches=[
+        SlotMapping("FakeHighlight?")
+    ]
+)
+
+pre_eye_glass_mappings = MappingCollection(
+    scalars=[
+        SlotMapping("TileX"),
+        SlotMapping("TileY"),
+        SlotMapping("RotateAngle")
     ],
     vectors=[
-        SlotMapping("Color1_Base"),
-        SlotMapping("Color2_Lit"),
-        SlotMapping("Color3_Shadows")
+        SlotMapping("RotateFactor")
     ]
 )
 
