@@ -10,7 +10,8 @@ RivalsPorting - Automation of the Marvel Rivals Porting Process
 [![Downloads](https://img.shields.io/github/downloads/bmarquez1997/RivalsPorting/total?color=green)]()
 ***
 
-![image](https://github.com/user-attachments/assets/960d0dc5-695f-43b6-be0c-db74efdf1a17)
+![RivalsPorting_Preview](https://github.com/user-attachments/assets/b484bd1a-785b-4d83-ba35-93065888aafb)
+
 
 ## Building RivalsPorting
 
