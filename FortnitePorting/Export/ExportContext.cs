@@ -596,9 +596,7 @@ public class ExportContext
             {
                 var exportMesh = MeshComponent(staticMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
-                exportMesh.Location = staticMeshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
-                exportMesh.Rotation = staticMeshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
-                exportMesh.Scale = staticMeshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
+                SetMeshComponentTransforms(exportMesh, staticMeshComponent);
 
                 foreach (var extraMesh in ExtraActorMeshes(actor))
                 {
@@ -641,9 +639,7 @@ public class ExportContext
             {
                 var exportMesh = MeshComponent(skeletalMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
-                exportMesh.Location = skeletalMeshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
-                exportMesh.Rotation = skeletalMeshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
-                exportMesh.Scale = skeletalMeshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
+                SetMeshComponentTransforms(exportMesh, staticMeshComponent);
 
                 foreach (var extraMesh in ExtraActorMeshes(actor))
                 {
@@ -685,6 +681,24 @@ public class ExportContext
         }
 
         return meshes;
+    }
+    
+    private void SetMeshComponentTransforms(ExportMesh exportMesh, USceneComponent meshComponent)
+    {
+        if (!exportMesh.IsEmpty)
+            // if (false)
+        {
+            var meshComponentAbsTransform = meshComponent.GetAbsoluteTransform();
+            exportMesh.Location = meshComponentAbsTransform.Translation;
+            exportMesh.Rotation = meshComponentAbsTransform.Rotator();
+            exportMesh.Scale = meshComponentAbsTransform.Scale3D;
+        }
+        else
+        {
+            exportMesh.Location = meshComponent.GetOrDefault("RelativeLocation", FVector.ZeroVector);
+            exportMesh.Rotation = meshComponent.GetOrDefault("RelativeRotation", FRotator.ZeroRotator);
+            exportMesh.Scale = meshComponent.GetOrDefault("RelativeScale3D", FVector.OneVector);
+        }
     }
 
     public List<ExportObject> Blueprint(UBlueprintGeneratedClass blueprintGeneratedClass)

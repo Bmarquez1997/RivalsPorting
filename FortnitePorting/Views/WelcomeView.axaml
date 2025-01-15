@@ -56,7 +56,7 @@
                     </Style>
                 </StackPanel.Styles>
                 
-                <ui:SettingsExpander Header="Fortnite Version" Description="The type of game installation that Rivals Porting will be loading.">
+                <ui:SettingsExpander Header="Rivals Installation Version" Description="The type of game installation that Rivals Porting will be loading.">
                     <ui:SettingsExpander.Footer>
                         <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type fortnitePorting:EFortniteVersion}}"
                                   SelectedItem="{Binding Profile.FortniteVersion, Converter={StaticResource EnumToRecord}}" />

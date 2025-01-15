@@ -732,7 +732,8 @@ class ImportContext:
             material.surface_render_method = "BLENDED"
             material.show_transparent_back = False
 
-        if "Common_Body" in base_material_path or "Common_Skin" in base_material_path or (self.type == EExportType.OUTFIT and "Body" in base_material_path):
+        # TODO: Proper cape/two sided material handling
+        if "Common_Body" in base_material_path or "Common_Skin" in base_material_path or "Common_Cape" in base_material_path or (self.type == EExportType.OUTFIT and "Body" in base_material_path):
             replace_shader_node("MR Hero")
             socket_mappings = hero_mappings
 
@@ -757,6 +758,7 @@ class ImportContext:
             replace_shader_node("MR Rim")
         
         # TODO: Common_Cape, Symbiote (1035)
+        # Cloak, Punisher
 
         setup_params(socket_mappings, shader_node, True)
 
@@ -824,7 +826,7 @@ class ImportContext:
             case "MR Eye Glass":
                 pre_eye_glass_node = nodes.new(type="ShaderNodeGroup")
                 pre_eye_glass_node.node_tree = bpy.data.node_groups.get("MR Pre Eye Glass")
-                pre_eye_glass_node.location = -500, -100
+                pre_eye_glass_node.location = -500, -75
                 setup_params(pre_eye_glass_mappings, pre_eye_glass_node, False)
 
                 if node := get_node(shader_node, "HighlightMask"):

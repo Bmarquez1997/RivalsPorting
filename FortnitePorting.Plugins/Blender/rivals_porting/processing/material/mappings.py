@@ -57,6 +57,7 @@ default_mappings = MappingCollection(
         SlotMapping("Base_MROH", "SpecularMasks"),
         SlotMapping("MROMap", "SpecularMasks"),
         SlotMapping("ORM", "SpecularMasks"),
+        SlotMapping("MRO", "SpecularMasks"),
         SlotMapping("BaseMask", "SpecularMasks"),
         SlotMapping("SpecularMask", "SpecularMasks"),
         SlotMapping("Concrete_SpecMask", "SpecularMasks"),

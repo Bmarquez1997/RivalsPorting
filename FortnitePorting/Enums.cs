@@ -232,10 +232,7 @@ public enum EAssetSortType
     AZ,
     
     [Description("Season")]
-    Season,
-
-    [Description("Rarity")]
-    Rarity
+    Season
 }
 
 public enum EImageFormat

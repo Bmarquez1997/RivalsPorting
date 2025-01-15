@@ -89,27 +89,27 @@ public partial class AssetLoader : ObservableObject
                 new FilterItem("Hidden Items", asset => asset.CreationData.IsHidden)
             ]
         },
-        new("Cosmetic")
-        {
-            Filters = 
-            [
-                new FilterItem("Battle Pass", asset => asset.CreationData.GameplayTags.ContainsAny("BattlePass")),
-                new FilterItem("Item Shop", asset => asset.CreationData.GameplayTags.ContainsAny("ItemShop"))
-            ],
-            AllowedTypes = 
-            [
-                EExportType.Outfit,
-                EExportType.Backpack,
-                EExportType.Pickaxe,
-                EExportType.Glider,
-                EExportType.Pet,
-                EExportType.Toy,
-                EExportType.Emote,
-                EExportType.Emoticon,
-                EExportType.Spray,
-                EExportType.LoadingScreen
-            ]
-        },
+        // new("Cosmetic")
+        // {
+        //     Filters = 
+        //     [
+        //         new FilterItem("Battle Pass", asset => asset.CreationData.GameplayTags.ContainsAny("BattlePass")),
+        //         new FilterItem("Item Shop", asset => asset.CreationData.GameplayTags.ContainsAny("ItemShop"))
+        //     ],
+        //     AllowedTypes = 
+        //     [
+        //         EExportType.Outfit,
+        //         EExportType.Backpack,
+        //         EExportType.Pickaxe,
+        //         EExportType.Glider,
+        //         EExportType.Pet,
+        //         EExportType.Toy,
+        //         EExportType.Emote,
+        //         EExportType.Emoticon,
+        //         EExportType.Spray,
+        //         EExportType.LoadingScreen
+        //     ]
+        // },
         new("Emote")
         {
             Filters = 
@@ -120,28 +120,6 @@ public partial class AssetLoader : ObservableObject
             AllowedTypes = 
             [
                 EExportType.Emote
-            ]
-        },
-        new("Game")
-        {
-            Filters = 
-            [
-                new FilterItem("Battle Royale", asset => !(asset.CreationData.GameplayTags.ContainsAny("CampaignHero", "SaveTheWorld") 
-                                                         || asset.CreationData.Object.GetPathName().Contains("SaveTheWorld", StringComparison.OrdinalIgnoreCase))),
-                new FilterItem("Save The World", asset => asset.CreationData.GameplayTags.ContainsAny("CampaignHero", "SaveTheWorld") 
-                                                           || asset.CreationData.Object.GetPathName().Contains("SaveTheWorld", StringComparison.OrdinalIgnoreCase))
-            ],
-            AllowedTypes = 
-            [
-                EExportType.Outfit,
-                EExportType.Backpack,
-                EExportType.Pickaxe,
-                EExportType.Glider,
-                EExportType.Banner,
-                EExportType.LoadingScreen,
-                EExportType.Item,
-                EExportType.Resource,
-                EExportType.Trap
             ]
         },
         new("Creative")
@@ -425,7 +403,6 @@ public partial class AssetLoader : ObservableObject
         {
             EAssetSortType.AZ => asset => asset.CreationData.DisplayName,
             EAssetSortType.Season => asset => asset is AssetItem assetItem ? assetItem.Season + (double) assetItem.Rarity * 0.01 : asset.CreationData.DisplayName,
-            EAssetSortType.Rarity => asset => asset is AssetItem assetItem ? assetItem.Series?.DisplayName.Text + (int) assetItem.Rarity : asset.CreationData.DisplayName,
             _ => asset => asset.CreationData.ID
         };
 

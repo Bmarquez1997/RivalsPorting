@@ -35,7 +35,7 @@ public abstract partial class BaseAssetItem : ObservableObject
         return CreationData switch
         {
             AssetItemCreationArgs assetArgs => MiscExtensions.Filter(assetArgs.DisplayName, filter)
-                                               || MiscExtensions.Filter(assetArgs.Object.Name, filter),
+                                               || MiscExtensions.Filter(assetArgs.ID, filter),
             CustomAssetItemCreationArgs creationArgs => MiscExtensions.Filter(creationArgs.DisplayName, filter),
             _ => true
         };
