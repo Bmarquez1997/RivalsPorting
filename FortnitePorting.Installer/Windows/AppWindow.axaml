@@ -9,7 +9,7 @@
         Width="560" Height="320" RequestedThemeVariant="Dark" FontFamily="Segoe UI" Background="{x:Null}"
         ExtendClientAreaToDecorationsHint="True"
         WindowStartupLocation="CenterScreen" CanResize="False"
-        Icon="/Assets/LogoV3.ico"
+        Icon="/Assets/LogoMR.ico"
         Title="Fortnite Porting">
     <Grid RowDefinitions="30, *" Margin="{Binding $parent[Window].OffScreenMargin}">
         <ExperimentalAcrylicBorder Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False">

@@ -10,7 +10,7 @@
         x:DataType="windowModels:PropertiesPreviewWindowModel"
         Width="1280" Height="720" RequestedThemeVariant="Dark" FontFamily="Segoe UI"
         TransparencyLevelHint="{Binding Theme.TransparencyHints}" ExtendClientAreaToDecorationsHint="True" WindowStartupLocation="CenterOwner"
-        Icon="/Assets/LogoV3.ico" Background="{x:Null}"
+        Icon="/Assets/LogoMR.ico" Background="{x:Null}"
         Title="Properties Viewer">
     <Grid>
         <Grid.RowDefinitions>

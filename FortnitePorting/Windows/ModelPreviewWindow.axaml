@@ -8,7 +8,7 @@
         x:DataType="windowModels:ModelPreviewWindowModel"
         Width="960" Height="540" RequestedThemeVariant="Dark" FontFamily="Segoe UI" Background="{x:Null}"
         TransparencyLevelHint="{Binding Theme.TransparencyHints}" ExtendClientAreaToDecorationsHint="True" WindowStartupLocation="CenterOwner"
-        Icon="/Assets/LogoV3.ico"
+        Icon="/Assets/LogoMR.ico"
         Title="Model Viewer">
     <Grid>
         <Grid.RowDefinitions>
