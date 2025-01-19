@@ -9,7 +9,8 @@ namespace FortnitePorting.Shared;
 public static class Globals
 {
     public static string VersionString => Version.GetDisplayString(EVersionStringType.IdentifierPrefix);
-    public static readonly FPVersion Version = new(0, 1, 1, identifier: "RivalsPorting");
+    public static readonly FPVersion Version = new(0, 1, 1, identifier: "Alpha");
+    public const string OnlineTag = "RivalsPorting";
     
     public static readonly FilePickerFileType MappingsFileType = new("Unreal Mappings") { Patterns = [ "*.usmap" ] };
     public static readonly FilePickerFileType JSONFileType = new("JSON") { Patterns = [ "*.json" ] };

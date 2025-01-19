@@ -46,10 +46,12 @@ default_mappings = MappingCollection(
         SlotMapping("M"),
         SlotMapping("Mask", "M"),
         SlotMapping("AO", "M"),
+        SlotMapping("M Mask", "M"),
 
         SlotMapping("SpecularMasks"),
         SlotMapping("S", "SpecularMasks"),
         SlotMapping("SRM", "SpecularMasks"),
+        SlotMapping("S Mask", "SpecularMasks"),
         SlotMapping("Specular Mask", "SpecularMasks"),
         SlotMapping("CombinedMask_a", "SpecularMasks"),
         SlotMapping("CombinedMask_b", "SpecularMasks"),
@@ -199,7 +201,9 @@ default_mappings = MappingCollection(
         SlotMapping("ClothFuzzTint", "Fuzz Tint"),
         SlotMapping("Cloth Fuzz Tint", "Fuzz Tint"),
 
-        SlotMapping("FlipbookTint")
+        SlotMapping("FlipbookTint"),
+        
+        SlotMapping("CloatcoatMaskChannel")
     ],
     switches=[
         SlotMapping("SwizzleRoughnessToGreen"),
