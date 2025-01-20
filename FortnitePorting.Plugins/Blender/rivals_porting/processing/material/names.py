@@ -42,6 +42,8 @@ texture_ignore_names = ["DefaultTexture"]
 
 vertex_crunch_names = ["MI_VertexCrunch", "M_VertexCrunch", "MI_Hide", "M_Hide"]
 
+hero_master_names = ["Common_Body", "Common_Skin", "Common_Cape"]
+
 toon_outline_names = ["Outline", "Toon_Lines"]
 
 glass_master_names = ["M_MED_Glass_Master", "M_TranslucentGlass", "M_Common_Glass"]

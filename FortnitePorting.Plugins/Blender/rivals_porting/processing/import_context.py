@@ -733,7 +733,7 @@ class ImportContext:
             material.show_transparent_back = False
 
         # TODO: Proper cape/two sided material handling
-        if "Common_Body" in base_material_path or "Common_Skin" in base_material_path or "Common_Cape" in base_material_path or (self.type == EExportType.OUTFIT and "Body" in base_material_path):
+        if any(hero_master_names, lambda x: x in base_material_path) or (self.type == EExportType.OUTFIT and ("Body" in base_material_path or "Skin" in base_material_path)):
             replace_shader_node("MR Hero")
             socket_mappings = hero_mappings
 

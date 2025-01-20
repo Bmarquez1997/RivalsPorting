@@ -639,7 +639,7 @@ public class ExportContext
             {
                 var exportMesh = MeshComponent(skeletalMeshComponent) ?? new ExportMesh { IsEmpty = true };
                 exportMesh.Name = actor.Name;
-                SetMeshComponentTransforms(exportMesh, staticMeshComponent);
+                SetMeshComponentTransforms(exportMesh, skeletalMeshComponent);
 
                 foreach (var extraMesh in ExtraActorMeshes(actor))
                 {
@@ -683,8 +683,10 @@ public class ExportContext
         return meshes;
     }
     
-    private void SetMeshComponentTransforms(ExportMesh exportMesh, USceneComponent meshComponent)
+    private void SetMeshComponentTransforms(ExportMesh exportMesh, USceneComponent? meshComponent)
     {
+        if (meshComponent == null) return;
+        
         if (!exportMesh.IsEmpty)
             // if (false)
         {
