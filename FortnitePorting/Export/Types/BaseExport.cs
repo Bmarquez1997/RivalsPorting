@@ -20,7 +20,7 @@ public class BaseExport
 
     public BaseExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData)
     {
-        Name = name + (styles.Length > 0 ? (" - " + styles[0].StyleName) : string.Empty);
+        Name = name + ((styles.Length > 0 && styles[0].StyleName != name) ? (" - " + styles[0].StyleName) : string.Empty);
         Type = exportType;
 
         Exporter = new ExportContext(metaData);
