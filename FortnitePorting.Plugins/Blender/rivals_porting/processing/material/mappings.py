@@ -38,6 +38,7 @@ default_mappings = MappingCollection(
         SlotMapping("PM_Diffuse", "Diffuse"),
         SlotMapping("___Diffuse", "Diffuse"),
         SlotMapping("CloudTexture", "Diffuse", alpha_slot="Alpha"),
+        SlotMapping("DIFF", "Diffuse", alpha_slot="Alpha"),
         SlotMapping("op_tex", "Alpha"),
 
         SlotMapping("Background Diffuse", alpha_slot="Background Diffuse Alpha"),
