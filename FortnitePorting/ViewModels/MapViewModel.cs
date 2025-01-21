@@ -359,6 +359,15 @@ public partial class WorldPartitionMap : ObservableObject
         SelectedMaps.Clear();
     }
     
+    // Art - Main Props
+    // ArtDynamic - Dynamic props (banners/trees/bushes/etc)
+    // Collision - Art but with additional collision meshes
+    // Config - Game controlled props like doors
+    // Destruction - Destructible environment pieces
+    // HighQuality - High Quality skybox
+    // LowQuality - Low Quality/static skybox
+    // VFX - FX meshes like clouds or energy rings
+    
     [RelayCommand]
     public async Task ExportMinimap()
     {
