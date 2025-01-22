@@ -1319,7 +1319,7 @@ class ImportContext:
             name = material.get("Name")
             Log.info(f"Importing Material: {name}")
             if is_object_import:
-                bpy.ops.mesh.primitive_ico_sphere_add()
+                bpy.ops.mesh.primitive_cube_add()
                 mat_mesh = bpy.context.active_object
                 mat_mesh.name = name
                 mat_mesh.data.materials.append(bpy.data.materials.new(name))

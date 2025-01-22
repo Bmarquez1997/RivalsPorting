@@ -7,7 +7,7 @@ from .processing.importer import Importer
 bl_info = {
     "name": "Rivals Porting",
     "description": "Import Server for Rivals Porting",
-    "author": "Half",
+    "author": "Half, DeveloperChipmunk",
     "blender": (4, 2, 0),
     "version": (0, 1, 3),
     "category": "Import-Export",
