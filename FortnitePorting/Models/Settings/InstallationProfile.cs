@@ -34,15 +34,10 @@ public partial class InstallationProfile : ObservableValidator
     [NotifyDataErrorInfo]
     [EncryptionKey]
     [ObservableProperty] 
-    private FileEncryptionKey _mainKey = new("0x0C263D8C22DCB085894899C3A3796383E9BF9DE0CBFB08C9BF2DEF2E84F29D74");
+    private FileEncryptionKey _mainKey = FileEncryptionKey.Empty;
     
     [ObservableProperty] private int _selectedExtraKeyIndex;
-    [ObservableProperty] private ObservableCollection<FileEncryptionKey> _extraKeys = [
-        new("0xF959B39D10C93808116F4D0C5583E1D11CBCCD428E737A48B75D40EC87FBF9D8"),
-        new("0xFCFC4D709BC395492703482C50DC423744B5931272587ACCD78B0E57D7215BDD"),
-        new("0x9F3F11DA58B6DD43266CE124F60E955C4A6BE7D5E4B23B69E63EFB0718DA952B"),
-        new("0xD7BA72F24C18357A2384399D98ACF9DB40DD03A55ED4128A396D3D7697930FB5"),
-    ];
+    [ObservableProperty] private ObservableCollection<FileEncryptionKey> _extraKeys = [];
     
     [ObservableProperty] 
     [NotifyPropertyChangedFor(nameof(MappingsFileEnabled))]

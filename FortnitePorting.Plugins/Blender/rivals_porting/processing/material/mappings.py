@@ -240,7 +240,8 @@ hero_mappings = MappingCollection(
         SlotMapping("ORM"),
         SlotMapping("Normal"),
         SlotMapping("SpecularTexture"),
-        SlotMapping("Emissive")
+        SlotMapping("Emissive"),
+        SlotMapping("OpacityMask")
     ],
     scalars=[
         SlotMapping("AOIntensity"),
@@ -319,6 +320,10 @@ eye_glass_mappings = MappingCollection(
         SlotMapping("HighlightIntensity"),
         SlotMapping("Opacity"),
         SlotMapping("Opacity_HighLight")
+    ],
+    vectors=[
+        SlotMapping("Matcap - Color"),
+        SlotMapping("FakeHighlight_Color")
     ],
     switches=[
         SlotMapping("FakeHighlight?")

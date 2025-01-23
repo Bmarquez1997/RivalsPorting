@@ -13,7 +13,7 @@ public static class DependencyService
     
     public static readonly FileInfo UpdaterFile = new(Path.Combine(DataFolder.FullName, "release", "FortnitePorting.Updater.exe"));
     
-    public static readonly FileInfo MappingsFile = new(Path.Combine(DataFolder.FullName, "5.3.2-1525091+++depot_marvel+S1_1_release-Marvel.usmap"));
+    public static readonly FileInfo MappingsFile = new(Path.Combine(DataFolder.FullName, "5.3.2-1573788+++depot_marvel+S1_1_release-Marvel.usmap"));
     
     public static readonly FileInfo BinkaFile = new(Path.Combine(DataFolder.FullName, "binka", "binkadec.exe"));
     public static readonly FileInfo VgmStreamFile = new(Path.Combine(DataFolder.FullName, "vgmstream-cli.exe"));
@@ -24,7 +24,7 @@ public static class DependencyService
     {
         TaskService.Run(() =>
         {
-            EnsureResourceBased("Assets/Mappings/5.3.2-1525091+++depot_marvel+S1_1_release-Marvel.usmap", MappingsFile);
+            EnsureResourceBased("Assets/Mappings/5.3.2-1573788+++depot_marvel+S1_1_release-Marvel.usmap", MappingsFile);
             EnsureResourceBased("Assets/Dependencies/binkadec.exe", BinkaFile);
             EnsureResourceBased("Assets/Dependencies/FortnitePorting.Updater.exe", UpdaterFile);
             EnsureVgmStream();

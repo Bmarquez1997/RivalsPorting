@@ -48,4 +48,6 @@ toon_outline_names = ["Outline", "Toon_Lines"]
 
 glass_master_names = ["M_MED_Glass_Master", "M_TranslucentGlass", "M_Common_Glass"]
 
+eye_glass_master_names = ["EyesHighLight", "EyesHighLight", "M_CrystalBall_Glass"]
+
 lite_shader_types = [EExportType.PROP, EExportType.PREFAB, EExportType.WORLD]

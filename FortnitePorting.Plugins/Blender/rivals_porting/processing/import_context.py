@@ -750,7 +750,7 @@ class ImportContext:
             replace_shader_node("MR Eye")
             socket_mappings = eye_mappings
 
-        if "EyeHighlight" in base_material_path or "EyesHighLight" in base_material_path or (self.type == EExportType.OUTFIT and "SimpleGlass" in base_material_path):
+        if any(eye_glass_master_names, lambda x: x in base_material_path) or (self.type == EExportType.OUTFIT and "SimpleGlass" in base_material_path):
             replace_shader_node("MR Eye Glass")
             socket_mappings = eye_glass_mappings
 

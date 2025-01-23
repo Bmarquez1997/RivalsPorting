@@ -196,14 +196,16 @@ public class CUE4ParseViewModel : ViewModelBase
 
     private async Task LoadKeys()
     {
-        var mainKey = AppSettings.Current.Installation.CurrentProfile.MainKey;
+        var mainKey = AppSettings.Current.Installation.CurrentProfile.IsCustom ? 
+            AppSettings.Current.Installation.CurrentProfile.MainKey
+            : new FileEncryptionKey(Globals.LATEST_AES);
         if (mainKey.IsEmpty) mainKey = FileEncryptionKey.Empty;
         
         await Provider.SubmitKeyAsync(Globals.ZERO_GUID, mainKey.EncryptionKey);
         
         foreach (var vfs in Provider.UnloadedVfs.ToArray())
         {
-            foreach (var extraKey in AppSettings.Current.Installation.CurrentProfile.ExtraKeys)
+            foreach (var extraKey in GetExtraKeys())
             {
                 if (extraKey.IsEmpty) continue;
                 if (!vfs.TestAesKey(extraKey.EncryptionKey)) continue;
@@ -211,6 +213,16 @@ public class CUE4ParseViewModel : ViewModelBase
                 await Provider.SubmitKeyAsync(vfs.EncryptionKeyGuid, extraKey.EncryptionKey);
             }
         }
+    }
+
+    private List<FileEncryptionKey> GetExtraKeys()
+    {
+        if (AppSettings.Current.Installation.CurrentProfile.IsCustom)
+            return AppSettings.Current.Installation.CurrentProfile.ExtraKeys.ToList();
+
+        List<FileEncryptionKey> extraKeys = [];
+        Globals.LATEST_EXTRA_AES.ForEach(key => extraKeys.Add(new FileEncryptionKey(key)));
+        return extraKeys;
     }
     
     private async Task LoadMappings()
