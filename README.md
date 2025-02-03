@@ -18,7 +18,7 @@ RivalsPorting - Automation of the Marvel Rivals Porting Process
 To build RivalsPorting from source, first clone the repository and all of its submodules.
 
 ```
-git clone -b v3 https://github.com//bmarquez1997/RivalsPorting --recursive
+git clone -b RivalsPorting https://github.com//bmarquez1997/RivalsPorting --recursive
 ```
 
 Then open the project directory in a terminal window and publish
