@@ -4,6 +4,7 @@ using CUE4Parse.FileProvider;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Assets.Exports.Material.Parameters;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
@@ -104,10 +105,10 @@ public static class CUE4ParseExtensions
     
     public static bool TryLoadObjectExports(this AbstractFileProvider provider, string path, out IEnumerable<UObject> exports)
     {
-        exports = Enumerable.Empty<UObject>();
+        exports = [];
         try
         {
-            exports = provider.LoadAllObjects(path);
+            exports = provider.LoadPackage(path).GetExports();
         }
         catch (KeyNotFoundException)
         {
@@ -119,6 +120,17 @@ public static class CUE4ParseExtensions
         }
 
         return true;
+    }
+    
+    public static IEnumerable<UObject> LoadAllObjects(this AbstractFileProvider provider, string path)
+    {
+        return provider.LoadPackage(path).GetExports();
+    }
+    
+    public static async Task<IEnumerable<UObject>> LoadAllObjectsAsync(this AbstractFileProvider provider, string path)
+    {
+        var package = await provider.LoadPackageAsync(path);
+        return package.GetExports();
     }
     
     public static async Task<T?> LoadOrDefaultAsync<T>(this FPackageIndex packageIndex, T def = default) where T : UObject
@@ -165,6 +177,12 @@ public static class CUE4ParseExtensions
     public static CStaticMesh Convert(this UStaticMesh staticMesh)
     {
         staticMesh.TryConvert(out var convertedMesh);
+        return convertedMesh;
+    }
+    
+    public static CSkeletalMesh Convert(this USkeletalMesh skeletalMesh)
+    {
+        skeletalMesh.TryConvert(out var convertedMesh);
         return convertedMesh;
     }
 

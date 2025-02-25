@@ -57,7 +57,7 @@ public partial class AssetLoaderCollection : ObservableObject
                     {
                         var iconName = "Marvel/Content/Marvel/UI/Textures/HeroPortrait/SelectHero/img_selecthero_" +
                                        asset.Name.Substring(9, 7);
-                        CUE4ParseVM.Provider.TryLoadObject(iconName, out UTexture2D previewImage);
+                        CUE4ParseVM.Provider.TryLoadPackageObject(iconName, out UTexture2D previewImage);
 
                         return previewImage;
                     },
@@ -73,13 +73,13 @@ public partial class AssetLoaderCollection : ObservableObject
                             {
                                 return texture;
                             }
-                            return await CUE4ParseVM.Provider.TryLoadObjectAsync<UTexture2D>("Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo");
+                            return await CUE4ParseVM.Provider.SafeLoadPackageObjectAsync<UTexture2D>("Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo");
                         }
 
                         async Task<Dictionary<HeroKey, List<FStructFallback>>> GetSkinMap()
                         {
                             var dictionary = new Dictionary<HeroKey, List<FStructFallback>>();
-                            var skinsTable = await CUE4ParseVM.Provider.TryLoadObjectAsync<UDataTable>(
+                            var skinsTable = await CUE4ParseVM.Provider.SafeLoadPackageObjectAsync<UDataTable>(
                                 "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UISkinTable");
                             if (skinsTable?.RowMap == null) return null;
                             
@@ -98,7 +98,7 @@ public partial class AssetLoaderCollection : ObservableObject
                         }
                         
                         var heroData =
-                            await CUE4ParseVM.Provider.TryLoadObjectAsync<UDataTable>(
+                            await CUE4ParseVM.Provider.SafeLoadPackageObjectAsync<UDataTable>(
                                 "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UIHeroTable");
                         
                          // put in map by hero id, add before putting in source

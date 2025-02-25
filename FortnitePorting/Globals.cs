@@ -1,14 +1,15 @@
+global using static FortnitePorting.Services.ApplicationService;
 using System.Collections.ObjectModel;
 using Avalonia.Platform.Storage;
 using CUE4Parse.UE4.Objects.Core.Misc;
 using FortnitePorting.Shared.Models;
 
-namespace FortnitePorting.Shared;
+namespace FortnitePorting;
 
 public static class Globals
 {
     public static string VersionString => Version.GetDisplayString(EVersionStringType.IdentifierPrefix);
-    public static readonly FPVersion Version = new(0, 1, 4, identifier: "Alpha");
+    public static readonly FPVersion Version = new(0, 1, 5, identifier: "Alpha");
     public const string OnlineTag = "RivalsPorting";
     
     public static readonly FilePickerFileType MappingsFileType = new("Unreal Mappings") { Patterns = [ "*.usmap" ] };

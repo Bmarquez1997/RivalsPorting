@@ -18,11 +18,11 @@ public partial class BlenderSettingsViewModel : BaseExportSettings
     
     // Armature
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsTastyRig))] private ERigType _rigType = ERigType.Default;
-    [ObservableProperty] private bool _mergeArmatures = true;
     [ObservableProperty] private bool _reorientBones = false;
     [ObservableProperty] private bool _importSockets = true;
     [ObservableProperty] private bool _importVirtualBones = false;
     [ObservableProperty] private bool _useDynamicBoneShape = true;
+    [ObservableProperty] private bool _simplifyFaceBones = true;
     [ObservableProperty] private float _boneLength = 4.0f;
     
     // Mesh

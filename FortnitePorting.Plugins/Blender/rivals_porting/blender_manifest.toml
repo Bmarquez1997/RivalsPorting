@@ -4,11 +4,11 @@ type = "add-on"
 license = ["SPDX:GPL-3.0-or-later"]
 
 id = "rivals_porting"
-version = "0.1.4"
+version = "0.1.5"
 blender_version_min = "4.2.0"
 name = "Rivals Porting"
 tagline = "Import Server for Rivals Porting"
-maintainer = "https://github.com/halfuwu"
+maintainer = "https://github.com/bmarquez1997"
 
 tags = ["Import-Export"]
 

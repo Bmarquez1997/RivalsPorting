@@ -12,6 +12,7 @@ using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
+using Log = Serilog.Log;
 
 namespace FortnitePorting.Extensions;
 
@@ -31,6 +32,9 @@ public static class SoundExtensions
                 break;
             case "binka":
                 SaveBinkaAsWav(data, path);
+                break;
+            case "rada":
+                SaveRadaAsWav(data, path);
                 break;
         }
 
@@ -86,7 +90,7 @@ public static class SoundExtensions
         {
             binkaProcess.StartInfo = new ProcessStartInfo
             {
-                FileName = DependencyService.BinkaFile.FullName,
+                FileName = DependencyService.BinkaDecoderFile.FullName,
                 Arguments = $"-i \"{binkaPath}\" -o \"{outPath}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -97,6 +101,31 @@ public static class SoundExtensions
         }
         
         MiscExtensions.TryDeleteFile(binkaPath);
+    }
+    
+    public static void SaveRadaAsWav(byte[] data, string outPath)
+    {
+        var radaPath = Path.ChangeExtension(outPath, "rada");
+        File.WriteAllBytes(radaPath, data);
+
+        using (var radaProcess = new Process())
+        {
+            radaProcess.StartInfo = new ProcessStartInfo
+            {
+                FileName = DependencyService.RadaDecoderFile.FullName,
+                Arguments = $"-i \"{radaPath}\" -o \"{outPath}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true
+            };
+
+            radaProcess.Start();
+            radaProcess.WaitForExit();
+            
+            Log.Information(radaProcess.StandardOutput.ReadToEnd());
+        }
+        
+        MiscExtensions.TryDeleteFile(radaPath);
     }
     
     public static void SaveADPCMAsWav(byte[] data, string outPath)

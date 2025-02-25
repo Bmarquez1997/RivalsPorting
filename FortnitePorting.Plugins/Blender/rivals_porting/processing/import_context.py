@@ -67,7 +67,6 @@ class ImportContext:
         rig_type = ERigType(self.options.get("RigType"))
         
         if rig_type == ERigType.TASTY:
-            self.options["MergeArmatures"] = True
             self.options["ReorientBones"] = True
         
         self.override_materials = data.get("OverrideMaterials")
@@ -90,7 +89,7 @@ class ImportContext:
 
         self.import_light_data(data.get("Lights"))
             
-        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
+        if self.type == EExportType.OUTFIT:
             master_skeleton = get_selected_armature()
             master_mesh = get_armature_mesh(master_skeleton)
             
@@ -119,7 +118,7 @@ class ImportContext:
                 solidify.material_offset = len(master_mesh.data.materials) - 1
                 
             if rig_type == ERigType.TASTY:
-                create_tasty_rig(self, master_skeleton, TastyRigOptions(scale=self.scale, use_dynamic_bone_shape=self.options.get("UseDynamicBoneShape")))
+                create_tasty_rig(self, master_skeleton, TastyRigOptions(scale=self.scale, use_dynamic_bone_shape=self.options.get("UseDynamicBoneShape"), simplify_face_bones=self.options.get("SimplifyFaceBones")))
 
             if anim_data := data.get("Animation"):
                 self.import_anim_data(anim_data, master_skeleton)
@@ -359,7 +358,16 @@ class ImportContext:
 
         mesh_path = os.path.join(self.assets_root, path.split(".")[0] + ".uemodel")
 
-        return UEFormatImport(options).import_file(mesh_path)
+        imported_object = UEFormatImport(options).import_file(mesh_path)
+
+        if imported_object is not None:
+            bpy.context.view_layer.objects.active = get_armature_mesh(imported_object)
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.set_normals_from_faces()
+            bpy.ops.object.editmode_toggle()
+
+        return imported_object
     
     def import_texture_data(self, data):
         import_method = ETextureImportMethod(self.options.get("TextureImportMethod"))

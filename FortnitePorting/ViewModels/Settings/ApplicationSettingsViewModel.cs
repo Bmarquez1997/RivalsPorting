@@ -22,9 +22,6 @@ public partial class ApplicationSettingsViewModel : ViewModelBase
     private string _assetsPath;
 
     [ObservableProperty] private int _audioDeviceIndex = 0;
-    [ObservableProperty] private int _chunkCacheLifetime = 1;
-    [ObservableProperty] private bool _downloadDebuggingSymbols;
-    [ObservableProperty] private int _requestTimeoutSeconds = 10;
 
     [ObservableProperty] private FPVersion _lastOnlineVersion = Globals.Version;
 
@@ -54,25 +51,6 @@ public partial class ApplicationSettingsViewModel : ViewModelBase
 
         switch (e.PropertyName)
         {
-            case nameof(DownloadDebuggingSymbols):
-            {
-                if (ApiVM is null) break;
-                
-                var executingDirectory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-                if (DownloadDebuggingSymbols)
-                {
-                    var fileNames = await ApiVM.FortnitePorting.GetReleaseFilesAsync();
-                    var pdbFiles = fileNames.Where(fileName => fileName.EndsWith(".pdb"));
-                    foreach (var pdbFile in pdbFiles) await ApiVM.DownloadFileAsync(pdbFile, executingDirectory);
-                }
-                else
-                {
-                    var pdbFiles = executingDirectory.GetFiles("*.pdb");
-                    foreach (var pdbFile in pdbFiles) pdbFile.Delete();
-                }
-
-                break;
-            }
             case nameof(AudioDeviceIndex):
             {
                 RadioVM?.UpdateOutputDevice();

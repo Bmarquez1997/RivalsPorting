@@ -20,6 +20,7 @@ using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
+using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.IO;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
@@ -54,8 +55,6 @@ public class CUE4ParseViewModel : ViewModelBase
     public readonly DefaultFileProvider Provider = new (
         AppSettings.Current.Installation.CurrentProfile.ArchiveDirectory, SearchOption.AllDirectories, true,
         new VersionContainer(AppSettings.Current.Installation.CurrentProfile.UnrealVersion));
-
-    public FBuildPatchAppManifest? LiveManifest;
     
     public readonly List<FAssetData> AssetRegistry = [];
     public readonly List<FRarityCollection> RarityColors = [];
@@ -90,11 +89,15 @@ public class CUE4ParseViewModel : ViewModelBase
         //await InitializeTextureStreaming();
         
         await LoadKeys();
-        Provider.LoadLocalization(AppSettings.Current.Installation.CurrentProfile.GameLanguage);
         Provider.LoadVirtualPaths();
         await LoadMappings();
         
         Provider.PostMount();
+        
+        if (!Provider.TryChangeCulture(Provider.GetLanguageCode(AppSettings.Current.Installation.CurrentProfile.GameLanguage)))
+        {
+            AppWM.Message("Internationalization", $"Failed to load language \"{AppSettings.Current.Installation.CurrentProfile.GameLanguage.GetDescription()}\"");
+        }
         
         await LoadAssetRegistries();
 
@@ -109,7 +112,7 @@ public class CUE4ParseViewModel : ViewModelBase
     private async Task CleanupCache()
     {
         var files = CacheFolder.GetFiles("*.*chunk");
-        var cutoffDate = DateTime.Now - TimeSpan.FromDays(AppSettings.Current.Application.ChunkCacheLifetime);
+        var cutoffDate = DateTime.Now - TimeSpan.FromDays(AppSettings.Current.Debug.ChunkCacheLifetime);
         foreach (var file in files)
         {
             if (file.LastWriteTime >= cutoffDate) continue;
@@ -287,7 +290,7 @@ public class CUE4ParseViewModel : ViewModelBase
             if (path.Contains("Plugin", StringComparison.OrdinalIgnoreCase) || path.Contains("Editor", StringComparison.OrdinalIgnoreCase)) continue;
 
             HomeVM.UpdateStatus($"Loading {file.Name}");
-            var assetArchive = await file.TryCreateReaderAsync();
+            var assetArchive = await file.SafeCreateReaderAsync();
             if (assetArchive is null) continue;
 
             try
@@ -306,13 +309,13 @@ public class CUE4ParseViewModel : ViewModelBase
     
     private async Task LoadApplicationAssets()
     {
-        if (await Provider.TryLoadObjectAsync("FortniteGame/Content/Balance/RarityData") is { } rarityData)
+        if (await Provider.SafeLoadPackageObjectAsync("FortniteGame/Content/Balance/RarityData") is { } rarityData)
         {
             for (var i = 0; i < rarityData.Properties.Count; i++)
                 RarityColors.Add(rarityData.GetByIndex<FRarityCollection>(i));
         }
 
-        if (await Provider.TryLoadObjectAsync("/BeanstalkCosmetics/Cosmetics/DataTables/DT_BeanstalkCosmetics_Colors") is UDataTable beanstalkColorTable)
+        if (await Provider.SafeLoadPackageObjectAsync("/BeanstalkCosmetics/Cosmetics/DataTables/DT_BeanstalkCosmetics_Colors") is UDataTable beanstalkColorTable)
         {
             foreach (var (name, fallback) in beanstalkColorTable.RowMap)
             {
@@ -321,7 +324,7 @@ public class CUE4ParseViewModel : ViewModelBase
             }
         }
         
-        if (await Provider.TryLoadObjectAsync("/BeanstalkCosmetics/Cosmetics/DataTables/DT_BeanstalkCosmetics_MaterialTypes") is UDataTable beanstalkMaterialTypesTable)
+        if (await Provider.SafeLoadPackageObjectAsync("/BeanstalkCosmetics/Cosmetics/DataTables/DT_BeanstalkCosmetics_MaterialTypes") is UDataTable beanstalkMaterialTypesTable)
         {
             foreach (var (name, fallback) in beanstalkMaterialTypesTable.RowMap)
             {
@@ -356,7 +359,7 @@ public class CUE4ParseViewModel : ViewModelBase
             }
         }
         
-        if (await Provider.TryLoadObjectAsync("/BeanstalkCosmetics/Cosmetics/DataTables/DT_PatternAtlasTextureSlots") is UDataTable beanstalkAtlasSlotsTable)
+        if (await Provider.SafeLoadPackageObjectAsync("/BeanstalkCosmetics/Cosmetics/DataTables/DT_PatternAtlasTextureSlots") is UDataTable beanstalkAtlasSlotsTable)
         {
             foreach (var (name, fallback) in beanstalkAtlasSlotsTable.RowMap)
             {

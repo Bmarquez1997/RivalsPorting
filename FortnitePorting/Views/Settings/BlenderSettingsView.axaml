@@ -59,12 +59,6 @@
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             
-            <ui:SettingsExpander Header="Merge Armatures" Description="All imported parts are merged together and properly parented. (Outfit Only)" IsVisible="{Binding !IsTastyRig}">
-                <ui:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding MergeArmatures}"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
-            
             <ui:SettingsExpander Header="Reorient Bones" Description="Reorients bones to point to their average child position." IsVisible="{Binding !IsTastyRig}">
                 <ui:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding ReorientBones}"/>
@@ -74,6 +68,12 @@
             <ui:SettingsExpander Header="Dynamic Bone Shape" Description="Dynamic bones, usually used for physics, will have a rectangular bone shape." IsVisible="{Binding IsTastyRig}">
                 <ui:SettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding UseDynamicBoneShape}"/>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+            
+            <ui:SettingsExpander Header="Simplify Face Bones" Description="Separate face bones into two bone collections in order to make posing easier for lobby models." IsVisible="{Binding IsTastyRig}">
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding SimplifyFaceBones}"/>
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             

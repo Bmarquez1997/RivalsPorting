@@ -9,7 +9,7 @@ bl_info = {
     "description": "Import Server for Rivals Porting",
     "author": "Half, DeveloperChipmunk",
     "blender": (4, 2, 0),
-    "version": (0, 1, 4),
+    "version": (0, 1, 5),
     "category": "Import-Export",
 }
 
