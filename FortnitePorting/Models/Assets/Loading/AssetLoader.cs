@@ -261,9 +261,9 @@ public partial class AssetLoader : ObservableObject
     {
         // var asset = await CUE4ParseVM.Provider.LoadAllObjectsAsync(data.PackageName.Text);
         var asset = await CUE4ParseVM.Provider.SafeLoadPackageObjectAsync(data.ObjectPath + "_C");
-        if (asset is UBlueprintGeneratedClass @class)
+        if (asset is UBlueprintGeneratedClass bpAsset)
         {
-            asset = await @class.ClassDefaultObject.TryLoadAsync();
+            asset = await bpAsset.ClassDefaultObject.TryLoadAsync();
         }
         if (asset == null) return;
 

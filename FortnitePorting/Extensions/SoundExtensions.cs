@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using ATL.Logging;
 using CUE4Parse_Conversion.Sounds;
 using CUE4Parse.GameTypes.FN.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Sound;
