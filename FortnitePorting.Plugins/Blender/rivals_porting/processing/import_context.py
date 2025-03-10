@@ -754,7 +754,7 @@ class ImportContext:
             replace_shader_node("MR Translucent")
             socket_mappings = translucent_mappings
 
-        if "Common_Eye" in base_material_path:
+        if "Common_Eye" in base_material_path or "Eye_Opt" in base_material_path:
             replace_shader_node("MR Eye")
             socket_mappings = eye_mappings
 
