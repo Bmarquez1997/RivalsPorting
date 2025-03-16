@@ -6,8 +6,8 @@ RivalsPorting - Automation of the Marvel Rivals Porting Process
 [![Discord](https://discord.com/api/guilds/866821077769781249/widget.png?style=shield)](https://discord.gg/X7dzY6TUzw)
 [![Blender](https://img.shields.io/badge/Blender-4.2+-blue?logo=blender&logoColor=white&color=orange)](https://www.blender.org/download/)
 [![Unreal](https://img.shields.io/badge/Unreal-5.4+-blue?logo=unreal-engine&logoColor=white&color=white)](https://www.unrealengine.com/en-US/download)
-[![Release](https://img.shields.io/github/release/bmarquez1997/RivalsPorting)]()
-[![Downloads](https://img.shields.io/github/downloads/bmarquez1997/RivalsPorting/total?color=green)]()
+[![Release](https://img.shields.io/github/release/Bmarquez1997/RivalsPorting)]()
+[![Downloads](https://img.shields.io/github/downloads/Bmarquez1997/RivalsPorting/total?color=green)]()
 ***
 
 ![RivalsPorting_Preview](https://github.com/user-attachments/assets/b484bd1a-785b-4d83-ba35-93065888aafb)
