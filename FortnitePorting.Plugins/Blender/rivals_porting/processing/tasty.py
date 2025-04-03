@@ -81,6 +81,7 @@ def create_tasty_rig(context, target_skeleton, options: TastyRigOptions):
     target_skeleton["is_tasty"] = True
     armature_data = target_skeleton.data
     is_metahuman = any(armature_data.bones, lambda bone: bone.name == "FACIAL_C_FacialRoot")
+    is_human = any(armature_data.bones, lambda bone: bone.name == "facial_master")
 
     base_collection = armature_data.collections.new("Base")
     rig_collection = armature_data.collections.new("Rig")
@@ -132,8 +133,8 @@ def create_tasty_rig(context, target_skeleton, options: TastyRigOptions):
         bone.tail = target_bone.tail
         bone.roll = target_bone.roll
 
-    r_eye_name = "FACIAL_R_Eye" if is_metahuman else "R_Eyeball_A_jnt" 
-    l_eye_name = "FACIAL_L_Eye" if is_metahuman else "L_Eyeball_A_jnt"
+    r_eye_name = "FACIAL_R_Eye" if is_metahuman else ("r_eye_ball" if is_human else "R_Eyeball_A_jnt")
+    l_eye_name = "FACIAL_L_Eye" if is_metahuman else ("l_eye_ball" if is_human else "L_Eyeball_A_jnt")
 
     # new name, parent name, (head, tail, roll)
     new_bones = [
@@ -230,6 +231,12 @@ def create_tasty_rig(context, target_skeleton, options: TastyRigOptions):
         ("calf_l", Lazy(lambda: edit_bones["foot_l"].head)),
         ("R_eye", Lazy(lambda: edit_bones["R_eye"].head - Vector((0, 0.1, 0)))),
         ("L_eye", Lazy(lambda: edit_bones["L_eye"].head - Vector((0, 0.1, 0)))),
+        ("FACIAL_R_Eye", Lazy(lambda: edit_bones["FACIAL_R_Eye"].head - Vector((0, 0.1, 0)))),
+        ("FACIAL_L_Eye", Lazy(lambda: edit_bones["FACIAL_L_Eye"].head - Vector((0, 0.1, 0)))),
+        ("r_eye_ball", Lazy(lambda: edit_bones["r_eye_ball"].head - Vector((0, 0.1, 0)))),
+        ("l_eye_ball", Lazy(lambda: edit_bones["l_eye_ball"].head - Vector((0, 0.1, 0)))),
+        ("FACIAL_L_EyeParallel", Lazy(lambda: edit_bones["FACIAL_L_EyeParallel"].head - Vector((0, 0.1, 0)))),
+        ("FACIAL_R_EyeParallel", Lazy(lambda: edit_bones["FACIAL_R_EyeParallel"].head - Vector((0, 0.1, 0)))),
         ("C_jaw", Lazy(lambda: edit_bones["C_jaw"].head - Vector((0, 0.1, 0)))),
     ]
 
@@ -698,6 +705,9 @@ def create_tasty_rig(context, target_skeleton, options: TastyRigOptions):
         CustomShape("FACIAL_R_Eye", "CTRL_Eye", "THEME02", collection=face_collection),
         CustomShape("FACIAL_L_Eye", "CTRL_Eye", "THEME02", collection=face_collection),
         CustomShape("FACIAL_C_Jaw", "CTRL_Jaw", "THEME02", collection=face_collection),
+        CustomShape("r_eye_ball", "CTRL_Eye", "THEME02", collection=face_collection),
+        CustomShape("l_eye_ball", "CTRL_Eye", "THEME02", collection=face_collection),
+        CustomShape("jaw", "CTRL_Jaw", "THEME02", scale=1.25, rotation=(radians(60), radians(90), 0), collection=face_collection),
 
         # reserve to not be affected by automatic facial bone detection
         CustomShape("R_eye_lid_upper_mid", None, "THEME02", collection=face_collection),
@@ -733,7 +743,7 @@ def create_tasty_rig(context, target_skeleton, options: TastyRigOptions):
         base_collection.assign(pose_bone)
         pose_bone.color.palette = "THEME10"
 
-    face_root_bones = ["faceAttach", "FACIAL_C_FacialRoot", "M_Head_A_jnt"]
+    face_root_bones = ["faceAttach", "FACIAL_C_FacialRoot", "M_Head_A_jnt", "facial_master"]
     dynamic_bone_names = ["_jnt", "hair", "whiskers", "brow", "hat", "fins", "skirt", "bow", "chain", "ear", "beard"]
     for pose_bone in pose_bones:
         existing_collections = pose_bone.bone.collections
@@ -746,7 +756,7 @@ def create_tasty_rig(context, target_skeleton, options: TastyRigOptions):
 
         has_vertex_group = pose_bone.color.palette != "THEME14"
 
-        if "tail" in pose_bone.name.casefold():
+        if "tail" in pose_bone.name.casefold() and "hair" not in pose_bone.name.casefold():
             tail_collection.assign(pose_bone)
 
             matches = re.findall(r'\d+', pose_bone.name)
