@@ -34,9 +34,9 @@ public static class SoundExtensions
             case "binka":
                 SaveBinkaAsWav(data, path);
                 break;
-            case "rada":
-                SaveRadaAsWav(data, path);
-                break;
+            // case "rada":
+            //     SaveRadaAsWav(data, path);
+            //     break;
         }
 
         return true;
@@ -104,30 +104,30 @@ public static class SoundExtensions
         MiscExtensions.TryDeleteFile(binkaPath);
     }
     
-    public static void SaveRadaAsWav(byte[] data, string outPath)
-    {
-        var radaPath = Path.ChangeExtension(outPath, "rada");
-        File.WriteAllBytes(radaPath, data);
-
-        using (var radaProcess = new Process())
-        {
-            radaProcess.StartInfo = new ProcessStartInfo
-            {
-                FileName = DependencyService.RadaDecoderFile.FullName,
-                Arguments = $"-i \"{radaPath}\" -o \"{outPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true
-            };
-
-            radaProcess.Start();
-            radaProcess.WaitForExit();
-            
-            Log.Information(radaProcess.StandardOutput.ReadToEnd());
-        }
-        
-        MiscExtensions.TryDeleteFile(radaPath);
-    }
+    // public static void SaveRadaAsWav(byte[] data, string outPath)
+    // {
+    //     var radaPath = Path.ChangeExtension(outPath, "rada");
+    //     File.WriteAllBytes(radaPath, data);
+    //
+    //     using (var radaProcess = new Process())
+    //     {
+    //         radaProcess.StartInfo = new ProcessStartInfo
+    //         {
+    //             FileName = DependencyService.RadaDecoderFile.FullName,
+    //             Arguments = $"-i \"{radaPath}\" -o \"{outPath}\"",
+    //             UseShellExecute = false,
+    //             CreateNoWindow = true,
+    //             RedirectStandardOutput = true
+    //         };
+    //
+    //         radaProcess.Start();
+    //         radaProcess.WaitForExit();
+    //         
+    //         Log.Information(radaProcess.StandardOutput.ReadToEnd());
+    //     }
+    //     
+    //     MiscExtensions.TryDeleteFile(radaPath);
+    // }
     
     public static void SaveADPCMAsWav(byte[] data, string outPath)
     {
