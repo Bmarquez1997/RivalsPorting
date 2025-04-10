@@ -1,0 +1,38 @@
+{
+	"FileVersion": 3,
+	"Version": 3,
+	"VersionName": "0.1.7",
+	"FriendlyName": "RivalsPorting",
+	"Description": "Import Server for Rivals Porting",
+	"Category": "Importers",
+	"CreatedBy": "Half, DeveloperChipmunk",
+	"CreatedByURL": "https://github.com/Bmarquez1997/RivalsPorting",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "RivalsPorting",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "UEFormat",
+			"Enabled": true
+		},
+		{
+			"Name": "PluginUtils",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		}
+	]
+}

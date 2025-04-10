@@ -44,7 +44,7 @@ public partial class UnrealPluginViewModel : ViewModelBase
         {
             var installation = Projects[SelectedProjectIndex];
             
-            Directory.Delete(installation.FortnitePortingFolder, true);
+            Directory.Delete(installation.RivalsPortingFolder, true);
             Directory.Delete(installation.UEFormatFolder, true);
 
             var selectedIndexToRemove = SelectedProjectIndex;

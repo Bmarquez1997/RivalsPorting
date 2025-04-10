@@ -20,8 +20,8 @@
     </ItemGroup>
     
     <ItemGroup>
-      <Compile Remove="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
-      <Content Include="Unreal\FortnitePorting\Source\FortnitePorting\FortnitePorting.Build.cs" />
+      <Compile Remove="Unreal\RivalsPorting\Source\RivalsPorting\RivalsPorting.Build.cs" />
+      <Content Include="Unreal\RivalsPorting\Source\RivalsPorting\RivalsPorting.Build.cs" />
       <Compile Remove="Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
       <Content Include="Unreal\UEFormat\Source\UEFormat\UEFormat.Build.cs" />
     </ItemGroup>
