@@ -12,7 +12,7 @@ public static class DependencyService
     public static bool Finished;
     
     public static readonly FileInfo UpdaterFile = new(Path.Combine(DataFolder.FullName, "release", "FortnitePorting.Updater.exe"));
-    public static readonly FileInfo MappingsFile = new(Path.Combine(DataFolder.FullName, "5.3.2-1756321+++depot_marvel+S1_2_release-Marvel+PY.usmap"));
+    public static readonly FileInfo MappingsFile = new(Path.Combine(DataFolder.FullName, "5.3.2-1811752+++depot_marvel+S2_1_release-Marvel.usmap"));
     
     public static readonly FileInfo BinkaDecoderFile = new(Path.Combine(DataFolder.FullName, "binka", "binkadec.exe"));
     // public static readonly FileInfo RadaDecoderFile = new(Path.Combine(DataFolder.FullName, "rada", "radadec.exe"));
@@ -24,7 +24,7 @@ public static class DependencyService
     {
         TaskService.Run(() =>
         {
-            EnsureResourceBased("Assets/Mappings/5.3.2-1756321+++depot_marvel+S1_2_release-Marvel+PY.usmap", MappingsFile);
+            EnsureResourceBased("Assets/Mappings/5.3.2-1811752+++depot_marvel+S2_1_release-Marvel.usmap", MappingsFile);
             EnsureResourceBased("Assets/Dependencies/binkadec.exe", BinkaDecoderFile);
             // EnsureResourceBased("Assets/Dependencies/radadec.exe", RadaDecoderFile);
             EnsureResourceBased("Assets/Dependencies/FortnitePorting.Updater.exe", UpdaterFile);
