@@ -13,6 +13,12 @@ public:
 	
 	static void EnsureDependencies();
 	inline static UMaterial* DefaultMaterial;
+	inline static UMaterial* HeroMaterial;
+	inline static UMaterial* HairMaterial;
+	inline static UMaterial* EyeMaterial;
+	inline static UMaterial* EyeGlassMaterial;
+	inline static UMaterial* TranslucentMaterial;
+	inline static UMaterial* RimMaterial;
 	inline static UMaterial* LayerMaterial;
 	
 private:

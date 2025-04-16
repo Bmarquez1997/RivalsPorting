@@ -324,7 +324,8 @@ eye_glass_mappings = MappingCollection(
     ],
     vectors=[
         SlotMapping("Matcap - Color"),
-        SlotMapping("FakeHighlight_Color")
+        SlotMapping("FakeHighlight_Color"),
+        SlotMapping("HighlightTint", "FakeHighlight_Color")
     ],
     switches=[
         SlotMapping("FakeHighlight?")

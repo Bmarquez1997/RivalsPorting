@@ -29,5 +29,10 @@ class FMaterialMappings
 {
 public:
 	static const FMappingCollection Default;
+	static const FMappingCollection Hero;
+	static const FMappingCollection Hair;
+	static const FMappingCollection Eye;
+	static const FMappingCollection EyeGlass;
+	static const FMappingCollection Translucent;
 	static const FMappingCollection Layer;
 };

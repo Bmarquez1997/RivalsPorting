@@ -18,4 +18,24 @@ public:
 		 "Diffuse_Texture_5", "SpecularMasks_5", "Normals_Texture_5", "Emissive_Texture_5",
 		 "Diffuse_Texture_6", "SpecularMasks_6", "Normals_Texture_6", "Emissive_Texture_6"
 	};
+
+	static inline TArray<FString> HeroBaseMaterialNames
+	{
+		"_Body", "_Skin", "Common_Cape", "Common_Crystal"
+	};
+
+	static inline TArray<FString> EyeBaseMaterialNames
+	{
+		"Common_Eye", "Eye_Opt"
+	};
+
+	static inline TArray<FString> EyeGlassBaseMaterialNames
+	{
+		"EyesHighLight", "EyesHighLight", "M_CrystalBall_Glass", "SimpleGlass"
+	};
+
+	static inline TArray<FString> TranslucentBaseMaterialNames
+	{
+		"Translucent", "FakeEyeShadow"
+	};
 };

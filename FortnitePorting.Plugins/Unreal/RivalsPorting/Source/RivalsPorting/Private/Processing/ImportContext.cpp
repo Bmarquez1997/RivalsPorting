@@ -46,10 +46,23 @@ void FImportContext::Run(const TSharedPtr<FJsonObject>& Json)
 void FImportContext::EnsureDependencies()
 {
 	if (DefaultMaterial == nullptr)
-		DefaultMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_FP_Default.M_FP_Default"));
+		DefaultMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_Default.M_MR_Default"));
+	if (HeroMaterial == nullptr)
+		HeroMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_Hero.M_MR_Hero"));
+	if (HairMaterial == nullptr)
+		HairMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_Hair.M_MR_Hair"));
+	if (EyeMaterial == nullptr)
+		EyeMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_Eye.M_MR_Eye"));
+	if (EyeGlassMaterial == nullptr)
+		EyeGlassMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_EyeGlass.M_MR_EyeGlass"));
+	if (TranslucentMaterial == nullptr)
+		TranslucentMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_Translucent.M_MR_Translucent"));
+	if (RimMaterial == nullptr)
+		RimMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_MR_Rim.M_MR_Rim"));
 	
 	if (LayerMaterial == nullptr)
 		LayerMaterial = Cast<UMaterial>(UEditorAssetLibrary::LoadAsset("/RivalsPorting/Materials/M_FP_Layer.M_FP_Layer"));
+	// Extra materials here
 }
 
 void FImportContext::ImportMeshData(const FMeshExport& Export)
@@ -190,6 +203,41 @@ UMaterialInstanceConstant* FImportContext::ImportMaterial(const FExportMaterial&
 	{
 		TargetMaterial = LayerMaterial;
 		TargetMappings = FMaterialMappings::Layer;
+	}
+	
+	if (FUtils::Any<FString>(FNames::HeroBaseMaterialNames, [&](FString name) { return Material.BaseMaterialPath.Contains(name, ESearchCase::IgnoreCase); }))
+	{
+		TargetMaterial = HeroMaterial;
+		TargetMappings = FMaterialMappings::Hero;
+	}
+	
+	if (Material.BaseMaterialPath.Contains("Hair", ESearchCase::IgnoreCase))
+	{
+		TargetMaterial = HairMaterial;
+		TargetMappings = FMaterialMappings::Hair;
+	}
+	
+	if (FUtils::Any<FString>(FNames::EyeBaseMaterialNames, [&](FString name) { return Material.BaseMaterialPath.Contains(name, ESearchCase::IgnoreCase); }))
+	{
+		TargetMaterial = EyeMaterial;
+		TargetMappings = FMaterialMappings::Eye;
+	}
+	
+	if (FUtils::Any<FString>(FNames::EyeGlassBaseMaterialNames, [&](FString name) { return Material.BaseMaterialPath.Contains(name, ESearchCase::IgnoreCase); }))
+	{
+		TargetMaterial = EyeGlassMaterial;
+		TargetMappings = FMaterialMappings::EyeGlass;
+	}
+	
+	if (FUtils::Any<FString>(FNames::TranslucentBaseMaterialNames, [&](FString name) { return Material.BaseMaterialPath.Contains(name, ESearchCase::IgnoreCase); }))
+	{
+		TargetMaterial = TranslucentMaterial;
+		TargetMappings = FMaterialMappings::Translucent;
+	}
+	
+	if (Material.BaseMaterialPath.Contains("Rim", ESearchCase::IgnoreCase))
+	{
+		TargetMaterial = RimMaterial;
 	}
 	
 	MaterialInstance->Parent = TargetMaterial;
