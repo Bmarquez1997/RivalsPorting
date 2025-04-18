@@ -12,6 +12,11 @@ RivalsPorting - Automation of the Marvel Rivals Porting Process
 
 ![RivalsPorting_Preview](https://github.com/user-attachments/assets/b484bd1a-785b-4d83-ba35-93065888aafb)
 
+## Add to Portle
+Add the following URL in the Repositories tab of Portle
+```
+https://raw.githubusercontent.com/Bmarquez1997/RivalsPorting/refs/heads/RivalsPorting/Repository.json
+```
 
 ## Building RivalsPorting
 
