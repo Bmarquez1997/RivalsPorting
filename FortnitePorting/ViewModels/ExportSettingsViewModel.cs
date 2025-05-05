@@ -58,6 +58,8 @@ public partial class BaseExportSettings : ViewModelBase
     [ObservableProperty] private EImageFormat _imageFormat = EImageFormat.PNG;
     [ObservableProperty] private bool _exportMaterials = true;
     
+    [ObservableProperty] private bool _importGameModel = false;
+    
     [ObservableProperty] private EMeshFormat _meshFormat = EMeshFormat.UEFormat;
     [ObservableProperty] private bool _importInstancedFoliage = true;
     

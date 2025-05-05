@@ -52,8 +52,11 @@ public partial class AssetsViewModel : ViewModelBase
                 var creationData = asset.Asset.CreationData;
                 return new PersonalExport(creationData.Object.GetPathName());
             });
-            
-            await ApiVM.FortnitePorting.PostExportsAsync(exports);
+
+            if (exports != null && exports.Any())
+            {
+                await ApiVM.FortnitePorting.PostExportsAsync(exports);
+            }
         }
     }
     
