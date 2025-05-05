@@ -12,7 +12,6 @@ namespace FortnitePorting.Models.CUE4Parse;
 public class HybridFileProvider : AbstractVfsFileProvider
 {
     public bool LoadExtraDirectories;
-    private readonly bool IsOptionalLoader;
     private readonly DirectoryInfo WorkingDirectory;
     private readonly IEnumerable<DirectoryInfo> ExtraDirectories;
     private const SearchOption SearchOption = System.IO.SearchOption.AllDirectories;
@@ -23,17 +22,15 @@ public class HybridFileProvider : AbstractVfsFileProvider
         IgnoreInaccessible = true,
     };
 
-    public HybridFileProvider(VersionContainer? version = null, bool isOptionalLoader = false)  : base(version, StringComparer.OrdinalIgnoreCase)
+    public HybridFileProvider(VersionContainer? version = null)  : base(version, StringComparer.OrdinalIgnoreCase)
     {
-        IsOptionalLoader = isOptionalLoader;
         SkipReferencedTextures = true;
     }
 
-    public HybridFileProvider(string directory, List<DirectoryInfo>? extraDirectories = null, VersionContainer? version = null, bool isOptionalLoader = false) : this(version)
+    public HybridFileProvider(string directory, List<DirectoryInfo>? extraDirectories = null, VersionContainer? version = null) : this(version)
     {
         WorkingDirectory = new DirectoryInfo(directory);
         ExtraDirectories = extraDirectories?.Where(dir => dir.Exists) ?? [];
-        IsOptionalLoader = isOptionalLoader;
         SkipReferencedTextures = true;
     }
 
@@ -58,7 +55,9 @@ public class HybridFileProvider : AbstractVfsFileProvider
         {
             var extension = file.Extension.SubstringAfter('.').ToLower();
             if (extension is not ("pak" or "utoc")) continue;
+
             RegisterVfs(file.FullName, [ file.OpenRead() ], it => new FStreamArchive(it, File.OpenRead(it), Versions));
+
         }
     }
 }

@@ -11,13 +11,13 @@ using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.UE4.Versions;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Application;
+using FortnitePorting.Framework;
 using FortnitePorting.Models.API;
 using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Settings;
 using FortnitePorting.Services;
 using FortnitePorting.Shared;
-using FortnitePorting.Shared.Framework;
 using FortnitePorting.Shared.Services;
 using FortnitePorting.Shared.Validators;
 using FortnitePorting.Views;
@@ -32,7 +32,7 @@ public partial class WelcomeViewModel : ViewModelBase
     [ObservableProperty] private InstallationProfile _profile = new()
     {
         ProfileName = "Default",
-        ArchiveDirectory = string.Empty
+        ArchiveDirectory = null
     };
     
     public override async Task Initialize()
@@ -63,6 +63,8 @@ public partial class WelcomeViewModel : ViewModelBase
     {
         AppSettings.Current.Installation.Profiles.Add(Profile);
         AppSettings.Current.Installation.FinishedWelcomeScreen = true;
+        
+        AppSettings.Current.Application.NextKofiAskDate = DateTime.Today.AddDays(7);
         
         AppWM.SetupTabsAreVisible = false;
         AppWM.Navigate<HomeView>();

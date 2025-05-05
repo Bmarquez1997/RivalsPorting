@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -11,6 +12,7 @@ using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Services;
 using FortnitePorting.Shared;
 using FortnitePorting.Shared.Validators;
+using FortnitePorting.Validators;
 using Newtonsoft.Json;
 
 namespace FortnitePorting.Models.Settings;
@@ -26,13 +28,13 @@ public partial class InstallationProfile : ObservableValidator
     private EFortniteVersion _fortniteVersion = EFortniteVersion.LatestInstalled;
     
     [NotifyDataErrorInfo]
-    [ArchiveDirectory]
+    [ArchiveDirectory(canValidateProperty: nameof(ArchiveDirectoryEnabled))]
     [ObservableProperty] private string _archiveDirectory;
     
     [ObservableProperty] private EGame _unrealVersion = EGame.GAME_MarvelRivals;
     
     [NotifyDataErrorInfo]
-    [EncryptionKey]
+    [EncryptionKey(canValidateProperty: nameof(EncryptionKeyEnabled))]
     [ObservableProperty] 
     private FileEncryptionKey _mainKey = FileEncryptionKey.Empty;
     
@@ -82,5 +84,19 @@ public partial class InstallationProfile : ObservableValidator
     public override string ToString()
     {
         return ProfileName;
+    }
+
+    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        switch (e.PropertyName)
+        {
+            case nameof(FortniteVersion):
+            {
+                ValidateAllProperties();
+                break;
+            }
+        }
     }
 }

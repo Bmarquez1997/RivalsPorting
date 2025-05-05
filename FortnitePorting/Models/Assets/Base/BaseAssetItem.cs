@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,7 +10,7 @@ using FortnitePorting.Models.Assets.Custom;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Shared.Models.Clipboard;
 using SkiaSharp;
-using SkiaExtensions = FortnitePorting.Shared.Extensions.SkiaExtensions;
+using SkiaExtensions = FortnitePorting.Extensions.SkiaExtensions;
 
 namespace FortnitePorting.Models.Assets.Base;
 
@@ -30,8 +31,19 @@ public abstract partial class BaseAssetItem : ObservableObject
     private SKColor InnerBackgroundColor { get; set; } = SKColor.Parse("#50C8FF");
     private SKColor OuterBackgroundColor { get; set; } = SKColor.Parse("#1B7BCF");
     
-    public bool Match(string filter)
+    public bool Match(string filter, bool useRegex = false)
     {
+        if (useRegex)
+        {
+            return CreationData switch
+            {
+                AssetItemCreationArgs assetArgs => Regex.IsMatch(assetArgs.DisplayName, filter)
+                                                   ||  Regex.IsMatch(assetArgs.Object.Name, filter),
+                CustomAssetItemCreationArgs creationArgs =>  Regex.IsMatch(creationArgs.DisplayName, filter),
+                _ => true
+            };
+        }
+        
         return CreationData switch
         {
             AssetItemCreationArgs assetArgs => MiscExtensions.Filter(assetArgs.DisplayName, filter)

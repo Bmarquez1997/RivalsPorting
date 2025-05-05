@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentAvalonia.UI.Media.Animation;
+using FortnitePorting.Framework;
 using FortnitePorting.Shared;
-using FortnitePorting.Shared.Framework;
 using FortnitePorting.Shared.Models;
 using FortnitePorting.Shared.Validators;
 using NAudio.Wave;
@@ -22,6 +22,7 @@ public partial class DebugSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _downloadDebuggingSymbols;
     [ObservableProperty] private int _requestTimeoutSeconds = 10;
     [ObservableProperty] private bool _showMapDebugInfo = false;
+    [ObservableProperty] private bool _isConsoleVisible = false;
     
     protected override async void OnPropertyChanged(PropertyChangedEventArgs e)
     {
@@ -54,6 +55,11 @@ public partial class DebugSettingsViewModel : ViewModelBase
             {
                 if (MapVM is not null)
                     MapVM.ShowDebugInfo = ShowMapDebugInfo;
+                break;
+            }
+            case nameof(IsConsoleVisible):
+            {
+                AppWM.ConsoleIsVisible = IsConsoleVisible;
                 break;
             }
         }

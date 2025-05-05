@@ -16,6 +16,7 @@ using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.GameplayTags;
 using DynamicData;
 using DynamicData.Binding;
+using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets.Asset;
 using FortnitePorting.Models.Assets.Base;
 using FortnitePorting.Models.Assets.Custom;
@@ -60,7 +61,9 @@ public partial class AssetLoader : ObservableObject
     private List<FAssetData> Assets;
 
     private bool BeganLoading;
-    private bool IsPaused;
+    
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(PauseIcon))] private bool _isPaused = false;
+    public MaterialIconKind PauseIcon => IsPaused ? MaterialIconKind.Play : MaterialIconKind.Pause;
     
     [ObservableProperty] private ObservableCollection<BaseAssetInfo> _selectedAssetInfos = [];
     
@@ -75,6 +78,7 @@ public partial class AssetLoader : ObservableObject
     
     public readonly IObservable<Func<BaseAssetItem, bool>> AssetFilter;
     [ObservableProperty] private string _searchFilter = string.Empty;
+    [ObservableProperty] private bool _useRegex = false;
     [ObservableProperty] private ObservableCollection<string> _searchAutoComplete = [];
 
     
@@ -157,7 +161,7 @@ public partial class AssetLoader : ObservableObject
         Type = exportType;
         
         AssetFilter = this
-            .WhenAnyValue(loader => loader.SearchFilter, loader => loader.ActiveFilters)
+            .WhenAnyValue(loader => loader.SearchFilter, loader => loader.ActiveFilters, loader => loader.UseRegex)
             .Select(CreateAssetFilter);
         
         AssetSort = this
@@ -378,20 +382,18 @@ public partial class AssetLoader : ObservableObject
         while (IsPaused) await Task.Delay(1);
     }
     
-    private static Func<BaseAssetItem, bool> CreateAssetFilter((string, ObservableCollection<FilterItem>) values)
+    private static Func<BaseAssetItem, bool> CreateAssetFilter((string, ObservableCollection<FilterItem>, bool) values)
     {
-        var (searchFilter, filters) = values;
+        var (searchFilter, filters, useRegex) = values;
         return asset =>
         {
             if (asset is AssetItem assetItem)
             {
-                return assetItem.Match(searchFilter) && filters.All(x => x.Predicate.Invoke(assetItem)) 
+                return assetItem.Match(searchFilter, useRegex) && filters.All(x => x.Predicate.Invoke(assetItem)) 
                                                      && assetItem.CreationData.IsHidden == filters.Any(filter => filter.Title.Equals("Hidden Items"));
             }
-            else
-            {
-                return asset.Match(searchFilter);
-            }
+
+            return asset.Match(searchFilter, useRegex);
         };
         
     }

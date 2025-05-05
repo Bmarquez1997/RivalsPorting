@@ -11,10 +11,11 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
+using FortnitePorting.Extensions;
 using FortnitePorting.Shared.Extensions;
 using SkiaSharp;
 using AssetLoader = FortnitePorting.Models.Assets.Loading.AssetLoader;
-using SkiaExtensions = FortnitePorting.Shared.Extensions.SkiaExtensions;
+using SkiaExtensions = FortnitePorting.Extensions.SkiaExtensions;
 
 namespace FortnitePorting.Models.Assets;
 
@@ -61,7 +62,7 @@ public partial class AssetStyleInfo : ObservableObject
         foreach (var style in styles)
         {
             var previewBitmap = fallbackPreviewImage;
-            if (AssetLoader.GetIcon(style)?.Decode() is { } iconBitmap)
+            if (AssetLoader.GetIcon(style)?.Decode()?.ToSkBitmap() is { } iconBitmap)
             {
                 var rarity = style.GetOrDefault("Rarity", EFortRarity.Uncommon);
                 var image = CreateDisplayImage(iconBitmap, rarity);

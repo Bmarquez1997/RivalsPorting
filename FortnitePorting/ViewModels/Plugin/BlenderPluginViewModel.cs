@@ -12,10 +12,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CUE4Parse.Utils;
 using FluentAvalonia.UI.Controls;
+using FortnitePorting.Framework;
 using FortnitePorting.Models.Plugin;
 using FortnitePorting.Shared;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Framework;
 using FortnitePorting.Shared.Services;
 using Newtonsoft.Json;
 using Serilog;
@@ -133,7 +133,7 @@ public partial class BlenderPluginViewModel : ViewModelBase
             }
 
             var previousVersion = installation.ExtensionVersion;
-            installation.Install();
+            installation.Install(verbose);
 
             AppWM.Message("Blender Extension", $"Successfully updated the Blender {installation.BlenderVersion} extension from {previousVersion} to {currentVersion}");
         }

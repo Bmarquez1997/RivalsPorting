@@ -25,7 +25,6 @@ using FortnitePorting.OnlineServices.Models;
 using FortnitePorting.OnlineServices.Packet;
 using FortnitePorting.Shared;
 using FortnitePorting.Shared.Extensions;
-using FortnitePorting.Shared.Framework;
 using FortnitePorting.Shared.Services;
 using FortnitePorting.ViewModels;
 using FortnitePorting.ViewModels.Settings;
@@ -93,7 +92,6 @@ public static class OnlineService
                             }
                             catch (Exception e)
                             {
-                                Log.Error(e.ToString());
                                 ChatVM.AreServicesDown = true;
                             }
 
