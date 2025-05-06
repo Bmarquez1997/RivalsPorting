@@ -27,8 +27,6 @@ public partial class InstallationProfile : ObservableValidator
     [NotifyPropertyChangedFor(nameof(IsCustom))]
     private EFortniteVersion _fortniteVersion = EFortniteVersion.LatestInstalled;
     
-    [NotifyDataErrorInfo]
-    [ArchiveDirectory(canValidateProperty: nameof(ArchiveDirectoryEnabled))]
     [ObservableProperty] private string _archiveDirectory;
     
     [ObservableProperty] private EGame _unrealVersion = EGame.GAME_MarvelRivals;

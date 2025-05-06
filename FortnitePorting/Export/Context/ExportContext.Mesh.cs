@@ -8,6 +8,7 @@ using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
+using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using FortnitePorting.Export.Models;
 using FortnitePorting.Shared.Extensions;
@@ -116,10 +117,23 @@ public partial class ExportContext
     
     public ExportMesh? MeshComponent(USkeletalMeshComponent meshComponent)
     {
-        var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
-        if (mesh is null) return null;
-
-        var exportMesh = Mesh(mesh);
+        ExportMesh exportMesh = null;
+        if (meshComponent.TryGetValue(out FSoftObjectPath objPath, "SkeletalMeshAsset_SoftPtr")
+            && objPath.TryLoad(out UObject loadedMesh))
+        {
+            var mesh = loadedMesh;
+            exportMesh = Mesh(mesh);
+        }
+        else if (meshComponent.Template != null && meshComponent.Template.TryLoad(out UObject baseMesh))
+        {
+            exportMesh = MeshComponent(baseMesh);
+        }
+        else if (meshComponent.GetSkeletalMesh() != null)
+        {
+            var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
+            exportMesh = Mesh(mesh);
+        }
+        
         if (exportMesh is null) return null;
         
         var overrideMaterials = meshComponent.GetOrDefault("OverrideMaterials", Array.Empty<UMaterialInterface?>());
