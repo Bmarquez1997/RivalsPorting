@@ -5,9 +5,9 @@
   "Icon": "https://raw.githubusercontent.com/Bmarquez1997/RivalsPorting/refs/tags/MR-0.1.5/FortnitePorting/Assets/LogoV3.png",
   "Versions": [
     {
-      "Version": "v0.1.7-alpha",
-      "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.1.7/RivalsPorting.exe",
-      "UploadTime": "04-10-2025"
+      "Version": "v0.1.5-alpha",
+      "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.1.5/RivalsPorting.exe",
+      "UploadTime": "03-10-2025"
     },
     {
       "Version": "v0.1.6-alpha",
@@ -15,9 +15,14 @@
       "UploadTime": "04-03-2025"
     },
     {
-      "Version": "v0.1.5-alpha",
-      "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.1.5/RivalsPorting.exe",
-      "UploadTime": "03-10-2025"
+      "Version": "v0.1.7-alpha",
+      "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.1.7/RivalsPorting.exe",
+      "UploadTime": "04-10-2025"
+    },
+    {
+      "Version": "v0.1.8-alpha",
+      "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.1.8/RivalsPorting.exe",
+      "UploadTime": "05-07-2025"
     }
   ]
 }
