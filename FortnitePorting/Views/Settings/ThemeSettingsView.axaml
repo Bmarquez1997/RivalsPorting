@@ -29,7 +29,7 @@
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             
-            <ui:SettingsExpander Header="Background Color" Description="The background color for any window created by Fortnite Porting." IsEnabled="{Binding !UseMica}">
+            <ui:SettingsExpander Header="Background Color" Description="The background color for any window created by Rivals Porting." IsEnabled="{Binding !UseMica}">
                 <ui:SettingsExpander.Footer>
                     <ColorPicker Color="{Binding BackgroundColor}" ColorSpectrumShape="Ring" IsColorPaletteVisible="False" IsAlphaEnabled="False" IsAlphaVisible="False"/>
                 </ui:SettingsExpander.Footer>

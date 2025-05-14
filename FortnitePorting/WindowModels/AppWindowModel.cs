@@ -74,7 +74,7 @@ public partial class AppWindowModel : WindowModelBase
                 var dialog = new ContentDialog
                 {
                     Title = "No Update Available",
-                    Content = "Fortnite Porting is up to date.",
+                    Content = "Rivals Porting is up to date.",
                     CloseButtonText = "Continue"
                 };
 
@@ -104,7 +104,7 @@ public partial class AppWindowModel : WindowModelBase
                 var dialog = new ContentDialog
                 {
                     Title = "Update Available",
-                    Content = $"Fortnite Porting {newestRelease.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)} is now available. Would you like to update?",
+                    Content = $"Rivals Porting {newestRelease.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)} is now available. Would you like to update?",
                     CloseButtonText = "No",
                     PrimaryButtonText = "Yes",
                     PrimaryButtonCommand = new RelayCommand(async () =>
@@ -120,9 +120,9 @@ public partial class AppWindowModel : WindowModelBase
                             "--silent",
                             "--skip-setup",
                             $"--add-repository {FortnitePortingAPI.REPOSITORY_URL}",
-                            $"--import-profile \"Fortnite Porting\" \"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName + ".exe")}\" \"FortnitePorting\"",
-                            "--update-profile \"Fortnite Porting\" -force",
-                            "--launch-profile \"Fortnite Porting\"",
+                            $"--import-profile \"Rivals Porting\" \"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName + ".exe")}\" \"FortnitePorting\"",
+                            "--update-profile \"Rivals Porting\" -force",
+                            "--launch-profile \"Rivals Porting\"",
                         };
                         
                         Process.Start(new ProcessStartInfo
@@ -160,12 +160,12 @@ public partial class AppWindowModel : WindowModelBase
                 var dialog = new ContentDialog
                 {
                     Title = "Update Available",
-                    Content = $"Fortnite Porting {releaseInfo.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)} is now available. Would you like to update?",
+                    Content = $"Rivals Porting {releaseInfo.Version.GetDisplayString(EVersionStringType.IdentifierPrefix)} is now available. Would you like to update?",
                     CloseButtonText = "No",
                     PrimaryButtonText = "Yes",
                     PrimaryButtonCommand = new RelayCommand(async () =>
                     {
-                        var updatedExecutableName = $"FortnitePorting-{releaseInfo.Version}.exe";
+                        var updatedExecutableName = $"RivalsPorting-{releaseInfo.Version}.exe";
                         var updatedPath = Path.Combine(DataFolder.FullName, "release", updatedExecutableName);
                         if (!File.Exists(updatedPath))
                         {
@@ -192,7 +192,7 @@ public partial class AppWindowModel : WindowModelBase
                 var dialog = new ContentDialog
                 {
                     Title = "No Update Available",
-                    Content = "Fortnite Porting is up to date.",
+                    Content = "Rivals Porting is up to date.",
                     CloseButtonText = "Continue"
                 };
 
