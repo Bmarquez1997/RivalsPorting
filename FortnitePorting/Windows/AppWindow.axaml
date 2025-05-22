@@ -94,7 +94,7 @@
                      </ui:NavigationViewItem.IconSource>
                  </ui:NavigationViewItem>
                  <ui:NavigationViewItemSeparator/>
-                 <ui:NavigationViewItem Content="Console" Tag="Console" IsEnabled="{Binding !SetupTabsAreVisible}" IsVisible="{Binding ConsoleIsVisible}">
+                 <ui:NavigationViewItem Content="Console" Tag="Console" IsEnabled="{Binding !SetupTabsAreVisible}">
                      <ui:NavigationViewItem.IconSource>
                          <ui:PathIconSource Data="{ext:MaterialKindToGeometry Console}"/>
                      </ui:NavigationViewItem.IconSource>

@@ -44,7 +44,8 @@ public partial class AssetStyleInfo : ObservableObject
                 var stylePreviewPath = "Marvel/Content/Marvel/UI/Textures/Item/Skin/item_skin_" + skinId;
                 if (CUE4ParseVM.Provider.TryLoadPackageObject(stylePreviewPath, out UTexture2D previewTexture))
                 {
-                    previewBitmap = previewTexture.Decode()!.ToWriteableBitmap();
+                    var previewDecodedTex = previewTexture.Decode();
+                    if (previewDecodedTex != null) previewBitmap = previewDecodedTex.ToWriteableBitmap();
                 }
             }
             

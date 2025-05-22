@@ -100,18 +100,21 @@ public static class Exporter
                 var styles = metaData.ExportLocation.IsFolder() ? assetInfo.GetAllStyles() : assetInfo.GetSelectedStyles();
                 var exportType = asset.CreationData.ExportType;
 
-                var styleData = (AssetStyleData)styles[0];
-                if (metaData.Settings.ImportGameModel
-                    && styleData.StyleData.TryGetValue(out FStructFallback resultInfoStruct, "ResultInfo")
-                    && resultInfoStruct.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
-                    && likeActorClass.ClassDefaultObject.TryLoad(out UObject likeActorObject))
+                foreach (AssetStyleData styleData in styles)
                 {
-                    asset.CreationData.Object = likeActorObject;
-                }
-                else if (styleData.StyleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass")
-                         && showActorClass.ClassDefaultObject.TryLoad(out UObject showActorObject))
-                {
-                    asset.CreationData.Object = showActorObject;
+                    if (metaData.Settings.ImportGameModel
+                        && styleData.StyleData.TryGetValue(out FStructFallback resultInfoStruct, "ResultInfo")
+                        && resultInfoStruct.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
+                        && likeActorClass.ClassDefaultObject.TryLoad(out UObject likeActorObject))
+                    {
+                        asset.CreationData.Object = likeActorObject;
+                    }
+                    else if (styleData.StyleData.TryGetValue(out UBlueprintGeneratedClass showActorClass,
+                                 "ShowActorClass")
+                             && showActorClass.ClassDefaultObject.TryLoad(out UObject showActorObject))
+                    {
+                        asset.CreationData.Object = showActorObject;
+                    }
                 }
 
                 return CreateExport(asset.CreationData.DisplayName, asset.CreationData.Object, exportType, styles,

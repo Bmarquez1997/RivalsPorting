@@ -43,6 +43,12 @@
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             
+            <ui:SettingsExpander Header="Import Game Models" Description="Whether or not to import the in-game model instead of the lobby model.">
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding ImportGameModel}"/>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+            
             <ui:SettingsExpander Header="Compression" Description="The type of compression that should be used on 'UE Format' assets.">
                 <ui:SettingsExpander.Footer>
                     <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type enums:EFileCompressionFormat}}"
@@ -108,12 +114,6 @@
                     <ui:NumberBox Value="{Binding TargetLOD}" 
                                   Minimum="0"
                                   SpinButtonPlacementMode="Inline"/>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
-            
-            <ui:SettingsExpander Header="Import Game Models" Description="Whether or not to import the in-game model instead of the lobby model.">
-                <ui:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding ImportGameModel}"/>
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
             
