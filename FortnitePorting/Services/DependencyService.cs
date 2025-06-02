@@ -11,7 +11,7 @@ public static class DependencyService
 {
     public static bool Finished;
     
-    public static readonly FileInfo MappingsFile = new(Path.Combine(DataFolder.FullName, "5.3.2-1933977+++depot_marvel+S2_1_release-Marvel+PY.usmap"));
+    public static readonly FileInfo MappingsFile = new(Path.Combine(DataFolder.FullName, "5.3.2-1967306+++depot_marvel+S2_2_release-Marvel+PY.usmap"));
     
     public static readonly FileInfo BinkaDecoderFile = new(Path.Combine(DataFolder.FullName, "binka", "binkadec.exe"));
     // public static readonly FileInfo RadaDecoderFile = new(Path.Combine(DataFolder.FullName, "rada", "radadec.exe"));
@@ -23,7 +23,7 @@ public static class DependencyService
     {
         TaskService.Run(() =>
         {
-            EnsureResourceBased("Assets/Mappings/5.3.2-1933977+++depot_marvel+S2_1_release-Marvel+PY.usmap", MappingsFile);
+            EnsureResourceBased("Assets/Mappings/5.3.2-1967306+++depot_marvel+S2_2_release-Marvel+PY.usmap", MappingsFile);
             EnsureResourceBased("Assets/Dependencies/binkadec.exe", BinkaDecoderFile);
             // EnsureResourceBased("Assets/Dependencies/radadec.exe", RadaDecoderFile);
             EnsureVgmStream();
