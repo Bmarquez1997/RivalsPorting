@@ -1,29 +1,10 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using CUE4Parse.GameTypes.FN.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
-using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
-using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using CUE4Parse.UE4.Assets.Objects;
-using CUE4Parse.UE4.Objects.Core.Math;
-using CUE4Parse.UE4.Objects.Engine;
-using CUE4Parse.UE4.Objects.Engine.Animation;
-using CUE4Parse.UE4.Objects.GameplayTags;
-using CUE4Parse.UE4.Objects.UObject;
-using CUE4Parse.Utils;
-using DynamicData;
+using CUE4Parse.UE4.Assets.Exports.Wwise;
 using FortnitePorting.Export.Models;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models.Assets;
-using FortnitePorting.Models.CUE4Parse;
-using FortnitePorting.Models.Unreal.Landscape;
-using FortnitePorting.Shared;
-using FortnitePorting.Shared.Extensions;
-using Serilog;
 
 namespace FortnitePorting.Export.Types;
 
@@ -34,6 +15,7 @@ public class SoundExport : BaseExport
     public SoundExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData) : base(name, asset, styles, exportType, metaData)
     {
         var exportSounds = new List<USoundWave>();
+        var akAudioSounds = new List<string>();
         switch (asset)
         {
             case USoundWave soundWave:
@@ -55,6 +37,15 @@ public class SoundExport : BaseExport
                 
                 break;
             }
+
+            case UAkAudioEvent akAudio:
+            {
+                akAudioSounds.AddRange(SoundExtensions.HandleSoundBnk(akAudio, 
+                                                                               metaData.AssetsRoot, 
+                                                                               metaData.CustomPath, 
+                                                                               metaData.Settings.SoundFormat));
+                break;
+            }
             
             // TODO metasounds
         }
@@ -63,6 +54,10 @@ public class SoundExport : BaseExport
         {
             Sounds.Add(new ExportSound { Path = Exporter.Export(exportSound) });
         }
+
+        foreach (var akTrack in akAudioSounds)
+        {
+            Sounds.Add(new ExportSound {Path = akTrack.Replace(metaData.AssetsRoot, "")});
+        }
     }
-    
 }

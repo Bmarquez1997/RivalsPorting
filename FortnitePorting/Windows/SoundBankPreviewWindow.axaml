@@ -1,0 +1,103 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:FortnitePorting.ViewModels"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:ext="clr-namespace:FortnitePorting.Shared.Extensions;assembly=FortnitePorting.Shared"
+        xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:windowModels="clr-namespace:FortnitePorting.WindowModels"
+        x:Class="FortnitePorting.Windows.SoundBankPreviewWindow"
+        x:DataType="windowModels:SoundBankPreviewWindowModel"
+        Width="540" RequestedThemeVariant="Dark" FontFamily="Segoe UI" SizeToContent="Height" Background="{x:Null}"
+        TransparencyLevelHint="{Binding Theme.TransparencyHints}" ExtendClientAreaToDecorationsHint="True" WindowStartupLocation="CenterOwner"
+        Icon="/Assets/LogoMR.ico"
+        Title="Sound Bank Viewer">
+    <Grid RowDefinitions="30, *, *" Margin="{Binding $parent[Window].OffScreenMargin}">
+        <ExperimentalAcrylicBorder Grid.Row="0" Grid.RowSpan="4" IsHitTestVisible="False" IsVisible="{Binding !Theme.UseMica}">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial BackgroundSource="Digger" MaterialOpacity="1.5" TintColor="{Binding Theme.BackgroundColor}" TintOpacity="1"/>
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+        
+        <Grid Grid.Row="0" Background="Transparent" HorizontalAlignment="Stretch" IsHitTestVisible="False">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="2" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="1" Text="Sound Bank Viewer" FontWeight="SemiBold" FontSize="16"
+                       HorizontalAlignment="Left" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3" Text="{Binding SoundName}" Classes="TextFillColorTertiaryBrush" FontSize="13" Margin="-2 2 0 0"
+                       HorizontalAlignment="Left" VerticalAlignment="Center" />
+        </Grid>
+        
+        <Grid Grid.Row="1" Margin="{ext:Space 1}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="{ext:Space 1}"/>
+                <RowDefinition Height="5*"/>
+            </Grid.RowDefinitions>
+            
+            <TextBlock Grid.Row="0" Text="Tracks" Classes="BodyStrongTextBlockStyle" Margin="{ext:Space 0, 0, 0, 1}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                
+            <ScrollViewer Grid.Row="2">
+                <ItemsControl ItemsSource="{Binding Tracks, Mode=TwoWay}" HorizontalAlignment="Stretch">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ui:FABorder Background="{Binding TrackBrush}" 
+                                         Padding="{ext:Space 1}" Margin="{ext:Space 0, 0, 0, 0.5}"
+                                         HorizontalAlignment="Stretch" Cursor="Hand" PointerPressed="OnTrackPressed">
+                                <TextBlock Text="{Binding Name}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Classes="BodyStrongTextBlockStyle"/>
+                            </ui:FABorder>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+        
+        <Grid Grid.Row="2" Margin="{ext:Space 1}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{ext:Space 1}"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Grid.Column="0" Classes="RadioButton" ToolTip.Tip="Previous" Command="{Binding Previous}">
+                <material:MaterialIcon Kind="SkipPrevious" Width="32" Height="32" />
+            </Button>
+            <Button Grid.Column="1" Classes="RadioButton" ToolTip.Tip="Play / Pause" Command="{Binding TogglePause}">
+                <material:MaterialIcon Kind="{Binding PauseIcon}" Width="32" Height="32"/>
+            </Button>
+            <Button Grid.Column="2" Classes="RadioButton" ToolTip.Tip="Next" Command="{Binding Next}">
+                <material:MaterialIcon Kind="SkipNext" Width="32" Height="32" />
+            </Button>
+            
+            <Grid Grid.Column="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{ext:Space 1}" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="{ext:Space 1}" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0"
+                           Text="{Binding CurrentTime, StringFormat=mm\\:ss, FallbackValue=0:00}"
+                           VerticalAlignment="Center" />
+                <Slider Grid.Column="2" Value="{Binding CurrentTime.TotalSeconds}" 
+                          Minimum="0" Maximum="{Binding TotalTime.TotalSeconds}"
+                          ValueChanged="OnSliderValueChanged"/>
+                <TextBlock Grid.Column="4"
+                           Text="{Binding TotalTime, StringFormat=mm\\:ss, FallbackValue=0:00}"
+                           VerticalAlignment="Center" />
+            </Grid>
+            
+        </Grid>
+    </Grid>
+</Window>

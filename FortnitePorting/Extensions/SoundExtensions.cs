@@ -8,6 +8,7 @@ using CUE4Parse_Conversion.Sounds;
 using CUE4Parse.GameTypes.FN.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Sound.Node;
+using CUE4Parse.UE4.Assets.Exports.Wwise;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
@@ -102,6 +103,86 @@ public static class SoundExtensions
         }
         
         MiscExtensions.TryDeleteFile(binkaPath);
+    }
+
+    public static List<string> HandleSoundBnk(UAkAudioEvent akAudio, string assetsRoot, string? customPath, ESoundFormat soundFormat = ESoundFormat.WAV)
+    {
+        var trackPaths = new List<string>();
+        var wwiseData = akAudio.EventCookedData;
+        foreach (var kvp in wwiseData?.EventLanguageMap)
+        {
+            if (!kvp.Value.HasValue) continue;
+
+            foreach (var media in kvp.Value.Value.Media)
+            {
+                var audioPath = Path.Combine("Game/WwiseAudio/", media.MediaPathName.Text);
+                if (!CUE4ParseVM.Provider.TrySaveAsset(audioPath, out var data)) continue;
+
+                var namedPath = string.Concat(
+                    "Game/", CUE4ParseVM.Provider.ProjectName, "/WwiseAudio/",
+                    media.DebugName.Text.SubstringBeforeLast('.').Replace('\\', '/'),
+                    " (", kvp.Key.LanguageName.Text, ")");
+
+                if (namedPath.StartsWith("/")) namedPath = namedPath[1..];
+                var rootPath = customPath ?? assetsRoot;
+
+                var savedAudioPath = Path.Combine(rootPath, customPath == null
+                                         ? namedPath
+                                         : namedPath.SubstringAfterLast('/')).Replace('\\', '/') +
+                                     $".{media.MediaPathName.Text.SubstringAfterLast('.').ToLowerInvariant()}";
+
+                if (TrySaveBnkTrack(savedAudioPath, data, out var wavPath, GetNewFileExtension(soundFormat)))
+                    trackPaths.Add(wavPath);
+            }
+        }
+
+        return trackPaths;
+    }
+
+    public static bool TrySaveBnkTrack(string inputFilePath, byte[] inputFileData, out string wavFilePath, string fileExtension = ".wav")
+    {
+        wavFilePath = string.Empty;
+        var vgmFilePath = DependencyService.VgmStreamFile.ToString();
+
+        Directory.CreateDirectory(inputFilePath.SubstringBeforeLast("/"));
+        File.WriteAllBytes(inputFilePath, inputFileData);
+
+        wavFilePath = Path.ChangeExtension(inputFilePath, fileExtension);
+        var vgmProcess = Process.Start(new ProcessStartInfo
+        {
+            FileName = vgmFilePath,
+            Arguments = $"-o \"{wavFilePath}\" \"{inputFilePath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+        vgmProcess?.WaitForExit(5000);
+
+        File.Delete(inputFilePath);
+        return vgmProcess?.ExitCode == 0 && File.Exists(wavFilePath);
+    }
+
+    public static bool TryOpenAudioStream(string path, out Stream? stream)
+    {
+        if (File.Exists(path))
+        {
+            stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            return true;
+        }
+
+        stream = null;
+        return false;
+    }
+
+    private static string GetNewFileExtension(ESoundFormat soundFormat)
+    {
+        return soundFormat switch
+        {
+            ESoundFormat.WAV => ".wav",
+            ESoundFormat.MP3 => ".mp3",
+            ESoundFormat.OGG => ".ogg",
+            ESoundFormat.FLAC => ".flac",
+            _ => ".wav"
+        };
     }
     
     // public static void SaveRadaAsWav(byte[] data, string outPath)

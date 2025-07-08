@@ -12,6 +12,7 @@ using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
+using CUE4Parse.UE4.Assets.Exports.Wwise;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.Engine.Animation;
@@ -157,6 +158,7 @@ public static class Exporter
             UTexture => EExportType.Texture,
             UVirtualTextureBuilder => EExportType.Texture,
             UBuildingTextureData => EExportType.Texture,
+            UAkAudioEvent => EExportType.Sound,
             USoundWave => EExportType.Sound,
             USoundCue => EExportType.Sound,
             UAnimSequence => EExportType.Animation,

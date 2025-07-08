@@ -17,6 +17,7 @@ using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
+using CUE4Parse.UE4.Assets.Exports.Wwise;
 using CUE4Parse.UE4.IO;
 using CUE4Parse.UE4.IO.Objects;
 using CUE4Parse.UE4.Objects.Engine;
@@ -349,6 +350,12 @@ public partial class FilesViewModel : ViewModelBase
                 if (soundWaveLazy?.Load<USoundWave>() is not { } soundWave) break;
                 
                 SoundPreviewWindow.Preview(soundWave);
+                break;
+            }
+            case UAkAudioEvent akAudio:
+            {
+                var tracks = SoundExtensions.HandleSoundBnk(akAudio, AppSettings.Current.Application.AssetPath, null);
+                SoundBankPreviewWindow.Preview(akAudio.Name, tracks);
                 break;
             }
             default:
