@@ -11,6 +11,7 @@ using CUE4Parse.UE4.Assets.Exports.Sound.Node;
 using CUE4Parse.UE4.Assets.Exports.Wwise;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
+using CUE4Parse.UE4.Wwise;
 using CUE4Parse.Utils;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
@@ -108,32 +109,18 @@ public static class SoundExtensions
     public static List<string> HandleSoundBnk(UAkAudioEvent akAudio, string assetsRoot, string? customPath, ESoundFormat soundFormat = ESoundFormat.WAV)
     {
         var trackPaths = new List<string>();
-        var wwiseData = akAudio.EventCookedData;
-        foreach (var kvp in wwiseData?.EventLanguageMap)
+        var wwiseProvider = new WwiseProvider(CUE4ParseVM.Provider);
+        var events = wwiseProvider.ExtractAudioEventSounds(akAudio);
+
+        foreach (var audioEvent in events)
         {
-            if (!kvp.Value.HasValue) continue;
+            var namedPath = audioEvent.ToString().Replace("/Content/", "/");
+            var rootPath = customPath ?? assetsRoot;
 
-            foreach (var media in kvp.Value.Value.Media)
-            {
-                var audioPath = Path.Combine("Game/WwiseAudio/", media.MediaPathName.Text);
-                if (!CUE4ParseVM.Provider.TrySaveAsset(audioPath, out var data)) continue;
+            var savedAudioPath = Path.Combine(rootPath, customPath == null ? $"Game/{namedPath}" : namedPath.SubstringAfterLast('/'));
 
-                var namedPath = string.Concat(
-                    "Game/", CUE4ParseVM.Provider.ProjectName, "/WwiseAudio/",
-                    media.DebugName.Text.SubstringBeforeLast('.').Replace('\\', '/'),
-                    " (", kvp.Key.LanguageName.Text, ")");
-
-                if (namedPath.StartsWith("/")) namedPath = namedPath[1..];
-                var rootPath = customPath ?? assetsRoot;
-
-                var savedAudioPath = Path.Combine(rootPath, customPath == null
-                                         ? namedPath
-                                         : namedPath.SubstringAfterLast('/')).Replace('\\', '/') +
-                                     $".{media.MediaPathName.Text.SubstringAfterLast('.').ToLowerInvariant()}";
-
-                if (TrySaveBnkTrack(savedAudioPath, data, out var wavPath, GetNewFileExtension(soundFormat)))
-                    trackPaths.Add(wavPath);
-            }
+            if (TrySaveBnkTrack(savedAudioPath, audioEvent.Data, out var wavPath, GetNewFileExtension(soundFormat)))
+                trackPaths.Add(wavPath);
         }
 
         return trackPaths;
