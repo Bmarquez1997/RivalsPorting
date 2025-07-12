@@ -1088,27 +1088,14 @@ class ImportContext:
 
                                 target_block.value = 0
 
-                    is_skeleton_legacy = any(skeleton.data.bones, lambda bone: bone.name == "faceAttach")
-                    is_skeleton_metahuman = any(skeleton.data.bones, lambda bone: bone.name == "FACIAL_C_FacialRoot")
-                    
-                    is_anim_legacy = any(anim_data.curves, lambda curve: curve.name in legacy_curve_names)
-                    is_anim_metahuman = any(anim_data.curves, lambda curve: curve.name == "is_3L")
-                    
-                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
-                        for curve in anim_data.curves:
-                            curve_name = curve.name.lower().replace("ctrl_expressions_", "")
+                    for curve in anim_data.curves:
+                        curve_name = curve.name.lower().replace("ctrl_expressions_", "")
 
-                            if target_block := first(key_blocks, lambda block: block.name.lower() == curve_name):
-                                for key in curve.keys:
-                                    target_block.value = key.value
-                                    target_block.keyframe_insert(data_path="value", frame=key.frame)
+                        if target_block := first(key_blocks, lambda block: block.name.lower() == curve_name):
+                            for key in curve.keys:
+                                target_block.value = key.value
+                                target_block.keyframe_insert(data_path="value", frame=key.frame)
                                 
-                    if is_skeleton_metahuman and is_anim_legacy and (legacy_to_metahuman_mappings := data.get("LegacyToMetahumanMappings")):
-                        import_curve_mapping(legacy_to_metahuman_mappings)
-
-                    if is_skeleton_legacy and is_anim_metahuman and (metahuman_to_legacy_mappings := data.get("MetahumanToLegacyMappings")):
-                        import_curve_mapping(metahuman_to_legacy_mappings)
-
                     if active_mesh.data.shape_keys.animation_data.action is not None:
                         try:
                             strip = mesh_track.strips.new(section_name, frame, active_mesh.data.shape_keys.animation_data.action)

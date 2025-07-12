@@ -122,7 +122,7 @@ public static class SoundExtensions
             if (TrySaveBnkTrack(savedAudioPath, audioEvent.Data, out var wavPath, GetNewFileExtension(soundFormat)))
                 trackPaths.Add(wavPath);
         }
-
+        if (trackPaths.Count == 4) trackPaths.RemoveAt(0);
         return trackPaths;
     }
 
