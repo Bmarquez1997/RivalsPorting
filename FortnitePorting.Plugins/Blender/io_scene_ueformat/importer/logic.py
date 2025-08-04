@@ -582,8 +582,7 @@ class UEFormatImport:
                     key_block.value = 0
                     
                 for curve in data.curves:
-                    
-                    if not (shape_key := first(key_blocks, lambda block: block.name.lower() in curve.name.lower())):
+                    if not (shape_key := best(key_blocks, lambda block: block.name.lower(), curve.name.lower())):
                         continue
                         
                     for key in curve.keys:

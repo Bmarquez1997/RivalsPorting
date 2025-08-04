@@ -82,7 +82,7 @@ public partial class AppWindowModel : WindowModelBase
             });
         }
         
-        var repositoryInfo = await ApiVM.FortnitePorting.GetRepositoryAsync();
+        var repositoryInfo = await ApiVM.Repository.GetRepositoryAsync();
         if (repositoryInfo is not null)
         {
             var newestRelease = repositoryInfo.Versions.MaxBy(version => version.UploadTime)!;
@@ -119,8 +119,8 @@ public partial class AppWindowModel : WindowModelBase
                         {
                             "--silent",
                             "--skip-setup",
-                            $"--add-repository {FortnitePortingAPI.REPOSITORY_URL}",
-                            $"--import-profile \"Rivals Porting\" \"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName + ".exe")}\" \"FortnitePorting\"",
+                            $"--add-repository {RepositoryAPI.REPOSITORY_URL}",
+                            $"--import-profile \"Rivals Porting\" \"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName + ".exe")}\" \"RivalsPorting\"",
                             "--update-profile \"Rivals Porting\" -force",
                             "--launch-profile \"Rivals Porting\"",
                         };

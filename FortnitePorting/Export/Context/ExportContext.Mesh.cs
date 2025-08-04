@@ -145,6 +145,14 @@ public partial class ExportContext
             exportMesh.OverrideMaterials.AddIfNotNull(Material(material, idx));
         }
 
+        if (!meshComponent.TryGetValue(out FSoftObjectPath[] softOverrideMats, "Materials_SoftPtr")) return exportMesh;
+        for (var idx = 0; idx < softOverrideMats.Length; idx++)
+        {
+            if (!softOverrideMats[idx].TryLoad(out UMaterialInstance overrideMat)) continue;
+            
+            exportMesh.OverrideMaterials.AddIfNotNull(Material(overrideMat, idx));
+        }
+
         return exportMesh;
     }
     

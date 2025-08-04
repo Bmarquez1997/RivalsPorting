@@ -709,7 +709,14 @@ class ImportContext:
 
             for switch in switches:
                 switch_param(switch, mappings, target_node, add_unused_params)
-        
+
+        def move_texture_node(target_node, slot_name):
+            if texture_node := get_node(shader_node, slot_name):
+                x, y = get_socket_pos(target_node, target_node.inputs.find(slot_name))
+                texture_node.location = x - 300, y
+                links.new(texture_node.outputs[0], target_node.inputs[slot_name])
+                links.new(target_node.outputs[slot_name], shader_node.inputs[slot_name])
+                
         def add_default_texture(texture_name, color_space, target_node, target_slot, pre_node=None, pre_slot=None):
             default_texture_node = nodes.new(type="ShaderNodeTexImage")
             default_texture_node.image = bpy.data.images.get(texture_name)
@@ -848,6 +855,25 @@ class ImportContext:
                 if diffuse_node := get_node(shader_node, "HighlightMask"):
                     nodes.active = diffuse_node
             
+            case "FP Layer":
+                if diffuse_node := get_node(shader_node, "BaseColor"):
+                    nodes.active = diffuse_node
+            
+            case "MR Hero":
+                if diffuse_node := get_node(shader_node, "BaseColor"):
+                    nodes.active = diffuse_node
+                    
+                if get_param(switches, "UseDyeing"):
+                    dye_node = nodes.new(type="ShaderNodeGroup")
+                    dye_node.node_tree = bpy.data.node_groups.get("MR ColorID Dye")
+                    dye_node.location = -500, -75
+                    setup_params(dye_mat_mappings, dye_node, False)
+                    
+                    move_texture_node(dye_node, "BaseColor")
+                    
+                    if diffuse_node := get_node(dye_node, "BaseColor"):
+                        nodes.active = diffuse_node
+
             case "FP Layer":
                 if diffuse_node := get_node(shader_node, "BaseColor"):
                     nodes.active = diffuse_node

@@ -15,6 +15,7 @@ def get_vector_param(source, name):
     found_value = found.get("Value")
     return Vector((found_value.get('R'), found_value.get('G'), found_value.get('B')))
 
+
 def get_param_multiple(source, names):
     found = first(source, lambda param: param.get("Name").casefold() in [name.casefold() for name in names])
     if found is None:
@@ -28,6 +29,7 @@ def get_param_info(source, name):
         return None
     return found
 
+
 def get_params(source, names):
     return [info.get("Value") for info in where(source, lambda param: param.get("Name").casefold() in [name.casefold() for name in names])]
 
@@ -36,6 +38,7 @@ def get_socket_pos(node, index):
     start_y = -100
     offset_y = -25
     return node.location.x, node.location.y + start_y + offset_y * index
+
 
 def replace_or_add_parameter(list, replace_item):
     if replace_item is None:
@@ -49,6 +52,7 @@ def replace_or_add_parameter(list, replace_item):
 
     if not any(list, lambda x: x.get("Name") == replace_item.get("Name")):
         list.append(replace_item)
+        
         
 def get_node(shader_node, name):
     input = shader_node.inputs.get(name)

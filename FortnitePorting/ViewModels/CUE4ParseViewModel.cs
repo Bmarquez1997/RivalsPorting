@@ -243,11 +243,18 @@ public class CUE4ParseViewModel : ViewModelBase
     
     private async Task LoadMappings()
     {
-        var mappingsPath = !AppSettings.Current.Installation.CurrentProfile.IsCustom ?
-            DependencyService.MappingsFile.FullName
-            : File.Exists(AppSettings.Current.Installation.CurrentProfile.MappingsFile)
-            ? AppSettings.Current.Installation.CurrentProfile.MappingsFile
-            : null;
+        // var mappingsPath = !AppSettings.Current.Installation.CurrentProfile.IsCustom ?
+        //     DependencyService.MappingsFile.FullName
+        //     : File.Exists(AppSettings.Current.Installation.CurrentProfile.MappingsFile)
+        //     ? AppSettings.Current.Installation.CurrentProfile.MappingsFile
+        //     : null;
+        
+        var mappingsPath = AppSettings.Current.Installation.CurrentProfile.FortniteVersion switch
+        {
+            EFortniteVersion.LatestInstalled => await GetEndpointMappings() ?? GetLocalMappings(),
+            _ when AppSettings.Current.Installation.CurrentProfile.UseMappingsFile && File.Exists(AppSettings.Current.Installation.CurrentProfile.MappingsFile) => AppSettings.Current.Installation.CurrentProfile.MappingsFile,
+            _ => string.Empty
+        };
         
         if (string.IsNullOrEmpty(mappingsPath)) return;
         
@@ -257,9 +264,9 @@ public class CUE4ParseViewModel : ViewModelBase
     
     private async Task<string?> GetEndpointMappings()
     {
-        async Task<string?> GetMappings(Func<string, Task<MappingsResponse[]?>> mappingsFunc)
+        async Task<string?> GetMappings(Func<Task<MappingsResponse[]?>> mappingsFunc)
         {
-            var mappings = await mappingsFunc(string.Empty);
+            var mappings = await mappingsFunc();
             if (mappings is null) return null;
             if (mappings.Length <= 0) return null;
 
@@ -278,7 +285,7 @@ public class CUE4ParseViewModel : ViewModelBase
         }
         
         
-        return await GetMappings(ApiVM.FortniteCentral.GetMappingsAsync) ?? await GetMappings(ApiVM.FortnitePorting.GetMappingsAsync);
+        return await GetMappings(ApiVM.Repository.GetMappingsAsync);
     }
 
 

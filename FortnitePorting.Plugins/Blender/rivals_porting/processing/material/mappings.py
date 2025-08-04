@@ -343,6 +343,48 @@ pre_eye_glass_mappings = MappingCollection(
     ]
 )
 
+dye_mat_mappings = MappingCollection(
+    textures=[
+        SlotMapping("DyeingTexture", alpha_slot="DyeingTexture Alpha"),
+    ],
+    scalars=[
+      SlotMapping("UseDyeingGBChannel")  
+    ],
+    vectors=[
+        SlotMapping("ExtraSpecularTint"),
+        SlotMapping("Region 1 - ColorA"),
+        SlotMapping("Region 1 - ColorB"),
+        SlotMapping("Region 2 - ColorA"),
+        SlotMapping("Region 2 - ColorB"),
+        SlotMapping("Region 3 - ColorA"),
+        SlotMapping("Region 3 - ColorB"),
+        SlotMapping("Region 4 - ColorA"),
+        SlotMapping("Region 4 - ColorB"),
+        SlotMapping("Region 5 - ColorA"),
+        SlotMapping("Region 5 - ColorB"),
+        SlotMapping("Region 6 - ColorA"),
+        SlotMapping("Region 6 - ColorB"),
+        SlotMapping("Region 7 - ColorA"),
+        SlotMapping("Region 7 - ColorB"),
+        
+        SlotMapping("Region 1 - ColorGChannel"),
+        SlotMapping("Region 2 - ColorGChannel"),
+        SlotMapping("Region 3 - ColorGChannel"),
+        SlotMapping("Region 4 - ColorGChannel"),
+        SlotMapping("Region 5 - ColorGChannel"),
+        SlotMapping("Region 6 - ColorGChannel"),
+        SlotMapping("Region 7 - ColorGChannel"),
+        
+        SlotMapping("Region 1 - ColorBChannel"),
+        SlotMapping("Region 2 - ColorBChannel"),
+        SlotMapping("Region 3 - ColorBChannel"),
+        SlotMapping("Region 4 - ColorBChannel"),
+        SlotMapping("Region 5 - ColorBChannel"),
+        SlotMapping("Region 6 - ColorBChannel"),
+        SlotMapping("Region 7 - ColorBChannel"),
+    ],
+)
+
 layer_mappings = MappingCollection(
     textures=[
         SlotMapping("Diffuse", alpha_slot="MaskTexture"),
