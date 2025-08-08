@@ -32,12 +32,17 @@
     {
       "Version": "v0.2.0-alpha",
       "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.2.0/RivalsPorting.exe",
-      "UploadTime": "6-02-2025"
+      "UploadTime": "06-02-2025"
     },
     {
       "Version": "v0.3.0-alpha",
       "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.3.0/RivalsPorting.exe",
-      "UploadTime": "7-11-2025"
+      "UploadTime": "07-11-2025"
+    },
+    {
+      "Version": "v0.3.5-alpha",
+      "ExecutableURL": "https://github.com/Bmarquez1997/RivalsPorting/releases/download/MR-0.3.5/RivalsPorting.exe",
+      "UploadTime": "08-08-2025"
     }
   ]
 }
