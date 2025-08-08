@@ -43,13 +43,11 @@ public partial class ExportContext
 
         foreach (var streamingLevelLazy in world.StreamingLevels)
         {
-            if (streamingLevelLazy.TryLoad(out ULevelStreaming levelStreaming)
-                && levelStreaming.WorldAsset.TryLoad(out UWorld worldAsset)
-                && worldAsset.PersistentLevel.TryLoad(out ULevel streamingLevel))
-            {
-                actors.AddRangeIfNotNull(Level(streamingLevel));
-            }
+            if (streamingLevelLazy.Load() is not ULevelStreaming levelStreaming) continue;
+            if (levelStreaming.WorldAsset?.Load() is not UWorld worldAsset) continue;
+            if (worldAsset.PersistentLevel.Load() is not ULevel streamingLevel) continue;
             
+            actors.AddRangeIfNotNull(Level(streamingLevel));
         }
 
         var exportWorldPartition = Meta.WorldFlags.HasFlag(EWorldFlags.WorldPartitionGrids);
