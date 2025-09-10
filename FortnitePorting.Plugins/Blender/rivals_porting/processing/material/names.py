@@ -42,7 +42,7 @@ texture_ignore_names = ["DefaultTexture"]
 
 vertex_crunch_names = ["MI_VertexCrunch", "M_VertexCrunch", "MI_Hide", "M_Hide"]
 
-hero_master_names = ["_Body", "_Skin", "Common_Cape", "Common_Crystal"]
+hero_master_names = ["_Body", "_Skin", "Common_Cape", "Common_Crystal", "1028001_Arms"]
 
 toon_outline_names = ["Outline", "Toon_Lines"]
 

@@ -253,6 +253,7 @@ hero_mappings = MappingCollection(
     ],
     vectors=[
         SlotMapping("ExtraSpecularTint"),
+        SlotMapping("EmissiveColor"),
     ]
 )
 
