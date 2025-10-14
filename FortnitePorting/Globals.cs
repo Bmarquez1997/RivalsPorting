@@ -9,7 +9,7 @@ namespace FortnitePorting;
 public static class Globals
 {
     public static string VersionString => Version.GetDisplayString(EVersionStringType.IdentifierPrefix);
-    public static readonly FPVersion Version = new(0, 3, 6, identifier: "Alpha");
+    public static readonly FPVersion Version = new(0, 4, 0, identifier: "Alpha");
     public const string OnlineTag = "RivalsPorting";
     
     public static readonly FilePickerFileType MappingsFileType = new("Unreal Mappings") { Patterns = [ "*.usmap" ] };
@@ -29,7 +29,7 @@ public static class Globals
     public static readonly FGuid ZERO_GUID = new();
     public const string ZERO_CHAR = "0x0000000000000000000000000000000000000000000000000000000000000000";
     
-    public const string LATEST_MAPPINGS = "5.3.2-2327098+++depot_marvel+S4.0_release-Marvel+PY.usmap";
+    public const string LATEST_MAPPINGS = "5.3.2-2436949+++depot_marvel+S4.5_release-Marvel.usmap";
     public const string LATEST_AES = "0x0C263D8C22DCB085894899C3A3796383E9BF9DE0CBFB08C9BF2DEF2E84F29D74";
     
     public static readonly ReadOnlyCollection<string> LATEST_EXTRA_AES = new([
