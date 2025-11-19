@@ -146,8 +146,9 @@ public partial class ExportContext
             {
                 foreach (var instanceComponentLazy in instanceComponents)
                 {
-                    var instanceComponent = instanceComponentLazy.Load<UInstancedStaticMeshComponent>();
-                    if (instanceComponent is null) continue;
+                    if (!instanceComponentLazy.TryLoad<UInstancedStaticMeshComponent>(out var instanceComponent) || instanceComponent == null)
+                        continue;
+                    
                     if (instanceComponent.ExportType == "HLODInstancedStaticMeshComponent") continue;
                     
                     var exportMesh = MeshComponent(instanceComponent);
@@ -243,37 +244,37 @@ public partial class ExportContext
 
         }
 
-        if (Meta.WorldFlags.HasFlag(EWorldFlags.Landscape) && actor is ALandscapeProxy landscapeProxy && landscapeProxy.ExportType != "Landscape")
+        if (Meta.WorldFlags.HasFlag(EWorldFlags.Landscape) && actor is ALandscapeProxy landscapeProxy) //&& landscapeProxy.ExportType != "Landscape")
         {
             var transform = landscapeProxy.GetAbsoluteTransformFromRootComponent();
             
-            var exportMesh = new ExportMesh();
-            exportMesh.Name = landscapeProxy.Name;
-            exportMesh.Path = Export(landscapeProxy, embeddedAsset: true, synchronousExport: true);
-            exportMesh.Location = transform.Translation;
-            exportMesh.Scale = transform.Scale3D;
+            var exportMesh = new ExportMesh
+            {
+                Name = landscapeProxy.Name,
+                Path = Export(landscapeProxy, embeddedAsset: true, synchronousExport: true),
+                Location = transform.Translation,
+                Scale = transform.Scale3D
+            };
+            
             meshes.Add(exportMesh);
         }
 
-        if (Meta.WorldFlags.HasFlag(EWorldFlags.HLODs))
+        if (Meta.WorldFlags.HasFlag(EWorldFlags.HLODs) && actor.ExportType == "FortMainHLOD")
         {
-            if (actor.ExportType == "FortMainHLOD")
+            var instanceComponents = actor.GetOrDefault<FPackageIndex[]>("InstanceComponents", []);
+            foreach (var instanceComponentLazy in instanceComponents)
             {
-                var instanceComponents = actor.GetOrDefault<FPackageIndex[]>("InstanceComponents", []);
-                foreach (var instanceComponentLazy in instanceComponents)
-                {
-                    var instanceComponent = instanceComponentLazy.Load<USceneComponent>();
-                    if (instanceComponent is null) continue;
-                    
-                    var component = MeshComponent(instanceComponent);
-                    if (component is null) continue;
+                var instanceComponent = instanceComponentLazy.Load<USceneComponent>();
+                if (instanceComponent is null) continue;
+                
+                var component = MeshComponent(instanceComponent);
+                if (component is null) continue;
 
-                    var transform = instanceComponent.GetAbsoluteTransform();
-                    component.Location = transform.Translation;
-                    component.Rotation = transform.Rotation.Rotator();
-                    component.Scale = transform.Scale3D;
-                    meshes.AddIfNotNull(component);
-                }
+                var transform = instanceComponent.GetAbsoluteTransform();
+                component.Location = transform.Translation;
+                component.Rotation = transform.Rotation.Rotator();
+                component.Scale = transform.Scale3D;
+                meshes.AddIfNotNull(component);
             }
         }
 
