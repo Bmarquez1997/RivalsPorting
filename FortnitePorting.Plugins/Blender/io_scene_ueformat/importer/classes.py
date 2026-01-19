@@ -231,7 +231,7 @@ class UEModelLOD:
                     lambda ar: MorphTarget.from_archive(ar),
                 )
             else:
-                Log.warn(f"Unknown Mesh Data: {header_name}")
+                Log.warn(f"Unknown LOD Data: {header_name}")
                 ar.skip(byte_size)
 
             ar.data.seek(pos + byte_size, 0)

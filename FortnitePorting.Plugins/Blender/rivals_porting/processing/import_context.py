@@ -894,7 +894,10 @@ class ImportContext:
 
         ext = ESoundFormat(self.options.get("SoundFormat")).name.lower()
         sound_path = os.path.join(self.assets_root, f"{file_path}.{ext}")
-        sound = bpy.context.scene.sequence_editor.sequences.new_sound(name, sound_path, 0, time)
+        if bpy.app.version < (4, 5, 0):
+            sound = bpy.context.scene.sequence_editor.sequences.new_sound(name, sound_path, 0, time)
+        else:
+            sound = bpy.context.scene.sequence_editor.strips.new_sound(name, sound_path, 0, time)
         sound["FPSound"] = True
         return sound
     
@@ -940,9 +943,14 @@ class ImportContext:
                 active_mesh.data.shape_keys.animation_data_create()
             
         if bpy.context.scene.sequence_editor:
-            sequences_to_remove = where(bpy.context.scene.sequence_editor.sequences, lambda seq: seq.get("FPSound"))
-            for sequence in sequences_to_remove:
-                bpy.context.scene.sequence_editor.sequences.remove(sequence)
+            if bpy.app.version < (4, 5, 0):
+                sequences_to_remove = where(bpy.context.scene.sequence_editor.sequences, lambda seq: seq.get("FPSound"))
+                for sequence in sequences_to_remove:
+                    bpy.context.scene.sequence_editor.sequences.remove(sequence)
+            else:
+                sequences_to_remove = where(bpy.context.scene.sequence_editor.strips, lambda seq: seq.get("FPSound"))
+                for sequence in sequences_to_remove:
+                    bpy.context.scene.sequence_editor.strips.remove(sequence)
 
         bpy.context.scene.frame_set(0)
 
@@ -975,6 +983,8 @@ class ImportContext:
 
                 strip = track.strips.new(section_name, frame, action)
                 strip.repeat = loop_count
+                if bpy.app.version >= (5, 0, 0):
+                    strip.action_slot = action.slots[0]
 
                 if len(anim_data.curves) > 0 and active_mesh.data.shape_keys is not None and is_main_skeleton:
                     key_blocks = active_mesh.data.shape_keys.key_blocks
