@@ -20,7 +20,6 @@ using CUE4Parse.UE4.Objects.Core.Math;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Framework;
 using FortnitePorting.Models.Material;
-using FortnitePorting.Models.Unreal.Material;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.Shared.Services;

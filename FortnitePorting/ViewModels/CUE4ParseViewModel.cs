@@ -39,7 +39,6 @@ using FortnitePorting.Framework;
 using FortnitePorting.Models.API.Responses;
 using FortnitePorting.Models.CUE4Parse;
 using FortnitePorting.Models.Fortnite;
-using FortnitePorting.Models.Unreal.Material;
 using FortnitePorting.Services;
 using FortnitePorting.Shared;
 using FortnitePorting.Shared.Extensions;
@@ -128,9 +127,9 @@ public class CUE4ParseViewModel : ViewModelBase
     
     private async Task InitializeOodle()
     {
-        var oodlePath = Path.Combine(DataFolder.FullName, OodleHelper.OODLE_DLL_NAME);
-        if (!File.Exists(oodlePath)) await OodleHelper.DownloadOodleDllAsync(oodlePath);
-        OodleHelper.Initialize(oodlePath);
+        var oodlePath = Path.Combine(DataFolder.FullName, DependencyService.NoodleFile.FullName);
+        if (!File.Exists(oodlePath)) await OodleHelper.DownloadOodleDllAsync(ref oodlePath);
+        await OodleHelper.InitializeAsync(oodlePath);
     }
     
     private async Task InitializeZlib()
@@ -154,61 +153,61 @@ public class CUE4ParseViewModel : ViewModelBase
         Provider.Initialize();
     }
 
-    private async Task InitializeTextureStreaming()
-    {
-        try
-        {
-            var tocPath = await GetTocPath(AppSettings.Current.Installation.CurrentProfile.FortniteVersion);
-            if (string.IsNullOrEmpty(tocPath)) return;
-
-            var tocName = tocPath.SubstringAfterLast("/");
-            var onDemandFile = new FileInfo(Path.Combine(DataFolder.FullName, tocName));
-            if (!onDemandFile.Exists || onDemandFile.Length == 0)
-            {
-                await ApiVM.DownloadFileAsync($"https://download.epicgames.com/{tocPath}", onDemandFile.FullName);
-            }
-
-            var options = new IoStoreOnDemandOptions
-            {
-                ChunkBaseUri = new Uri("https://download.epicgames.com/ias/fortnite/", UriKind.Absolute),
-                ChunkCacheDirectory = CacheFolder,
-                Authorization = new AuthenticationHeaderValue("Bearer", AppSettings.Current.Online.EpicAuth?.Token),
-                Timeout = TimeSpan.FromSeconds(30)
-            };
-
-            var chunkToc = new IoChunkToc(onDemandFile);
-            await Provider.RegisterVfs(chunkToc, options);
-            await Provider.MountAsync();
-        }
-        catch (Exception e)
-        {
-            AppWM.Dialog("Failed to Initialize Texture Streaming", 
-                $"Please enable the \"Pre-Download Streamed Assets\" option for Fortnite in the Epic Games Launcher and disable texture streaming in installation settings to remove this popup.");
-        }
-    }
-    
-    private async Task<string> GetTocPath(EFortniteVersion loadingType)
-    {
-        var onDemandText = string.Empty;
-        switch (loadingType)
-        {
-            case EFortniteVersion.LatestInstalled:
-            {
-                var onDemandPath = Path.Combine(AppSettings.Current.Installation.CurrentProfile.ArchiveDirectory, @"..\..\..\Cloud\IoStoreOnDemand.ini");
-                if (File.Exists(onDemandPath)) onDemandText = await File.ReadAllTextAsync(onDemandPath);
-                break;
-            }
-        }
-
-        if (string.IsNullOrEmpty(onDemandText)) return string.Empty;
-
-        var onDemandIni = new ConfigIni();
-        onDemandIni.Read(new StringReader(onDemandText));
-        return onDemandIni
-            .Sections.FirstOrDefault(section => section.Name?.Equals("Endpoint") ?? false)?
-            .Tokens.OfType<InstructionToken>().FirstOrDefault(token => token.Key.Equals("TocPath"))?
-            .Value.Replace("\"", string.Empty) ?? string.Empty;
-    }
+    // private async Task InitializeTextureStreaming()
+    // {
+    //     try
+    //     {
+    //         var tocPath = await GetTocPath(AppSettings.Current.Installation.CurrentProfile.FortniteVersion);
+    //         if (string.IsNullOrEmpty(tocPath)) return;
+    //
+    //         var tocName = tocPath.SubstringAfterLast("/");
+    //         var onDemandFile = new FileInfo(Path.Combine(DataFolder.FullName, tocName));
+    //         if (!onDemandFile.Exists || onDemandFile.Length == 0)
+    //         {
+    //             await ApiVM.DownloadFileAsync($"https://download.epicgames.com/{tocPath}", onDemandFile.FullName);
+    //         }
+    //
+    //         var options = new IoStoreOnDemandOptions
+    //         {
+    //             ChunkBaseUri = new Uri("https://download.epicgames.com/ias/fortnite/", UriKind.Absolute),
+    //             ChunkCacheDirectory = CacheFolder,
+    //             Authorization = new AuthenticationHeaderValue("Bearer", AppSettings.Current.Online.EpicAuth?.Token),
+    //             Timeout = TimeSpan.FromSeconds(30)
+    //         };
+    //
+    //         var chunkToc = new IoChunkToc(onDemandFile);
+    //         await Provider.RegisterVfs(chunkToc, options);
+    //         await Provider.MountAsync();
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         AppWM.Dialog("Failed to Initialize Texture Streaming", 
+    //             $"Please enable the \"Pre-Download Streamed Assets\" option for Fortnite in the Epic Games Launcher and disable texture streaming in installation settings to remove this popup.");
+    //     }
+    // }
+    //
+    // private async Task<string> GetTocPath(EFortniteVersion loadingType)
+    // {
+    //     var onDemandText = string.Empty;
+    //     switch (loadingType)
+    //     {
+    //         case EFortniteVersion.LatestInstalled:
+    //         {
+    //             var onDemandPath = Path.Combine(AppSettings.Current.Installation.CurrentProfile.ArchiveDirectory, @"..\..\..\Cloud\IoStoreOnDemand.ini");
+    //             if (File.Exists(onDemandPath)) onDemandText = await File.ReadAllTextAsync(onDemandPath);
+    //             break;
+    //         }
+    //     }
+    //
+    //     if (string.IsNullOrEmpty(onDemandText)) return string.Empty;
+    //
+    //     var onDemandIni = new ConfigIni();
+    //     onDemandIni.Read(new StringReader(onDemandText));
+    //     return onDemandIni
+    //         .Sections.FirstOrDefault(section => section.Name?.Equals("Endpoint") ?? false)?
+    //         .Tokens.OfType<InstructionToken>().FirstOrDefault(token => token.Key.Equals("TocPath"))?
+    //         .Value.Replace("\"", string.Empty) ?? string.Empty;
+    // }
 
     private async Task LoadKeys()
     {

@@ -13,6 +13,7 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.UE4.Wwise;
 using CUE4Parse.Utils;
+using FortnitePorting.Application;
 using FortnitePorting.Services;
 using FortnitePorting.Shared.Extensions;
 using Log = Serilog.Log;
@@ -109,7 +110,7 @@ public static class SoundExtensions
     public static List<string> HandleSoundBnk(UAkAudioEvent akAudio, string assetsRoot, string? customPath, ESoundFormat soundFormat = ESoundFormat.WAV)
     {
         var trackPaths = new List<string>();
-        var wwiseProvider = new WwiseProvider(CUE4ParseVM.Provider);
+        var wwiseProvider = new WwiseProvider(CUE4ParseVM.Provider, AppSettings.Current.Installation.CurrentProfile.ArchiveDirectory);
         var events = wwiseProvider.ExtractAudioEventSounds(akAudio);
 
         foreach (var audioEvent in events)

@@ -26,7 +26,6 @@ using DynamicData.Binding;
 using FluentAvalonia.UI.Controls;
 using FortnitePorting.Extensions;
 using FortnitePorting.Models.Files;
-using FortnitePorting.Models.Unreal.Material;
 using FortnitePorting.Shared.Extensions;
 using FortnitePorting.WindowModels;
 using ReactiveUI;
