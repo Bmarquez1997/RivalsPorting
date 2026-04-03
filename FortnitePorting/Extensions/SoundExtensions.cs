@@ -120,16 +120,18 @@ public static class SoundExtensions
 
             var savedAudioPath = Path.Combine(rootPath, customPath == null ? $"Game/{namedPath}" : namedPath.SubstringAfterLast('/'));
 
-            if (TrySaveBnkTrack(savedAudioPath, audioEvent.Data, out var wavPath, GetNewFileExtension(soundFormat)))
+            if (TrySaveBnkTrack(savedAudioPath, audioEvent.Data?.GetData(), out var wavPath, GetNewFileExtension(soundFormat)))
                 trackPaths.Add(wavPath);
         }
         if (trackPaths.Count == 4) trackPaths.RemoveAt(0);
         return trackPaths;
     }
 
-    public static bool TrySaveBnkTrack(string inputFilePath, byte[] inputFileData, out string wavFilePath, string fileExtension = ".wav")
+    public static bool TrySaveBnkTrack(string inputFilePath, byte[]? inputFileData, out string wavFilePath, string fileExtension = ".wav")
     {
         wavFilePath = string.Empty;
+        if (inputFileData == null) return false;
+        
         var vgmFilePath = DependencyService.VgmStreamFile.ToString();
 
         Directory.CreateDirectory(inputFilePath.SubstringBeforeLast("/"));
