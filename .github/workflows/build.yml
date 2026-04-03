@@ -1,0 +1,208 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'MR-*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    if: github.event.base_ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    outputs:
+      version_info: ${{ steps.version.outputs.version_info }}
+
+    steps:
+      - name: GIT Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch Submodules Recursively
+        run: git submodule update --init --recursive
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $current = $tag -replace '^MR-', ''
+          echo "current=$current" >> $env:GITHUB_OUTPUT
+          $version_parts = $current -split '\.'
+          $major = $version_parts[0]
+          $minor = $version_parts[1]
+          $patch = $version_parts[2]
+          $next_patch = [int]$patch + 1
+          $next_version = "$major.$minor.$next_patch"
+          echo "major=$major" >> $env:GITHUB_OUTPUT
+          echo "minor=$minor" >> $env:GITHUB_OUTPUT
+          echo "patch=$patch" >> $env:GITHUB_OUTPUT
+          echo "next_patch=$next_patch" >> $env:GITHUB_OUTPUT
+          echo "next_version=$next_version" >> $env:GITHUB_OUTPUT
+          
+          # Create JSON object
+          $version_info = @{
+            major = $major
+            minor = $minor
+            patch = $next_patch
+            version = $next_version
+          } | ConvertTo-Json -Compress
+          echo "version_info=$version_info" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Verify current version in files
+        run: |
+          Write-Host "Building release for version: ${{ steps.version.outputs.current }}"
+        shell: pwsh
+
+      - name: .NET 8 Setup
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: .NET Restore
+        run: dotnet restore FortnitePorting
+
+      - name: .NET Publish
+        run: |
+          dotnet publish FortnitePorting -c Release --self-contained -r win-x64 -o "./Release" `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -p:IncludeNativeLibrariesForSelfExtract=true
+
+      - name: Update to main
+        run: |
+          git fetch origin
+          git checkout main
+          git pull origin main
+
+      - name: Generate release notes with commit links
+        id: release_notes
+        run: |
+          $prev_tag = git describe --tags --abbrev=0 ${{ github.ref_name }}^ 2>$null
+          if (-not $prev_tag) {
+            $range = "HEAD"
+            $commits = git log --pretty=format:"%h - %s" HEAD
+          } else {
+            $range = "$prev_tag..${{ github.ref_name }}"
+            $commits = git log --pretty=format:"%h - %s" $prev_tag..${{ github.ref_name }}
+          }
+          
+          # Generate markdown with commit links
+          $commit_list = @()
+          git log --pretty=format:"%H|%s" $range | ForEach-Object {
+            $parts = $_ -split '\|'
+            $hash = $parts[0]
+            $message = $parts[1]
+            $short_hash = $hash.Substring(0, 7)
+            $commit_list += "* [$short_hash](https://github.com/${{ github.repository }}/commit/$hash) - $message"
+          }
+          
+          $notes = @"
+          ## What's Changed
+          
+          $($commit_list -join "`n")
+          
+          ---
+          "@
+          
+          echo "notes<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$notes" >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Rivals Porting ${{ steps.version.outputs.current }} Alpha"
+          body: ${{ steps.release_notes.outputs.notes }}
+          files: ./Release/RivalsPorting.exe
+          draft: false
+          prerelease: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Repository.json with current version entry
+        run: |
+          $jsonPath = "Repository.json"
+          $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+          
+          $currentDate = Get-Date -Format "MM-dd-yyyy"
+          $newEntry = @{
+            Version = "v${{ steps.version.outputs.current }}-alpha"
+            ExecutableURL = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/RivalsPorting.exe"
+            UploadTime = $currentDate
+          }
+          
+          $json.Versions += $newEntry
+          $json | ConvertTo-Json -Depth 10 | Set-Content $jsonPath
+        shell: pwsh
+
+      - name: Commit and push Repository entry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Repository.json
+          git commit -m "Add ${{ steps.version.outputs.current }} to Repository.json"
+          git push origin HEAD
+        shell: pwsh
+  
+  update-version:
+    runs-on: ubuntu-latest
+    needs: build-and-release  # This ensures it runs AFTER build-and-release completes successfully
+    if: success()  # Only run if build-and-release succeeded
+    permissions:
+      contents: write  # Needed to push commits
+    
+    steps:
+      - name: GIT Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update all version files
+        id: update-versions
+        run: |
+          # Parse the JSON version info
+          VERSION_INFO='${{ needs.build-and-release.outputs.version_info }}'
+          MAJOR=$(echo $VERSION_INFO | jq -r '.major')
+          MINOR=$(echo $VERSION_INFO | jq -r '.minor')
+          PATCH=$(echo $VERSION_INFO | jq -r '.patch')
+          VERSION=$(echo $VERSION_INFO | jq -r '.version')
+          
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          
+          echo Incrementing versions to $VERSION
+          
+          # Update Globals.cs
+          sed -i "s/public static readonly FPVersion Version = new([0-9]*, [0-9]*, [0-9]*, identifier: \"Alpha\");/public static readonly FPVersion Version = new($MAJOR, $MINOR, $PATCH, identifier: \"Alpha\");/" FortnitePorting/Globals.cs
+          echo Globals.cs updated
+          
+          # Update __init__.py
+          sed -i "s/    \"version\": ([0-9]*, [0-9]*, [0-9]*),/    \"version\": ($MAJOR, $MINOR, $PATCH),/" FortnitePorting.Plugins/Blender/rivals_porting/__init__.py
+          echo __init__.py updated
+          
+          # Update blender_manifest.toml
+          sed -i "s/version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$VERSION\"/" FortnitePorting.Plugins/Blender/rivals_porting/blender_manifest.toml
+          echo blender_manifest.toml updated
+          
+          # Update RivalsPorting.uplugin
+          sed -i "s/^[[:space:]]*\"VersionName\": \"[0-9]*\.[0-9]*\.[0-9]*\",/	\"VersionName\": \"$VERSION\",/" FortnitePorting.Plugins/Unreal/RivalsPorting/RivalsPorting.uplugin
+          echo RivalsPorting.uplugin updated
+        shell: bash
+
+      - name: Commit and push version updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add FortnitePorting/Globals.cs
+          git add FortnitePorting.Plugins/Blender/rivals_porting/__init__.py
+          git add FortnitePorting.Plugins/Blender/rivals_porting/blender_manifest.toml
+          git add FortnitePorting.Plugins/Unreal/RivalsPorting/RivalsPorting.uplugin
+          git commit -m "Bump version to ${{ steps.update-versions.outputs.version }}" || echo "No changes to commit"
+          git push origin HEAD
