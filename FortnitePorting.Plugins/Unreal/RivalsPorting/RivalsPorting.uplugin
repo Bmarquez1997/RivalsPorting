@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 3,
-	"VersionName": "0.1.8",
+	"VersionName": "0.4.3",
 	"FriendlyName": "RivalsPorting",
 	"Description": "Import Server for Rivals Porting",
 	"Category": "Importers",
