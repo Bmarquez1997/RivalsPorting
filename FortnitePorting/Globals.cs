@@ -29,7 +29,7 @@ public static class Globals
     public static readonly FGuid ZERO_GUID = new();
     public const string ZERO_CHAR = "0x0000000000000000000000000000000000000000000000000000000000000000";
     
-    public const string LATEST_MAPPINGS = "5.3.2-3107694+++depot_marvel+S7.0_release-Marvel.usmap";
+    public const string LATEST_MAPPINGS = "5.3.2-3198112+++depot_marvel+S7.0_release-Marvel.usmap";
     public const string LATEST_AES = "0x0C263D8C22DCB085894899C3A3796383E9BF9DE0CBFB08C9BF2DEF2E84F29D74";
     
     public static readonly ReadOnlyCollection<string> LATEST_EXTRA_AES = new([
