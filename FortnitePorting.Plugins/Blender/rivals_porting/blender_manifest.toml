@@ -1,10 +1,10 @@
-schema_version = "0.4.4"
+schema_version = "0.4.5"
 
 type = "add-on"
 license = ["SPDX:GPL-3.0-or-later"]
 
 id = "rivals_porting"
-version = "0.4.4"
+version = "0.4.5"
 blender_version_min = "4.2.0"
 name = "Rivals Porting"
 tagline = "Import Server for Rivals Porting"
