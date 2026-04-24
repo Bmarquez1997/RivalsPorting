@@ -363,8 +363,11 @@ class ImportContext:
 
         mesh, mesh_data = UEFormatImport(options).import_file(mesh_path)
 
-        if mesh is not None:
-            bpy.context.view_layer.objects.active = get_armature_mesh(mesh)
+        if mesh is None:
+            return mesh
+
+        if imported_mesh := get_armature_mesh(mesh):
+            bpy.context.view_layer.objects.active = imported_mesh
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.set_normals_from_faces()

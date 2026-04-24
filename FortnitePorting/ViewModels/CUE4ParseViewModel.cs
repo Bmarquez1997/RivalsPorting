@@ -141,7 +141,7 @@ public class CUE4ParseViewModel : ViewModelBase
     
     private async Task InitializeDetex()
     {
-        TextureDecoder.UseAssetRipperTextureDecoder = true;
+        TextureDecoder.UseAssetRipperTextureDecoder = false;
         var detexPath = Path.Combine(DataFolder.FullName, DetexHelper.DLL_NAME);
         if (!File.Exists(detexPath)) await DetexHelper.LoadDllAsync(detexPath);
         DetexHelper.Initialize(detexPath);
