@@ -2,7 +2,7 @@
   "Id": "RivalsPorting",
   "Title": "Rivals Porting",
   "Description": "The repository for Rivals Porting builds",
-  "Icon": "https://raw.githubusercontent.com/Bmarquez1997/RivalsPorting/refs/tags/MR-0.1.5/FortnitePorting/Assets/LogoV3.png",
+  "Icon": "https://github.com/Bmarquez1997/RivalsPorting/raw/refs/heads/main/FortnitePorting/Assets/LogoV3.png",
   "Versions": [
     {
       "Version": "v0.1.5-alpha",
