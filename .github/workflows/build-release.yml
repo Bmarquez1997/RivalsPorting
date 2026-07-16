@@ -81,17 +81,12 @@ jobs:
             $commit_list += "* No commits found between releases."
           }
 
-          $notes = @"
-## What's Changed
+          $nl = [Environment]::NewLine
+          $notes = "## What's Changed" + $nl + $nl + ($commit_list -join $nl) + $nl + $nl + "---" + $nl
 
-$($commit_list -join "`n")
-
----
-"@
-
-          "notes<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          $notes | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "notes<<EOF" -Encoding utf8NoBOM
+          Add-Content -Path $env:GITHUB_OUTPUT -Value $notes -Encoding utf8NoBOM
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "EOF" -Encoding utf8NoBOM
 
       - name: Update to main
         shell: pwsh
