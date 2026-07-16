@@ -47,7 +47,7 @@ dotnet publish RivalsPorting -c Release --self-contained -r win-x64 -o "./Releas
 
 ## Contributors
 
-[Chippy](https://github.com/Bmarquez1997) - Has done some incredible work on the new material system and exporting features overall.
+[Half](https://github.com/h4lfheart) - Created Fortnite Porting, the original application that Rivals Porting was built off of.
 
 [Ghost](https://github.com/GhostScissors) - Super helpful with implementing the two built-in RADA and BINKA audio decoders along with fixing tons of asset deserialization issues caused by engine changes.
 
