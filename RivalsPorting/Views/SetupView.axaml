@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewModels="clr-namespace:RivalsPorting.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:ext="clr-namespace:RivalsPorting.Extensions;assembly=RivalsPorting"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="clr-namespace:RivalsPorting.Controls"
+             d:DesignHeight="770" d:DesignWidth="1160"
+             x:Class="RivalsPorting.Views.SetupView"
+             x:DataType="viewModels:SetupViewModel">
+    <Grid RowDefinitions="35, *" >
+        <Border Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False" CornerRadius="0" Background="#000000" Opacity="0.5"/>
+        
+        <Grid Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False"
+              Opacity="0.25" 
+              Effect="blur(3)"
+              ClipToBounds="False">
+            <controls:ScrollingCardGrid 
+                ImagePaths="{Binding ImagePaths}" 
+                CardGap="16"
+                Margin="-50"/>
+        </Grid>
+         
+        <Border Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False" Opacity="0.75">
+            <Border.Background>
+                <RadialGradientBrush Center="50%, 50%">
+                    <GradientStops>
+                        <GradientStop Offset="0" Color="#00000000"/>
+                        <GradientStop Offset="0.5" Color="#00000000"/>
+                        <GradientStop Offset="1" Color="#FF000000"/>
+                    </GradientStops>
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+        
+        <ui:Frame Grid.Row="1" x:Name="ContentFrame" Margin="{ext:Space 1}"/>
+    </Grid>
+</UserControl>

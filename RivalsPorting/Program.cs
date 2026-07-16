@@ -1,0 +1,105 @@
+﻿using Avalonia;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using RivalsPorting.Application;
+using RivalsPorting.Services;
+using Serilog;
+
+namespace RivalsPorting;
+
+internal static class Program
+{
+    private static Mutex _programMutex = null!;
+    
+    [STAThread]
+    public static void Main(string[] args)
+    {
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject.ToString() is not { } exceptionString)
+                return;
+            
+            Log.Fatal(exceptionString);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            Log.Fatal(e.Exception.ToString());
+            e.SetObserved();
+        };
+        
+        try
+        {
+            _programMutex = new Mutex(true, "RivalsPortingMutex", out var isNew);
+
+            if (isNew)
+            {
+                StartApp(args);
+            }
+            else
+            {
+                OpenExistingApp(args);
+            }
+            
+        }
+        catch (Exception e)
+        {
+            Debugger.Break();
+            Log.Fatal(e.ToString());
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+            _programMutex.ReleaseMutex();
+        }
+    }
+
+    private static void StartApp(string[] args)
+    {
+        TaskService.Run(() =>
+        {
+            using var pipe = new NamedPipeServerStream("RivalsPorting");
+
+            var reader = new BinaryReader(pipe);
+            while (true)
+            {
+                pipe.WaitForConnection();
+
+                var url = reader.ReadString();
+                App.HandleUrlScheme(url);
+                
+                pipe.Disconnect();
+            }
+        });
+        
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
+    
+    private static void OpenExistingApp(string[] args)
+    {
+        try
+        {
+            using var pipe = new NamedPipeClientStream("RivalsPorting");
+            pipe.Connect(1000);
+
+            var writer = new BinaryWriter(pipe);
+            writer.Write(args[0]);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e.ToString());
+            StartApp(args);
+        }
+    }
+
+    private static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<RivalsPortingApp>()
+            .UsePlatformDetect()
+            .LogToTrace()
+            .With(new Win32PlatformOptions { CompositionMode = [Win32CompositionMode.WinUIComposition] });
+}

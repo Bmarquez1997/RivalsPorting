@@ -1,0 +1,37 @@
+using System.Threading.Tasks;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using RivalsPorting.Extensions;
+using Newtonsoft.Json;
+using RivalsPorting.Models.API.Responses;
+using RivalsPorting.Models.Supabase.Tables;
+
+namespace RivalsPorting.Models.Leaderboard;
+
+public partial class LeaderboardUserLevel : ObservableObject
+{
+    [ObservableProperty] [JsonProperty("rank")] private int _ranking;
+    [ObservableProperty] [JsonProperty("user_id")] private string _userId;
+
+    [ObservableProperty] [JsonProperty("level")] private int _level;
+    [ObservableProperty] [JsonProperty("total_xp")] private int _totalXP;
+
+    [ObservableProperty] private UserInfoResponse? _userInfo;
+
+    public SolidColorBrush UserBrush => new(UserInfo?.Role switch
+    {
+        ESupabaseRole.System => Color.Parse("#B040FF"),
+        ESupabaseRole.Owner => Color.Parse("#83c4db"),
+        ESupabaseRole.Support => Color.Parse("#635fd4"),
+        ESupabaseRole.Staff => Color.Parse("#9856a2"),
+        ESupabaseRole.Verified => Color.Parse("#00ff97"),
+        ESupabaseRole.User => Colors.White,
+        _ => Colors.White
+    });
+
+    public async Task Load()
+    {
+        UserInfo = await SupaBase.GetUserAsync(UserId);
+    }
+}

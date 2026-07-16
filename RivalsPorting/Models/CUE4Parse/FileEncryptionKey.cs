@@ -1,0 +1,23 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CUE4Parse.Encryption.Aes;
+using Newtonsoft.Json;
+
+namespace RivalsPorting.Models.CUE4Parse;
+
+public partial class FileEncryptionKey : ObservableValidator
+{
+    public static FileEncryptionKey Empty => new(Globals.ZERO_CHAR);
+    
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EncryptionKey))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    private string _keyString;
+
+    public FileEncryptionKey(string keyString)
+    {
+        KeyString = keyString;
+    }
+
+    [JsonIgnore] public bool IsEmpty => string.IsNullOrWhiteSpace(KeyString);
+    [JsonIgnore] public FAesKey EncryptionKey => new(KeyString);
+}

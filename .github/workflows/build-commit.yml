@@ -1,0 +1,48 @@
+name: Build Commit
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: GIT Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Fetch Submodules Recursively
+        run: git submodule update --init --recursive
+
+      - name: .NET 10 Setup
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: .NET Restore
+        run: dotnet restore RivalsPorting
+
+      - name: Get Version
+        shell: bash
+        run: echo "RP_VERSION=1.0.0-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: .NET Publish
+        run: |
+          dotnet publish RivalsPorting -c Release --self-contained -r win-x64 -o "./Release" `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:Version=${{ env.RP_VERSION }}
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RivalsPorting-${{ github.sha }}
+          path: ./Release/RivalsPorting.exe
+          retention-days: 30

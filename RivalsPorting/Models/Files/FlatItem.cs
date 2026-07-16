@@ -1,0 +1,63 @@
+using System.IO;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CUE4Parse.Utils;
+using RivalsPorting.Extensions;
+using RivalsPorting.Models.Chat;
+using RivalsPorting.Services;
+using RivalsPorting.Views;
+using Newtonsoft.Json;
+using RivalsPorting.Exporting;
+
+namespace RivalsPorting.Models.Files;
+
+public partial class FlatItem : ObservableObject
+{
+    [ObservableProperty] private string _path;
+    [ObservableProperty] private string _vfsName;
+
+    public FlatItem(string path, string vfsName = "")
+    {
+        Path = path;
+        VfsName = vfsName;
+    }
+
+    [RelayCommand]
+    public async Task CopyPath(bool withoutExtension = false)
+    {
+        await App.Clipboard.SetTextAsync(withoutExtension ? Path.SubstringBefore(".") : Path);
+    }
+    
+    
+    [RelayCommand]
+    public async Task CopyProperties()
+    {
+        var assets = await UEParse.Provider.LoadAllObjectsAsync(Exporter.FixPath(Path));
+        var json = JsonConvert.SerializeObject(assets, Formatting.Indented);
+        await App.Clipboard.SetTextAsync(json);
+    }
+    
+    [RelayCommand]
+    public async Task SaveProperties()
+    {
+        if (await App.SaveFileDialog(suggestedFileName: Path.SubstringAfterLast("/").SubstringBefore("."),
+                Globals.JSONFileType) is { } path)
+        {
+            var assets = await UEParse.Provider.LoadAllObjectsAsync(Exporter.FixPath(Path));
+            var json = JsonConvert.SerializeObject(assets, Formatting.Indented);
+            await File.WriteAllTextAsync(path, json);
+        }
+    }
+
+    [RelayCommand]
+    public async Task SendToChat()
+    {
+        var (icon, displayName, _) = await UEParse.ResolveGameFileAsync(Path);
+        await TaskService.RunDispatcherAsync(() =>
+        {
+            ChatVM.PendingGameFile = new PendingGameFileAttachment(Path, icon, displayName);
+            Navigation.App.Open<ChatView>();
+        });
+    }
+}

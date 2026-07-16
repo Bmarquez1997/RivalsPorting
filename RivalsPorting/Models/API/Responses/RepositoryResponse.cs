@@ -1,0 +1,20 @@
+using System;
+using System.Collections.Generic;
+
+namespace RivalsPorting.Models.API.Responses;
+
+public class RepositoryResponse
+{
+    public string Id;
+    public string Title;
+    public string Description;
+    public string? Icon;
+    public List<RepositoryVersion> Versions = [];
+}
+
+public class RepositoryVersion
+{
+    public RPVersion Version { get; set; }
+    public string ExecutableURL { get; set; }
+    public DateTime UploadTime { get; set; }
+}

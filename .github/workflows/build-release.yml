@@ -1,0 +1,144 @@
+name: Build Release
+run-name: Release ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+      - 'MR-1.*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: GIT Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Fetch Submodules Recursively
+        run: git submodule update --init --recursive
+
+      - name: .NET 10 Setup
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: .NET Restore
+        run: dotnet restore RivalsPorting
+
+      - name: Get Version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $current = $tag -replace '^MR-', ''
+          echo "current=$current" >> $env:GITHUB_OUTPUT
+          echo "RP_VERSION=$current" >> $env:GITHUB_ENV
+
+      - name: .NET Publish
+        run: |
+          dotnet publish RivalsPorting -c Release --self-contained -r win-x64 -o "./Release" `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:Version=${{ env.RP_VERSION }}
+
+      - name: Generate release notes with commit links
+        id: release_notes
+        shell: pwsh
+        run: |
+          git fetch origin --tags --force
+
+          $currentTag = "${{ github.ref_name }}"
+          $prevTag = git describe --tags --match "MR-*" --abbrev=0 "$currentTag^" 2>$null
+
+          if (-not $prevTag) {
+            $range = $currentTag
+            Write-Host "No previous MR-* tag found; listing commits reachable from $currentTag"
+          } else {
+            $range = "$prevTag..$currentTag"
+            Write-Host "Listing commits in range $range"
+          }
+
+          $commit_list = @()
+          git log --pretty=format:"%H|%s" $range | ForEach-Object {
+            if ([string]::IsNullOrWhiteSpace($_)) { return }
+            $parts = $_ -split '\|', 2
+            if ($parts.Length -lt 2) { return }
+            $hash = $parts[0]
+            $message = $parts[1]
+            $short_hash = $hash.Substring(0, 7)
+            $commit_list += "* [$short_hash](https://github.com/${{ github.repository }}/commit/$hash) - $message"
+          }
+
+          if ($commit_list.Count -eq 0) {
+            $commit_list += "* No commits found between releases."
+          }
+
+          $notes = @"
+## What's Changed
+
+$($commit_list -join "`n")
+
+---
+"@
+
+          "notes<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $notes | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Update to main
+        shell: pwsh
+        run: |
+          git fetch origin
+          git checkout main
+          git pull origin main
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Rivals Porting ${{ steps.version.outputs.current }}"
+          body: ${{ steps.release_notes.outputs.notes }}
+          files: ./Release/RivalsPorting.exe
+          draft: false
+          prerelease: true
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Repository.json with current version entry
+        shell: pwsh
+        run: |
+          $jsonPath = "Repository.json"
+          $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+
+          $currentDate = Get-Date -Format "MM-dd-yyyy"
+          $newEntry = [pscustomobject]@{
+            Version = "v${{ steps.version.outputs.current }}-alpha"
+            ExecutableURL = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/RivalsPorting.exe"
+            UploadTime = $currentDate
+          }
+
+          $versions = [System.Collections.Generic.List[object]]::new()
+          foreach ($entry in @($json.Versions)) {
+            $versions.Add($entry)
+          }
+          $versions.Add($newEntry)
+          $json.Versions = $versions.ToArray()
+
+          $json | ConvertTo-Json -Depth 10 | Set-Content $jsonPath -Encoding utf8
+
+      - name: Commit and push Repository entry
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Repository.json
+          git commit -m "Add ${{ steps.version.outputs.current }} to Repository.json"
+          git push origin HEAD

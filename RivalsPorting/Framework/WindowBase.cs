@@ -1,0 +1,67 @@
+using System;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Microsoft.Extensions.DependencyInjection;
+using RivalsPorting.Application;
+using RivalsPorting.Services;
+
+namespace RivalsPorting.Framework;
+
+public abstract class WindowBase<T> : Window where T : WindowModelBase
+{
+    public T WindowModel { get; set; }
+
+    public WindowBase(T? templateWindowModel = null, bool initializeWindowModel = true)
+    {
+        WindowManager.Register(this);
+
+        WindowModel = templateWindowModel ?? AppServices.Services.GetService<T>();
+        WindowModel.Window = this;
+        
+        if (initializeWindowModel)
+        {
+            TaskService.Run(WindowModel.Initialize);
+        }
+    }
+
+    protected override async void OnClosed(EventArgs e)
+    {
+        WindowManager.Unregister(this);
+        base.OnClosed(e);
+        
+        await WindowModel.OnViewExited();
+    }
+    
+    protected void OnPointerPressedUpperBar(object? sender, PointerPressedEventArgs e)
+    {
+        BeginMoveDrag(e);
+    }
+
+    protected void OnMinimizePressed(object? sender, PointerPressedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+    
+    protected void OnMaximizePressed(object? sender, PointerPressedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+    
+    protected void OnClosePressed(object? sender, PointerPressedEventArgs e)
+    {
+        Close();
+    }
+}
+
+
+public static class WindowExtensions 
+{
+    extension(Window window)
+    {
+        public void BringToTop()
+        {
+            window.Topmost = true;
+            window.Topmost = false;
+        }
+    }
+}

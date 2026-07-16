@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ext="clr-namespace:RivalsPorting.Extensions;assembly=RivalsPorting"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:setup="clr-namespace:RivalsPorting.ViewModels.Setup"
+             d:DesignHeight="770" d:DesignWidth="1160"
+             x:Class="RivalsPorting.Views.Setup.OnlineSetupView"
+             x:DataType="setup:OnlineSetupViewModel">
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <TextBlock Text="Online Settings" FontFamily="{StaticResource SFDisplayBold}" FontSize="40" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{ext:Space 0, 0, 0, 1}">
+            <TextBlock.Effect>
+                <DropShadowEffect BlurRadius="15" Color="#8F000000" OffsetX="0" OffsetY="0" />
+            </TextBlock.Effect>
+        </TextBlock>
+        
+        <TextBlock Text="Please sign in with your discord account to use online features." HorizontalAlignment="Center"
+                   VerticalAlignment="Center" Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"
+                   Margin="{ext:Space 0, 0, 0, 2}">
+            <TextBlock.Effect>
+                <DropShadowEffect BlurRadius="15" Color="#8F000000" OffsetX="0" OffsetY="0" />
+            </TextBlock.Effect>
+        </TextBlock>
+            
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Button Content="Skip" Margin="{ext:Space 0, 0, 1, 0}" Classes="Red"
+                    Command="{Binding SkipCommand}"
+                    HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                
+            <Button Content="Sign In" Classes="Purple"
+                    Command="{Binding SignInCommand}"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

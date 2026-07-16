@@ -1,6 +1,14 @@
 [submodule "Dependencies/CUE4Parse"]
 	path = Dependencies/CUE4Parse
 	url = https://github.com/Bmarquez1997/CUE4Parse
-[submodule "Dependencies/EpicManifestParser"]
-	path = Dependencies/EpicManifestParser
-	url = https://github.com/NotOfficer/EpicManifestParser
+[submodule "Dependencies/FluentAvalonia.BreadcrumbBar"]
+	path = Dependencies/FluentAvalonia.BreadcrumbBar
+	url = https://github.com/h4lfheart/FluentAvalonia.BreadcrumbBar
+[submodule "RivalsPorting.Plugins/UEFormat/Blender"]
+	path = RivalsPorting.Plugins/UEFormat/Blender
+	url = git@github.com:Bmarquez1997/UEFormat.git
+	branch = blender
+[submodule "RivalsPorting.Plugins/UEFormat/Unreal"]
+	path = RivalsPorting.Plugins/UEFormat/Unreal
+	url = git@github.com:Bmarquez1997/UEFormat.git
+	branch = unreal

@@ -1,0 +1,29 @@
+using System;
+using System.IO;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using RivalsPorting.Framework;
+
+namespace RivalsPorting.ViewModels.Settings;
+
+public partial class DeveloperSettingsViewModel : SettingsViewModelBase
+{
+     [ObservableProperty, NotifyPropertyChangedFor(nameof(PortlePath))] private string _portleExecutablePath;
+     [ObservableProperty, NotifyPropertyChangedFor(nameof(PortlePath))] private bool _usePortlePath;
+     
+     [JsonIgnore]
+     public string PortlePath => UsePortlePath && File.Exists(PortleExecutablePath) 
+          ? PortleExecutablePath 
+          : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Portle", "Portle.exe");
+
+     
+     [ObservableProperty] private int _chunkCacheLifetime = 7;
+     [ObservableProperty] private int _requestTimeoutSeconds = 60;
+     
+     public async Task BrowsePortlePath()
+     {
+          if (await App.BrowseFileDialog() is { } path) PortleExecutablePath = path;
+     }
+
+}

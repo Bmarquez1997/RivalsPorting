@@ -1,0 +1,133 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:ext="clr-namespace:RivalsPorting.Extensions;assembly=RivalsPorting"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:windowModels="clr-namespace:RivalsPorting.WindowModels"
+        x:Class="RivalsPorting.Windows.SoundBankPreviewWindow"
+        x:DataType="windowModels:SoundBankPreviewWindowModel"
+        Width="540" SizeToContent="Height" RequestedThemeVariant="Dark" Background="{DynamicResource WindowBackgroundBrush}"
+        TransparencyLevelHint="{Binding Settings.Application.TransparencyHints}"
+        ExtendClientAreaToDecorationsHint="True" ExtendClientAreaChromeHints="NoChrome" FontFamily="{StaticResource SFTextRegular}"
+        WindowStartupLocation="CenterScreen" ClosingBehavior="OwnerAndChildWindows" ExtendClientAreaTitleBarHeightHint="35"
+        Icon="/Assets/LogoRebrand.ico"
+        Title="Sound Bank Viewer">
+    <Window.Styles>
+        <Style Selector="Border.soundBankTrack">
+            <Setter Property="Background" Value="#0DFFFFFF" />
+        </Style>
+        <Style Selector="Border.soundBankTrack.playing">
+            <Setter Property="Background" Value="{DynamicResource FPAccentBrush}" />
+        </Style>
+    </Window.Styles>
+    <Grid RowDefinitions="35, Auto, Auto" Margin="{Binding $parent[Window].OffScreenMargin}">
+        <Grid Grid.Row="0" HorizontalAlignment="Stretch" PointerPressed="OnPointerPressedUpperBar">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="{ext:Space 0.75}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{ext:Space 0.5}" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ui:ImageIcon Grid.Column="0" Source="{DynamicResource FPLogoBitmap}"
+                              HorizontalAlignment="Right"
+                              Width="20" Height="20"
+                              RenderOptions.BitmapInterpolationMode="HighQuality" RenderOptions.EdgeMode="Antialias"/>
+
+                <TextBlock Grid.Column="2" Text="Sound Bank Viewer" FontFamily="{StaticResource SFTextSemiBold}" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+
+            <Grid HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{ext:Space 0.5}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{ext:Space 0.5}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="1" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" PointerPressed="OnMinimizePressed" Cursor="Hand" CornerRadius="0" Classes="MinimizeMaximize" Child="{avalonia:MaterialIconExt Minus}" Width="35" Height="35"/>
+                <Border Grid.Column="2" PointerPressed="OnMaximizePressed" Cursor="Hand" CornerRadius="0" Classes="MinimizeMaximize" Child="{avalonia:MaterialIconExt Maximize}" Width="35" Height="35"/>
+                <Border Grid.Column="4" PointerPressed="OnClosePressed" Cursor="Hand" CornerRadius="0" Classes="Close" Child="{avalonia:MaterialIconExt Close}" Width="35" Height="35"/>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="{ext:Space 1}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="{ext:Space 0.5}"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="{ext:Space 1}"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Tracks" FontFamily="{StaticResource SFTextSemiBold}" FontSize="14"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="2" Text="{Binding SoundName}" Opacity="0.55" FontSize="12"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <ScrollViewer Grid.Row="4" MaxHeight="240">
+                <ItemsControl ItemsSource="{Binding Tracks}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="windowModels:SoundBankTrack">
+                            <Border Classes="soundBankTrack" Classes.playing="{Binding IsPlaying}"
+                                    CornerRadius="4"
+                                    Padding="{ext:Space 1}" Margin="{ext:Space 0, 0, 0, 0.5}"
+                                    HorizontalAlignment="Stretch" Cursor="Hand" PointerPressed="OnTrackPressed">
+                                <TextBlock Text="{Binding Name}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource SFTextSemiBold}"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="{ext:Space 1, 0, 1, 1}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{ext:Space 0.5}"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{ext:Space 0.5}"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{ext:Space 1}"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" ToolTip.Tip="Previous" Command="{Binding Previous}">
+                <avalonia:MaterialIcon Kind="SkipPrevious"/>
+            </Button>
+            <Button Grid.Column="2" ToolTip.Tip="Play / Pause" Command="{Binding TogglePause}">
+                <avalonia:MaterialIcon Kind="{Binding PauseIcon}"/>
+            </Button>
+            <Button Grid.Column="4" ToolTip.Tip="Next" Command="{Binding Next}">
+                <avalonia:MaterialIcon Kind="SkipNext"/>
+            </Button>
+
+            <Grid Grid.Column="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{ext:Space 1}" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="{ext:Space 1}" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding CurrentTime, StringFormat=mm\\:ss, FallbackValue=0:00}"
+                           VerticalAlignment="Center" />
+                <Slider Grid.Column="2" Value="{Binding CurrentTime.TotalSeconds}"
+                          Minimum="0" Maximum="{Binding TotalTime.TotalSeconds}"
+                          ValueChanged="OnSliderValueChanged"/>
+                <TextBlock Grid.Column="4"
+                           Text="{Binding TotalTime, StringFormat=mm\\:ss, FallbackValue=0:00}"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
