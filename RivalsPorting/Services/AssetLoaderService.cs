@@ -138,10 +138,23 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                             var assetItem = new AssetItem(assetArgs);
                             await assetItem.LoadBitmapAsync();
 
+                            skinsByHero.TryGetValue(heroId, out var skins);
+                            skins ??= [];
+                            skinLookupByHero.TryGetValue(heroId, out var skinLookup);
+                            skinLookup ??= new Dictionary<(string SkinId, string ShapeId), FStructFallback>();
+
+                            // Ignore placeholder hero shapes that have no UISkinTable rows (e.g. Deadpool/Black Cat shape 1).
+                            var shapesWithSkins = skinLookup.Keys
+                                .Select(key => key.ShapeId)
+                                .ToHashSet(StringComparer.Ordinal);
+                            var validShapes = orderedShapes
+                                .Where(shape => shapesWithSkins.Contains(shape.ShapeId))
+                                .ToList();
+
                             // Skip shape 0 only when there are multiple other shapes (e.g. C&D 1+2, Banner 1-3).
-                            // Heroes with a single alt form (e.g. Magick, Deadpool) keep shape 0 in Forms.
-                            var nonZeroShapes = orderedShapes.Where(shape => shape.ShapeId != "0").ToList();
-                            var formShapes = nonZeroShapes.Count > 1 ? nonZeroShapes : orderedShapes;
+                            // Heroes with a single alt form (e.g. Magik) keep shape 0 in Forms.
+                            var nonZeroShapes = validShapes.Where(shape => shape.ShapeId != "0").ToList();
+                            var formShapes = nonZeroShapes.Count > 1 ? nonZeroShapes : validShapes;
 
                             var formStyles = new List<FormStyleData>();
                             foreach (var shape in formShapes)
@@ -162,11 +175,6 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
 
                                 formStyles.Add(new FormStyleData(shapeName, heroId, shape.ShapeId, formPreview));
                             }
-
-                            skinsByHero.TryGetValue(heroId, out var skins);
-                            skins ??= [];
-                            skinLookupByHero.TryGetValue(heroId, out var skinLookup);
-                            skinLookup ??= new Dictionary<(string SkinId, string ShapeId), FStructFallback>();
 
                             assetItem.AssetInfo = formStyles.Count > 1 || skins.Count > 0
                                 ? new AssetInfo(assetItem, skins.ToArray(), formStyles, skinLookup)

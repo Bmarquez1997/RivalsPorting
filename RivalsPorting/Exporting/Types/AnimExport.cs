@@ -6,14 +6,18 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Animation.CurveExpression;
 using CUE4Parse.UE4.Assets.Exports.MetaSound;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Objects;
+using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
+using RivalsPorting.Exporting;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
 using RivalsPorting.Extensions;
 using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Fortnite;
+using RivalsPorting.Models.Marvel;
 using RivalsPorting.Shared.Extensions;
 
 namespace RivalsPorting.Exporting.Types;
@@ -72,22 +76,21 @@ public class AnimExport : BaseExport
                 {
                     foreach (var style in animStyles)
                         ExportAnimAsset(style.StyleData);
-
-                    break;
                 }
-
-                if (asset is UAnimMontage or UAnimSequenceBase)
+                else if (asset is UAnimMontage or UAnimSequenceBase)
                 {
                     ExportAnimAsset(asset);
-                    break;
                 }
-                
-                var montage = asset.GetOrDefault<UAnimMontage?>("Animation");
-                montage ??= asset.GetOrDefault<UAnimMontage?>("FrontEndAnimation");
-                montage ??= DataListMontage(asset);
-                if (montage is null) break;
-                
-                AnimMontage(montage);
+                else
+                {
+                    var montage = asset.GetOrDefault<UAnimMontage?>("Animation");
+                    montage ??= asset.GetOrDefault<UAnimMontage?>("FrontEndAnimation");
+                    montage ??= DataListMontage(asset);
+                    if (montage is not null)
+                        AnimMontage(montage);
+                }
+
+                RivalsEmoteWeaponProps.AppendForExportedAnim(Exporter, Props, asset, styles);
                 break;
             }
         }
@@ -225,6 +228,40 @@ public class AnimExport : BaseExport
                 };
 
                 Props.Add(prop);
+                break;
+            }
+            case AnimNotifyState_TimedSkeletonAnimation timedSkeleton:
+            {
+                if (!timedSkeleton.SkeletalMeshTemplate.TryLoad(out USkeletalMesh skeletalMesh))
+                    break;
+
+                var mesh = Exporter.Mesh(skeletalMesh);
+                if (mesh is null) break;
+
+                var animSections = new List<ExportAnimSection>();
+                if (timedSkeleton.AnimToPlay.TryLoad(out UObject animAsset))
+                {
+                    switch (animAsset)
+                    {
+                        case UAnimMontage propMontage:
+                            if (propMontage.CompositeSections.FirstOrDefault() is { } firstSection)
+                                HandleSectionTree(animSections, propMontage, firstSection);
+                            break;
+                        case UAnimSequenceBase propSequence when Exporter.AnimSequence(propSequence) is { } section:
+                            animSections.Add(section);
+                            break;
+                    }
+                }
+
+                Props.Add(new ExportProp
+                {
+                    Mesh = mesh,
+                    AnimSections = animSections,
+                    SocketName = timedSkeleton.SocketName.IsNone ? string.Empty : timedSkeleton.SocketName.Text,
+                    LocationOffset = FVector.ZeroVector,
+                    RotationOffset = FRotator.ZeroRotator,
+                    Scale = FVector.OneVector
+                });
                 break;
             }
         }

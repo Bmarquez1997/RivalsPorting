@@ -8,6 +8,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
+using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
@@ -18,6 +19,7 @@ using CUE4Parse.UE4.Objects.Engine.Animation;
 using CUE4Parse.UE4.Objects.GameplayTags;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
+using RivalsPorting.Exporting;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
 using RivalsPorting.Extensions;
@@ -54,23 +56,23 @@ public class MeshExport : BaseExport
                     && resultInfoStruct.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
                     && likeActorClass.ClassDefaultObject.TryLoad(out UObject likeActorObject))
                 {
-                    Export(likeActorObject, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType);
+                    Export(likeActorObject, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
                 }
                 else if (objectStyle.StyleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass")
                          && showActorClass.ClassDefaultObject.TryLoad(out UObject showActorObject))
                 {
-                    Export(showActorObject, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType);
+                    Export(showActorObject, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
                 }
                 else
                 {
-                    Export(objectStyle.StyleData, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType);
+                    Export(objectStyle.StyleData, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
                 }
             }
             
             return;
         }
 
-        Export(asset, exportType);
+        Export(asset, exportType, styles);
         
         var assetStyles = styles.OfType<AssetStyleData>();
         ExportStyles(asset, assetStyles);
@@ -118,7 +120,7 @@ public class MeshExport : BaseExport
         
     }
 
-    public void Export(UObject asset, EExportType exportType)
+    public void Export(UObject asset, EExportType exportType, BaseStyleData[]? styles = null)
     {
         switch (exportType)
         {
@@ -127,40 +129,26 @@ public class MeshExport : BaseExport
                 if (asset.TryGetValue(out UObject characterMesh, "Mesh1"))
                 {
                     Meshes.AddIfNotNull(Exporter.MeshComponent(characterMesh));
-                    break;
                 }
-
-                UAnimMontage? montage = asset.GetOrDefault<UAnimMontage?>("FrontendAnimMontageIdleOverride");
-                var parts = asset.GetOrDefault("BaseCharacterParts", Array.Empty<UObject>());
-                if (asset.TryGetValue(out UObject heroDefinition, "HeroDefinition"))
+                else
                 {
-                    if (parts.Length == 0 && heroDefinition.TryGetValue(out UObject[] specializations, "Specializations"))
+                    var parts = asset.GetOrDefault("BaseCharacterParts", Array.Empty<UObject>());
+                    if (parts.Length == 0
+                        && asset.TryGetValue(out UObject heroDefinition, "HeroDefinition")
+                        && heroDefinition.TryGetValue(out UObject[] specializations, "Specializations"))
                     {
                         parts = specializations.First().GetOrDefault("CharacterParts", Array.Empty<UObject>());
                     }
 
-                    montage ??= heroDefinition.GetOrDefault<UAnimMontage?>("FrontendAnimMontageIdleOverride");
-                }
-                
-                foreach (var part in parts)
-                {
-                    Meshes.AddIfNotNull(Exporter.CharacterPart(part));
-                    
-                    montage ??= part.GetOrDefault<UAnimMontage?>("FrontendAnimMontageIdleOverride");
+                    foreach (var part in parts)
+                    {
+                        Meshes.AddIfNotNull(Exporter.CharacterPart(part));
+                    }
                 }
 
-                if (Meshes.FirstOrDefault(mesh => mesh is ExportPart { Type: EFortCustomPartType.Body }) is ExportPart bodyPart)
+                if (Exporter.Meta.Settings.ImportLobbyPoses)
                 {
-                    montage ??= bodyPart.GenderPermitted switch
-                    {
-                        EFortCustomGender.Female => UEParse.FemaleLobbyMontages.Random()!,
-                        _ => UEParse.MaleLobbyMontages.Random()!
-                    };
-                }
-                
-                if (Exporter.Meta.Settings.ImportLobbyPoses && montage is not null)
-                {
-                    Animation = new AnimExport(montage.Name, montage, [], EExportType.Animation, Exporter.Meta, null);
+                    TryImportRivalsLobbyPose(styles ?? []);
                 }
                 
                 break;
@@ -634,6 +622,70 @@ public class MeshExport : BaseExport
             {
                 Lights.Add(exportLight);
             }
+        }
+    }
+
+    private void TryImportRivalsLobbyPose(BaseStyleData[] styles)
+    {
+        string? heroId = null;
+        string? shapeId = null;
+
+        // Prefer the selected form when present — Identifier may be a shape-0 skin row.
+        if (styles.OfType<FormStyleData>().FirstOrDefault() is { } formStyle)
+        {
+            heroId = formStyle.HeroId;
+            shapeId = formStyle.ShapeId;
+        }
+
+        foreach (var style in styles.OfType<AssetStyleData>())
+        {
+            if (!style.StyleData.TryGetValue(out FStructFallback identifier, "Identifier"))
+                continue;
+
+            heroId ??= identifier.GetOrDefault("HeroID", string.Empty);
+            shapeId ??= identifier.GetOrDefault("ShapeID", "0");
+            if (!string.IsNullOrEmpty(heroId))
+                break;
+        }
+
+        if (string.IsNullOrEmpty(heroId))
+            return;
+
+        shapeId ??= "0";
+
+        if (!UEParse.Provider.TryLoadPackageObject<UDataTable>(
+                "Marvel/Content/Marvel/Data/DataTable/UI/HeroSkin/UIHeroEmoteTable",
+                out var emoteTable)
+            || emoteTable.RowMap is null)
+        {
+            return;
+        }
+
+        foreach (var emote in emoteTable.RowMap.Values)
+        {
+            if (!emote.TryGetValue(out FStructFallback identifier, "EmoteIdentifier"))
+                continue;
+
+            if (identifier.GetOrDefault("EmoteID", string.Empty) != "201")
+                continue;
+            if (identifier.GetOrDefault("SkinID", string.Empty) != "001")
+                continue;
+            if (identifier.GetOrDefault("HeroID", string.Empty) != heroId)
+                continue;
+            if (identifier.GetOrDefault("ShapeID", "0") != shapeId)
+                continue;
+
+            var animPath = RivalsEmoteWeaponProps.GetEmoteAnimationPath(emote);
+            if (animPath is null)
+                return;
+
+            if (!UEParse.Provider.TryLoadPackageObject(animPath, out var animAsset) || animAsset is null)
+                return;
+
+            Animation = new AnimExport(animAsset.Name, animAsset, [], EExportType.Animation, Exporter.Meta, null);
+            if (RivalsEmoteWeaponProps.ResolveShowActorFromStyles(styles) is { } showBp)
+                RivalsEmoteWeaponProps.AppendFromEmote(Exporter, Animation.Props, emote, showBp);
+            return;
         }
     }
     

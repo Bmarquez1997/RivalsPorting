@@ -48,7 +48,8 @@ class MeshImportContext:
                 self.parent_deform_bones(imported_mesh["Skeleton"], ["dfrm_", "deform_"])
                 self.parent_bones(imported_mesh["Skeleton"], extra_deform_mappings)
             
-        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
+        master_skeleton = None
+        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT]: # and self.options.get("MergeArmatures"):
             master_skeleton = get_selected_armature()
             master_mesh = get_armature_mesh(master_skeleton)
             # Update attribute to account for joined mesh
@@ -81,8 +82,14 @@ class MeshImportContext:
             if rig_type == ERigType.TASTY:
                 self.create_tasty_rig(master_skeleton)
 
+        # Lobby poses are nested on Outfit exports; apply even when MergeArmatures is off.
+        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT]:
             if anim_data := data.get("Animation"):
-                self.import_anim_data(anim_data, master_skeleton)
+                if master_skeleton is None and self.imported_meshes:
+                    body_part = first(self.imported_meshes, lambda p: p.get("Type") == EFortCustomPartType.BODY)
+                    master_skeleton = (body_part or self.imported_meshes[0]).get("Skeleton")
+                if master_skeleton is not None:
+                    self.import_anim_data(anim_data, master_skeleton)
 
         if self.type in [EExportType.SIDEKICK]:
             master_mesh = self.imported_meshes[0]["Mesh"]
