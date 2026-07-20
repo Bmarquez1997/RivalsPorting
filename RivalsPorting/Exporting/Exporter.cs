@@ -131,6 +131,18 @@ public static class Exporter
                 var exportType = asset.CreationData.ExportType;
                 var exportObject = asset.CreationData.Object;
 
+                // Multi-shape outfits: combine Forms (ShapeID) + Skins (SkinID) into the matching UISkinTable row.
+                if (exportType is EExportType.Outfit
+                    && !metaData.ExportLocation.IsFolder
+                    && assetInfo.ResolveOutfitSkin() is { } resolvedOutfitSkin)
+                {
+                    styles =
+                    [
+                        ..styles.Where(style => style is not AssetStyleData and not FormStyleData),
+                        new AssetStyleData(resolvedOutfitSkin, asset.IconDisplayImage!)
+                    ];
+                }
+
                 foreach (var style in styles.OfType<AssetStyleData>())
                 {
                     if (metaData.Settings.ImportGameModel

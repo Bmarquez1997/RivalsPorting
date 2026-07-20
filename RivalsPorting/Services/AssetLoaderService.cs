@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
@@ -40,46 +42,92 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                     LoadHiddenAssets = true,
                     AssetHandler = async loader =>
                     {
-                        async Task<Dictionary<HeroKey, List<FStructFallback>>> GetSkinMap()
+                        async Task<(
+                            Dictionary<string, List<FStructFallback>> SkinsByHero,
+                            Dictionary<string, Dictionary<(string SkinId, string ShapeId), FStructFallback>> SkinLookupByHero
+                        )> GetSkinMaps()
                         {
-                            var dictionary = new Dictionary<HeroKey, List<FStructFallback>>();
+                            var skinsByHero = new Dictionary<string, List<FStructFallback>>();
+                            var skinLookupByHero = new Dictionary<string, Dictionary<(string SkinId, string ShapeId), FStructFallback>>();
                             var skinsTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
                                 "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UISkinTable");
-                            if (skinsTable?.RowMap == null) return dictionary;
-                            
+                            if (skinsTable?.RowMap == null) return (skinsByHero, skinLookupByHero);
+
                             foreach (var skin in skinsTable.RowMap.Values)
                             {
-                                if (skin.TryGetValue(out FStructFallback identifier, "Identifier"))
+                                if (!skin.TryGetValue(out FStructFallback identifier, "Identifier")) continue;
+
+                                var heroId = identifier.GetOrDefault("HeroID", string.Empty);
+                                var skinId = identifier.GetOrDefault("SkinID", string.Empty);
+                                var shapeId = identifier.GetOrDefault("ShapeID", "0");
+                                if (string.IsNullOrEmpty(heroId) || string.IsNullOrEmpty(skinId)) continue;
+
+                                if (!skinLookupByHero.TryGetValue(heroId, out var heroLookup))
                                 {
-                                    var key = new HeroKey(identifier);
-                                    if (!dictionary.ContainsKey(key))
-                                        dictionary[key] = [];
-                                    
-                                    dictionary[key].Add(skin);
+                                    heroLookup = new Dictionary<(string SkinId, string ShapeId), FStructFallback>();
+                                    skinLookupByHero[heroId] = heroLookup;
+                                }
+
+                                heroLookup[(skinId, shapeId)] = skin;
+
+                                // Skins channel lists shape-0 entries only (one row per SkinID).
+                                if (shapeId == "0")
+                                {
+                                    if (!skinsByHero.TryGetValue(heroId, out var heroSkins))
+                                    {
+                                        heroSkins = [];
+                                        skinsByHero[heroId] = heroSkins;
+                                    }
+
+                                    heroSkins.Add(skin);
                                 }
                             }
-                            return dictionary;
+
+                            return (skinsByHero, skinLookupByHero);
                         }
-                        
+
                         var heroData =
                             await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
                                 "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UIHeroTable");
-                        
-                        var skinMap = await GetSkinMap();
-                         
+
+                        var (skinsByHero, skinLookupByHero) = await GetSkinMaps();
+
                         if (heroData?.RowMap == null) return;
 
-                        loader.TotalAssets = heroData.RowMap.Count();
+                        var heroGroups = new Dictionary<string, List<(string RowKey, FStructFallback Value, string ShapeId)>>();
                         foreach (var (key, value) in heroData.RowMap)
                         {
-                            var heroBasic = value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
-                            var heroIcon = value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
+                            var heroId = key.Text.Length >= 4 ? key.Text[..4] : key.Text;
+                            var shapeId = value.GetOrDefault("ShapeID_74_5AF5149B4F1C6B5D135F8F8F98CDC0CB", 0).ToString();
+
+                            if (!heroGroups.TryGetValue(heroId, out var group))
+                            {
+                                group = [];
+                                heroGroups[heroId] = group;
+                            }
+
+                            group.Add((key.Text, value, shapeId));
+                        }
+
+                        loader.TotalAssets = heroGroups.Count;
+                        foreach (var (heroId, shapes) in heroGroups)
+                        {
+                            var orderedShapes = shapes
+                                .OrderBy(shape => shape.ShapeId, StringComparer.Ordinal)
+                                .ToList();
+
+                            var primary = orderedShapes.FirstOrDefault(shape => shape.ShapeId == "0");
+                            if (primary.Value is null)
+                                primary = orderedShapes[0];
+
+                            var heroBasic = primary.Value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
+                            var heroIcon = primary.Value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
                             var iconPath = GetDataTableIconPath(heroIcon);
-                            
+
                             var assetArgs = new AssetItemCreationArgs
                             {
-                                ID = key.Text,
-                                DisplayName = heroBasic.GetOrDefault("TName_10_93EE6AC745A8786CA1DF5A83B5253AC4", new FText(key.Text)).Text.ToLower().TitleCase(),
+                                ID = primary.RowKey,
+                                DisplayName = heroBasic.GetOrDefault("TName_10_93EE6AC745A8786CA1DF5A83B5253AC4", new FText(primary.RowKey)).Text.ToLower().TitleCase(),
                                 Description = heroBasic.GetOrDefault("Desc_63_F34334EF45CD2DCEF0F5CEB7B7893F3F", new FText("No Description")).Text,
                                 MainColor = heroBasic.GetOrDefault("HeroInfoMainColor_60_DF3A9B7B49FBF4A7F47FDCB06DADE676", new FLinearColor(1, 1, 1, 1)),
                                 SecondaryColor = heroBasic.GetOrDefault("HeroInfoSecondaryColor_66_9A43BF184D53A7114048DBA131305FFB", new FLinearColor(0, 0, 0, 1)),
@@ -89,11 +137,40 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                             };
                             var assetItem = new AssetItem(assetArgs);
                             await assetItem.LoadBitmapAsync();
-                            
-                            if (skinMap.TryGetValue(new HeroKey(key.Text), out var skins))
-                                assetItem.AssetInfo = new AssetInfo(assetItem, skins.ToArray());
-                            else
-                                assetItem.AssetInfo = new AssetInfo(assetItem);
+
+                            // Skip shape 0 only when there are multiple other shapes (e.g. C&D 1+2, Banner 1-3).
+                            // Heroes with a single alt form (e.g. Magick, Deadpool) keep shape 0 in Forms.
+                            var nonZeroShapes = orderedShapes.Where(shape => shape.ShapeId != "0").ToList();
+                            var formShapes = nonZeroShapes.Count > 1 ? nonZeroShapes : orderedShapes;
+
+                            var formStyles = new List<FormStyleData>();
+                            foreach (var shape in formShapes)
+                            {
+                                var shapeBasic = shape.Value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
+                                var shapeIcon = shape.Value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
+                                var shapeName = shapeBasic.GetOrDefault(
+                                    "TName_10_93EE6AC745A8786CA1DF5A83B5253AC4",
+                                    new FText(shape.RowKey)).Text.ToLower().TitleCase();
+
+                                Bitmap? formPreview = assetItem.IconDisplayImage;
+                                var shapeIconPath = GetDataTableIconPath(shapeIcon);
+                                if (await UEParse.Provider!.SafeLoadPackageObjectAsync<UTexture2D>(shapeIconPath) is { } shapeTexture
+                                    && shapeTexture.Decode()?.ToWriteableBitmap() is { } shapeBitmap)
+                                {
+                                    formPreview = shapeBitmap;
+                                }
+
+                                formStyles.Add(new FormStyleData(shapeName, heroId, shape.ShapeId, formPreview));
+                            }
+
+                            skinsByHero.TryGetValue(heroId, out var skins);
+                            skins ??= [];
+                            skinLookupByHero.TryGetValue(heroId, out var skinLookup);
+                            skinLookup ??= new Dictionary<(string SkinId, string ShapeId), FStructFallback>();
+
+                            assetItem.AssetInfo = formStyles.Count > 1 || skins.Count > 0
+                                ? new AssetInfo(assetItem, skins.ToArray(), formStyles, skinLookup)
+                                : new AssetInfo(assetItem);
 
                             loader.Source.AddOrUpdate(assetItem);
                             loader.LoadedAssets++;
@@ -550,32 +627,4 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
     }
 
     private sealed record HeroDisplayInfo(string Name, string IconPath, FLinearColor MainColor, FLinearColor SecondaryColor);
-
-    private class HeroKey
-    {
-        private readonly string _heroID;
-        private readonly string _shapeID;
-
-        public HeroKey(FStructFallback identifier)
-        {
-            _heroID = identifier.Get<string>("HeroID");
-            _shapeID = identifier.Get<string>("ShapeID");
-        }
-
-        public HeroKey(string heroID)
-        {
-            _heroID = heroID.Substring(0, 4);
-            _shapeID = heroID.Substring(4, 1);
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is HeroKey other && _heroID.Equals(other._heroID) && _shapeID.Equals(other._shapeID);
-        }
-
-        public override int GetHashCode()
-        {
-            return (_heroID + _shapeID).GetHashCode();
-        }
-    }
 }

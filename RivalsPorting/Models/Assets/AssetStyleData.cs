@@ -137,3 +137,19 @@ public class SoftAnimStyleData : BaseStyleData
         AppWM.Window.BringToTop();
     }
 }
+
+/// <summary>Hero shape/form selection for multi-shape outfits (e.g. Cloak vs Dagger).</summary>
+public class FormStyleData : BaseStyleData
+{
+    public string HeroId { get; }
+    public string ShapeId { get; }
+
+    public FormStyleData(string name, string heroId, string shapeId, Bitmap? previewImage)
+    {
+        StyleName = name;
+        HeroId = heroId;
+        ShapeId = shapeId;
+        StyleDisplayImage = previewImage;
+        ShowName = true;
+    }
+}

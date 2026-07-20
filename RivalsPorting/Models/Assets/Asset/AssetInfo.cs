@@ -10,6 +10,7 @@ using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using RivalsPorting.Extensions;
+using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Fortnite;
 using Serilog;
 
@@ -131,6 +132,8 @@ public partial class AssetInfo : Base.BaseAssetInfo
         }
     }
 
+    private readonly Dictionary<(string SkinId, string ShapeId), FStructFallback>? _outfitSkinLookup;
+
     public AssetInfo(AssetItem asset, FStructFallback[] styles)
     {
         Asset = asset;
@@ -139,6 +142,26 @@ public partial class AssetInfo : Base.BaseAssetInfo
 
         var styleInfo = new AssetStyleInfo("Skins", styles, Asset.IconDisplayImage!);
         if (styleInfo.StyleDatas.Count > 0) StyleInfos.Add(styleInfo);
+    }
+
+    public AssetInfo(
+        AssetItem asset,
+        FStructFallback[] skins,
+        IEnumerable<FormStyleData> forms,
+        Dictionary<(string SkinId, string ShapeId), FStructFallback> skinLookup)
+    {
+        Asset = asset;
+        _outfitSkinLookup = skinLookup;
+
+        var formArray = forms.ToArray();
+        if (formArray.Length > 1)
+            StyleInfos.Add(new AssetStyleInfo("Forms", formArray));
+
+        if (skins.Length > 0)
+        {
+            var styleInfo = new AssetStyleInfo("Skins", skins, Asset.IconDisplayImage!);
+            if (styleInfo.StyleDatas.Count > 0) StyleInfos.Add(styleInfo);
+        }
     }
 
     public AssetInfo(AssetItem asset, IEnumerable<BaseStyleData> styles, string channelName = "Styles")
@@ -181,5 +204,33 @@ public partial class AssetInfo : Base.BaseAssetInfo
         return StyleInfos
             .SelectMany<AssetStyleInfo, BaseStyleData>(info => info.StyleDatas)
             .ToArray();
+    }
+
+    /// <summary>
+    /// Resolves the UISkinTable entry for the selected Form (ShapeID) + Skin (SkinID) combination.
+    /// Falls back to the selected skin entry when no lookup match exists.
+    /// </summary>
+    public FStructFallback? ResolveOutfitSkin()
+    {
+        var selected = GetSelectedStyles();
+        var skinStyle = selected.OfType<AssetStyleData>()
+            .FirstOrDefault(style => style.StyleData.TryGetValue(out string _, "SkinItemID"));
+        if (skinStyle is null) return null;
+
+        var formStyle = selected.OfType<FormStyleData>().FirstOrDefault();
+        var shapeId = formStyle?.ShapeId ?? "0";
+
+        if (_outfitSkinLookup is not null
+            && skinStyle.StyleData.TryGetValue(out FStructFallback identifier, "Identifier"))
+        {
+            var skinId = identifier.GetOrDefault("SkinID", string.Empty);
+            if (!string.IsNullOrEmpty(skinId)
+                && _outfitSkinLookup.TryGetValue((skinId, shapeId), out var resolved))
+            {
+                return resolved;
+            }
+        }
+
+        return skinStyle.StyleData;
     }
 }
