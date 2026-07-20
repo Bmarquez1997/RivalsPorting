@@ -140,6 +140,16 @@ public partial class AssetInfo : Base.BaseAssetInfo
         var styleInfo = new AssetStyleInfo("Skins", styles, Asset.IconDisplayImage!);
         if (styleInfo.StyleDatas.Count > 0) StyleInfos.Add(styleInfo);
     }
+
+    public AssetInfo(AssetItem asset, IEnumerable<BaseStyleData> styles, string channelName = "Styles")
+    {
+        Asset = asset;
+
+        var styleArray = styles.ToArray();
+        if (styleArray.Length <= 1) return;
+
+        StyleInfos.Add(new AssetStyleInfo(channelName, styleArray));
+    }
     
     public AssetInfo(AssetItem asset, IEnumerable<string> stylePaths)
     {

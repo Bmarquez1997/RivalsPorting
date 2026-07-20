@@ -112,3 +112,28 @@ public class AnimStyleData : ObjectStyleData
         ShowName = true;
     }
 }
+
+/// <summary>Holds an animation soft path so the montage/sequence is only loaded on export.</summary>
+public class SoftAnimStyleData : BaseStyleData
+{
+    public string AnimPath { get; }
+
+    public SoftAnimStyleData(string name, string animPath)
+    {
+        StyleName = name;
+        AnimPath = animPath;
+        ShowName = true;
+    }
+
+    public override async Task CopyPath()
+    {
+        await App.Clipboard.SetTextAsync(AnimPath);
+    }
+
+    public override async Task NavigateTo()
+    {
+        Navigation.App.Open<FilesView>();
+        FilesVM.JumpTo(UEParse.Provider.FixPath(AnimPath.SubstringBefore(".")));
+        AppWM.Window.BringToTop();
+    }
+}

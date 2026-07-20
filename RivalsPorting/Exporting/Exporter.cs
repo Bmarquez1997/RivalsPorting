@@ -129,6 +129,7 @@ public static class Exporter
                 var asset = assetInfo.Asset;
                 var styles = metaData.ExportLocation.IsFolder ? assetInfo.GetAllStyles() : assetInfo.GetSelectedStyles();
                 var exportType = asset.CreationData.ExportType;
+                var exportObject = asset.CreationData.Object;
 
                 foreach (var style in styles.OfType<AssetStyleData>())
                 {
@@ -137,20 +138,30 @@ public static class Exporter
                         && resultInfoStruct.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
                         && likeActorClass.ClassDefaultObject.TryLoad(out UObject likeActorObject))
                     {
-                        asset.CreationData.Object = likeActorObject;
+                        exportObject = likeActorObject;
                     }
                     else if (style.StyleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass")
                              && showActorClass.ClassDefaultObject.TryLoad(out UObject showActorObject))
                     {
-                        asset.CreationData.Object = showActorObject;
+                        exportObject = showActorObject;
                     }
                 }
 
-                if (asset.CreationData.Object is null)
+                styles = ResolveSoftAnimStyles(styles);
+
+                if (exportObject is null && asset.CreationData.ObjectPath is { } objectPath
+                    && UEParse.Provider.TryLoadPackageObject(objectPath, out var pathObject))
+                {
+                    exportObject = pathObject;
+                }
+
+                if (exportObject is null && styles.OfType<AnimStyleData>().FirstOrDefault() is { } animStyle)
+                    exportObject = animStyle.StyleData;
+
+                if (exportObject is null)
                     return null;
 
-                return CreateExport(asset.CreationData.DisplayName, asset.CreationData.Object, exportType, styles,
-                    metaData);
+                return CreateExport(asset.CreationData.DisplayName, exportObject, exportType, styles, metaData);
             }
 
             if (baseAssetInfo is CustomAssetInfo customAssetInfo)
@@ -159,7 +170,7 @@ public static class Exporter
             }
 
             return null;
-        })!, metaData);
+        }).OfType<BaseExport>(), metaData);
     }
     
     public static async Task<bool> Export(IEnumerable<ExportFileEntry> assets, ExportDataMeta metaData)
@@ -259,6 +270,23 @@ public static class Exporter
         }
 
         return outPath;
+    }
+
+    private static BaseStyleData[] ResolveSoftAnimStyles(BaseStyleData[] styles)
+    {
+        if (styles.Length == 0 || !styles.OfType<SoftAnimStyleData>().Any())
+            return styles;
+
+        return styles.Select(style =>
+        {
+            if (style is SoftAnimStyleData softAnim
+                && UEParse.Provider.TryLoadPackageObject(softAnim.AnimPath, out var animObject))
+            {
+                return (BaseStyleData) new AnimStyleData(softAnim.StyleName, animObject);
+            }
+
+            return style;
+        }).ToArray();
     }
     
     private static BaseExport CreateExport(string displayName, UObject asset, EExportType exportType, BaseStyleData[] styles, ExportDataMeta metaData, IExportFileMeta? fileMeta = null)

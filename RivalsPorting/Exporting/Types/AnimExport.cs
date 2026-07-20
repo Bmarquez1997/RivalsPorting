@@ -67,15 +67,18 @@ public class AnimExport : BaseExport
             }
             case EExportType.Emote:
             {
-                if (styles.Length > 0)
+                var animStyles = styles.OfType<AnimStyleData>().ToArray();
+                if (animStyles.Length > 0)
                 {
-                    foreach (var style in styles.OfType<AnimStyleData>())
-                    {
-                        if (style.StyleData is not UAnimMontage styleMontage) continue;
-                        
-                        AnimMontage(styleMontage);
-                    }
-                    
+                    foreach (var style in animStyles)
+                        ExportAnimAsset(style.StyleData);
+
+                    break;
+                }
+
+                if (asset is UAnimMontage or UAnimSequenceBase)
+                {
+                    ExportAnimAsset(asset);
                     break;
                 }
                 
@@ -104,6 +107,24 @@ public class AnimExport : BaseExport
         }
     }
     
+    private void ExportAnimAsset(UObject animAsset)
+    {
+        switch (animAsset)
+        {
+            case UAnimMontage montage:
+                AnimMontage(montage);
+                break;
+            case UAnimSequenceBase sequence:
+            {
+                if (sequence.Skeleton.Load<USkeleton>() is { } skeleton)
+                    Skeleton = Exporter.Skeleton(skeleton);
+
+                Sections.AddIfNotNull(Exporter.AnimSequence(sequence));
+                break;
+            }
+        }
+    }
+
     private void AnimMontage(UAnimMontage montage)
     {
         Skeleton = Exporter.Skeleton(montage.Skeleton.Load<USkeleton>())!;

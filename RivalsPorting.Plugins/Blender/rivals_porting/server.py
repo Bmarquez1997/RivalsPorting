@@ -29,7 +29,7 @@ class Server(Thread):
         return Server.instance
 
     def run(self):
-        Log.info(f"Running RP V4 Server at {self.host}:{self.port}")
+        Log.info(f"Running RP V1 Server at {self.host}:{self.port}")
         try:
             self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

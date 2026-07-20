@@ -13,6 +13,7 @@ using CUE4Parse.UE4.Objects.UObject;
 using DynamicData;
 using RivalsPorting.Extensions;
 using RivalsPorting.Framework;
+using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Assets.Asset;
 using RivalsPorting.Models.Assets.Base;
 using RivalsPorting.Models.Assets.Loading;
@@ -39,20 +40,6 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                     LoadHiddenAssets = true,
                     AssetHandler = async loader =>
                     {
-                        static string GetDataTableIconPath(FStructFallback iconStruct)
-                        {
-                            if (iconStruct.TryGetValue(out FStructFallback icon,
-                                    "HeroHeadBig_18_9ACCBB7F4F69AA4CADA5CA94E3788DB5",
-                                    "HeroHeadSpuare_11_B4C0FC694F2D5538B14839BD2DCAA5B3")
-                                && icon.TryGetValue(out FSoftObjectPath texturePath, "Image_2_BDA02B484B8F00FAFED6C0A9E2AF13EF")
-                                && !texturePath.AssetPathName.IsNone)
-                            {
-                                return texturePath.AssetPathName.Text;
-                            }
-
-                            return "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo";
-                        }
-
                         async Task<Dictionary<HeroKey, List<FStructFallback>>> GetSkinMap()
                         {
                             var dictionary = new Dictionary<HeroKey, List<FStructFallback>>();
@@ -115,47 +102,215 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                         loader.LoadedAssets = loader.TotalAssets;
                     }
                 },
-                // new AssetLoader(EExportType.Emote)
-                // {
-                //     ClassNames = ["DataTable"],
-                //     AllowNames = ["EmoteResTable"]
-                //     // TODO: 
-                //     // Each EmoteResTable contains multiple emotes, separate into assets or keep as styles?
-                //     // UIHeroEmoteTable - Emote names, universal emote style handling?
-                //     // UI icon: Marvel/Content/Marvel/UI/Textures/Item/Emote/item_emote_<emoteID>.uasset
-                //     // ,AssetHandler = async loader => { }
-                // },
+                new AssetLoader(EExportType.Emote)
+                {
+                    ClassNames = ["DataTable"],
+                    PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                    LoadHiddenAssets = true,
+                    AssetHandler = async loader =>
+                    {
+                        var emoteTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/UI/HeroSkin/UIHeroEmoteTable");
+                        var heroData = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UIHeroTable");
+
+                        if (emoteTable?.RowMap == null) return;
+
+                        var emoteIconIndex = BuildEmoteIconIndex();
+
+                        var heroLookup = new Dictionary<string, HeroDisplayInfo>();
+                        if (heroData?.RowMap != null)
+                        {
+                            foreach (var (key, value) in heroData.RowMap)
+                            {
+                                var heroBasic = value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
+                                var heroIcon = value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
+                                heroLookup[key.Text] = new HeroDisplayInfo(
+                                    heroBasic.GetOrDefault("TName_10_93EE6AC745A8786CA1DF5A83B5253AC4", new FText(key.Text)).Text.ToLower().TitleCase(),
+                                    GetDataTableIconPath(heroIcon),
+                                    heroBasic.GetOrDefault("HeroInfoMainColor_60_DF3A9B7B49FBF4A7F47FDCB06DADE676", new FLinearColor(1, 1, 1, 1)),
+                                    heroBasic.GetOrDefault("HeroInfoSecondaryColor_66_9A43BF184D53A7114048DBA131305FFB", new FLinearColor(0, 0, 0, 1))
+                                );
+                            }
+                        }
+
+                        var emoteGroups = new Dictionary<string, List<(string RowKey, FStructFallback Emote)>>();
+                        foreach (var (key, value) in emoteTable.RowMap)
+                        {
+                            if (!value.TryGetValue(out FStructFallback identifier, "EmoteIdentifier")) continue;
+
+                            var heroId = identifier.GetOrDefault("HeroID", string.Empty);
+                            var skinId = identifier.GetOrDefault("SkinID", string.Empty);
+                            var emoteId = identifier.GetOrDefault("EmoteID", string.Empty);
+                            var groupKey = $"{heroId}{skinId}{emoteId}";
+
+                            if (!emoteGroups.TryGetValue(groupKey, out var group))
+                            {
+                                group = [];
+                                emoteGroups[groupKey] = group;
+                            }
+
+                            group.Add((key.Text, value));
+                        }
+
+                        loader.TotalAssets = emoteGroups.Count;
+                        foreach (var (groupKey, entries) in emoteGroups)
+                        {
+                            var orderedEntries = entries
+                                .OrderBy(entry =>
+                                {
+                                    if (entry.Emote.TryGetValue(out FStructFallback id, "EmoteIdentifier"))
+                                        return id.GetOrDefault("ShapeID", "0");
+                                    return "0";
+                                })
+                                .ToList();
+
+                            var primary = orderedEntries[0];
+                            if (!primary.Emote.TryGetValue(out FStructFallback primaryId, "EmoteIdentifier"))
+                            {
+                                loader.LoadedAssets++;
+                                continue;
+                            }
+
+                            var primaryAnimPath = GetEmoteAnimationPath(primary.Emote);
+                            var universalStyles = CollectUniversalEmoteStyles(primary.Emote, heroLookup);
+                            if (primaryAnimPath is null
+                                && !orderedEntries.Any(entry => GetEmoteAnimationPath(entry.Emote) is not null)
+                                && universalStyles.Count == 0)
+                            {
+                                // Stub rows with no AnimMT/Anim (placeholder slots) — skip
+                                loader.LoadedAssets++;
+                                continue;
+                            }
+
+                            var heroId = primaryId.GetOrDefault("HeroID", string.Empty);
+                            var emoteId = primaryId.GetOrDefault("EmoteID", string.Empty);
+                            var isLobbyEmote = emoteId == "201";
+
+                            heroLookup.TryGetValue($"{heroId}0", out var baseHero);
+                            baseHero ??= heroLookup.GetValueOrDefault($"{heroId}{primaryId.GetOrDefault("ShapeID", "0")}");
+
+                            string displayName;
+                            string? lowResIconPath;
+                            string? highResIconPath;
+                            var mainColor = baseHero?.MainColor ?? new FLinearColor(1, 1, 1, 1);
+                            var secondaryColor = baseHero?.SecondaryColor ?? new FLinearColor(0, 0, 0, 1);
+
+                            if (isLobbyEmote)
+                            {
+                                var heroName = baseHero?.Name ?? primary.Emote.GetOrDefault("HeroName", heroId);
+                                displayName = $"{heroName} - Lobby";
+                                lowResIconPath = baseHero?.IconPath;
+                                highResIconPath = baseHero?.IconPath;
+                            }
+                            else
+                            {
+                                displayName = ResolveEmoteDisplayName(
+                                    primary.Emote.GetOrDefault<FText?>("EmoteName"),
+                                    primary.RowKey);
+
+                                if (emoteIconIndex.TryGetValue(groupKey, out var indexedIcons))
+                                {
+                                    lowResIconPath = indexedIcons.LowRes ?? indexedIcons.HighRes;
+                                    highResIconPath = indexedIcons.HighRes ?? indexedIcons.LowRes;
+                                }
+                                else
+                                {
+                                    lowResIconPath = $"Marvel/Content/Marvel_LQ/UI/Textures/Item/Emote/item_emote_{groupKey}";
+                                    highResIconPath = $"Marvel/Content/Marvel/UI/Textures/Item/Emote/item_emote_{groupKey}";
+                                }
+                            }
+
+                            primaryAnimPath ??= orderedEntries
+                                .Select(entry => GetEmoteAnimationPath(entry.Emote))
+                                .FirstOrDefault(path => path is not null);
+                            primaryAnimPath ??= universalStyles.FirstOrDefault()?.AnimPath;
+
+                            var assetArgs = new AssetItemCreationArgs
+                            {
+                                ID = primary.RowKey,
+                                DisplayName = displayName,
+                                Description = string.Empty,
+                                MainColor = mainColor,
+                                SecondaryColor = secondaryColor,
+                                LowResIconPath = lowResIconPath,
+                                HighResIconPath = highResIconPath,
+                                ExportType = EExportType.Emote,
+                                ObjectPath = primaryAnimPath
+                            };
+
+                            var assetItem = new AssetItem(assetArgs);
+                            await assetItem.LoadBitmapAsync();
+
+                            var styleDatas = new List<BaseStyleData>();
+                            if (orderedEntries.Count > 1)
+                            {
+                                foreach (var (_, emote) in orderedEntries)
+                                {
+                                    if (!emote.TryGetValue(out FStructFallback identifier, "EmoteIdentifier")) continue;
+
+                                    var shapeId = identifier.GetOrDefault("ShapeID", "0");
+                                    var shapeHeroKey = $"{identifier.GetOrDefault("HeroID", string.Empty)}{shapeId}";
+                                    var styleName = heroLookup.TryGetValue(shapeHeroKey, out var shapeHero)
+                                        ? shapeHero.Name
+                                        : shapeId;
+
+                                    var animPath = GetEmoteAnimationPath(emote);
+                                    if (animPath is null) continue;
+
+                                    styleDatas.Add(new SoftAnimStyleData(styleName, animPath));
+                                }
+                            }
+                            else if (universalStyles.Count > 0)
+                            {
+                                styleDatas.AddRange(universalStyles);
+                            }
+
+                            if (assetItem.CreationData.ObjectPath is null && styleDatas.Count > 0)
+                                assetItem.CreationData.ObjectPath = ((SoftAnimStyleData) styleDatas[0]).AnimPath;
+
+                            assetItem.AssetInfo = styleDatas.Count > 1
+                                ? new AssetInfo(assetItem, styleDatas, orderedEntries.Count > 1 ? "Styles" : "Heroes")
+                                : new AssetInfo(assetItem);
+
+                            loader.Source.AddOrUpdate(assetItem);
+                            loader.LoadedAssets++;
+                        }
+
+                        loader.LoadedAssets = loader.TotalAssets;
+                    }
+                },
                 // new AssetLoader(EExportType.Backpack) //Accessory
                 // {
                 //     ClassNames = ["AthenaLoadingScreenItemDefinition"]
                 // },
-                // new AssetLoader(EExportType.Emoticon) // Mood
-                // {
-                //     ClassNames = ["Texture2D"],
-                //     AllowNames = ["item_mood", "img_mood"],
-                //     DisallowedNames = ["Marvel_LQ"],
-                //     DisplayNameHandler = asset => asset.Name,
-                //     LowResIconHandler = asset => 
-                //         UEParse.Provider.LoadPackageObject<UTexture2D>(asset.GetPathName().Replace("Marvel/UI", "Marvel_LQ/UI")),
-                //     HighResIconHandler = asset => (UTexture2D) asset 
-                // },
-                // new AssetLoader(EExportType.Spray)
-                // {
-                //     ClassNames = ["Texture2D"],
-                //     AllowNames = ["item_spray", "img_spray"],
-                //     DisallowedNames = ["Marvel_LQ"],
-                //     DisplayNameHandler = asset => asset.Name,
-                //     LowResIconHandler = asset => 
-                //         UEParse.Provider.LoadPackageObject<UTexture2D>(asset.GetPathName().Replace("Marvel/UI", "Marvel_LQ/UI")),
-                //     HighResIconHandler = asset => (UTexture2D) asset 
-                // },
-                // new AssetLoader(EExportType.Banner) // Nameplate
-                // {
-                //     ClassNames = ["FortHomebaseBannerIconItemDefinition"],
-                //     HideRarity = true
-                //     // Export Nameplate
-                //     // Icon Playerhead
-                // },
+                new AssetLoader(EExportType.Emoticon) // Mood
+                {
+                    ClassNames = ["Texture2D"],
+                    AllowNames = ["item_mood", "img_mood"],
+                    DisallowedNames = ["Marvel_LQ"],
+                    DisplayNameHandler = asset => asset.Name,
+                    LowResIconHandler = asset => 
+                        UEParse.Provider.LoadPackageObject<UTexture2D>(asset.GetPathName().Replace("Marvel/UI", "Marvel_LQ/UI")),
+                    HighResIconHandler = asset => (UTexture2D) asset 
+                },
+                new AssetLoader(EExportType.Spray)
+                {
+                    ClassNames = ["Texture2D"],
+                    AllowNames = ["item_spray", "img_spray"],
+                    DisallowedNames = ["Marvel_LQ"],
+                    DisplayNameHandler = asset => asset.Name,
+                    LowResIconHandler = asset => 
+                        UEParse.Provider.LoadPackageObject<UTexture2D>(asset.GetPathName().Replace("Marvel/UI", "Marvel_LQ/UI")),
+                    HighResIconHandler = asset => (UTexture2D) asset 
+                },
+                new AssetLoader(EExportType.Banner) // Nameplate
+                {
+                    ClassNames = ["FortHomebaseBannerIconItemDefinition"],
+                    HideRarity = true
+                    // Export Nameplate
+                    // Icon Playerhead
+                },
             ]
         },
         // new(EAssetCategory.Gameplay)
@@ -220,6 +375,181 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         ActiveCollection = ActiveLoader.Filtered;
         ActiveLoader.UpdateFilterVisibility();
     }
+
+    private static string GetDataTableIconPath(FStructFallback iconStruct)
+    {
+        if (iconStruct.TryGetValue(out FStructFallback icon,
+                "HeroHeadBig_18_9ACCBB7F4F69AA4CADA5CA94E3788DB5",
+                "HeroHeadSpuare_11_B4C0FC694F2D5538B14839BD2DCAA5B3")
+            && icon.TryGetValue(out FSoftObjectPath texturePath, "Image_2_BDA02B484B8F00FAFED6C0A9E2AF13EF")
+            && !texturePath.AssetPathName.IsNone)
+        {
+            return texturePath.AssetPathName.Text;
+        }
+
+        return "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo";
+    }
+
+    private static Dictionary<string, EmoteIconPaths> BuildEmoteIconIndex()
+    {
+        var index = new Dictionary<string, EmoteIconPaths>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var file in UEParse.Provider.Files.Values)
+        {
+            var name = file.NameWithoutExtension;
+            string id;
+            if (name.StartsWith("item_emote_", StringComparison.OrdinalIgnoreCase))
+                id = name["item_emote_".Length..];
+            else if (name.StartsWith("item_emoto_", StringComparison.OrdinalIgnoreCase))
+                id = name["item_emoto_".Length..];
+            else
+                continue;
+
+            if (string.IsNullOrEmpty(id)) continue;
+
+            var path = file.PathWithoutExtension;
+            var isLq = path.Contains("Marvel_LQ", StringComparison.OrdinalIgnoreCase);
+            var isStandardLocation = path.Contains("/Item/Emote/", StringComparison.OrdinalIgnoreCase);
+
+            if (!index.TryGetValue(id, out var existing))
+                existing = new EmoteIconPaths();
+
+            if (isLq)
+                PreferEmoteIconPath(ref existing.LowRes, path, isStandardLocation);
+            else
+                PreferEmoteIconPath(ref existing.HighRes, path, isStandardLocation);
+
+            index[id] = existing;
+        }
+
+        return index;
+    }
+
+    private static void PreferEmoteIconPath(ref string? current, string candidate, bool candidateIsStandard)
+    {
+        if (current is null)
+        {
+            current = candidate;
+            return;
+        }
+
+        var currentIsStandard = current.Contains("/Item/Emote/", StringComparison.OrdinalIgnoreCase);
+        if (!currentIsStandard && candidateIsStandard)
+            current = candidate;
+    }
+
+    private sealed class EmoteIconPaths
+    {
+        public string? LowRes;
+        public string? HighRes;
+    }
+
+    private static string? GetEmoteAnimationPath(FStructFallback emote)
+    {
+        if (emote.TryGetValue(out FSoftObjectPath animMT, "AnimMT")
+            && !animMT.AssetPathName.IsNone
+            && !string.IsNullOrEmpty(animMT.AssetPathName.Text))
+        {
+            return animMT.AssetPathName.Text;
+        }
+
+        if (emote.TryGetValue(out FSoftObjectPath anim, "Anim")
+            && !anim.AssetPathName.IsNone
+            && !string.IsNullOrEmpty(anim.AssetPathName.Text))
+        {
+            return anim.AssetPathName.Text;
+        }
+
+        return null;
+    }
+
+    private static List<SoftAnimStyleData> CollectUniversalEmoteStyles(
+        FStructFallback emote,
+        Dictionary<string, HeroDisplayInfo> heroLookup)
+    {
+        var styles = new List<SoftAnimStyleData>();
+        if (!emote.TryGetValue(out FStructFallback[] heroAnims, "HeroUniversalAnims")
+            || heroAnims.Length == 0)
+        {
+            return styles;
+        }
+
+        foreach (var heroAnim in heroAnims)
+        {
+            var heroId = GetEmoteHeroId(heroAnim);
+            if (string.IsNullOrEmpty(heroId)) continue;
+            if (!heroAnim.TryGetValue(out FStructFallback[] shapeAnims, "ShapeUniversalAnims"))
+                continue;
+
+            foreach (var shapeAnim in shapeAnims)
+            {
+                var animPath = GetEmoteAnimationPath(shapeAnim);
+                if (animPath is null) continue;
+
+                var shapeId = shapeAnim.TryGetValue(out int shapeIdInt, "ShapeID")
+                    ? shapeIdInt.ToString()
+                    : shapeAnim.GetOrDefault("ShapeID", "0");
+
+                var styleName = heroLookup.TryGetValue($"{heroId}{shapeId}", out var shapeHero)
+                    ? shapeHero.Name
+                    : heroLookup.TryGetValue($"{heroId}0", out var baseHero)
+                        ? baseHero.Name
+                        : heroId;
+
+                styles.Add(new SoftAnimStyleData(styleName, animPath));
+            }
+        }
+
+        return styles;
+    }
+
+    private static string GetEmoteHeroId(FStructFallback heroAnim)
+    {
+        if (heroAnim.TryGetValue(out string heroId, "HeroID") && !string.IsNullOrEmpty(heroId))
+            return heroId;
+        if (heroAnim.TryGetValue(out int heroIdInt, "HeroID"))
+            return heroIdInt.ToString();
+        return string.Empty;
+    }
+
+    private static string ResolveEmoteDisplayName(FText? emoteName, string fallback)
+    {
+        var text = emoteName?.Text;
+        if (string.IsNullOrWhiteSpace(text))
+            return fallback;
+
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            && TryDecodeHexAsciiName(text, out var decoded))
+        {
+            return decoded.ToLower().TitleCase();
+        }
+
+        return text;
+    }
+
+    private static bool TryDecodeHexAsciiName(string hexText, out string decoded)
+    {
+        decoded = string.Empty;
+        var hex = hexText.AsSpan(2);
+        if (hex.Length == 0 || hex.Length % 2 != 0)
+            return false;
+
+        Span<char> chars = stackalloc char[hex.Length / 2];
+        var count = 0;
+        for (var i = 0; i < hex.Length; i += 2)
+        {
+            if (!byte.TryParse(hex.Slice(i, 2), System.Globalization.NumberStyles.HexNumber, null, out var b))
+                return false;
+            if (b is < 32 or > 126) continue;
+            chars[count++] = (char) b;
+        }
+
+        if (count == 0) return false;
+        decoded = new string(chars[..count]);
+        return true;
+    }
+
+    private sealed record HeroDisplayInfo(string Name, string IconPath, FLinearColor MainColor, FLinearColor SecondaryColor);
 
     private class HeroKey
     {

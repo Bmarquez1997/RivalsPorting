@@ -8,6 +8,8 @@ namespace RivalsPorting.Models.Assets.Asset;
 public class AssetItemCreationArgs : BaseAssetItemCreationArgs
 {
     public UObject? Object { get; set; }
+    /// <summary>Unresolved asset path loaded on export when <see cref="Object"/> is null.</summary>
+    public string? ObjectPath { get; set; }
     public string? LowResIconPath { get; set; }
     public string? HighResIconPath { get; set; }
     public string? IconPath => LowResIconPath ?? HighResIconPath;
