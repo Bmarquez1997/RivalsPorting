@@ -1,11 +1,13 @@
+using System;
 using System.Collections.Generic;
-using Avalonia.Controls.Shapes;
+using System.Linq;
 using CUE4Parse.GameTypes.FN.Assets.Exports.DataAssets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
 using RivalsPorting.Extensions;
+using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Fortnite;
 using RivalsPorting.Models.Unreal;
 using RivalsPorting.Shared.Extensions;
@@ -26,32 +28,51 @@ public class TextureExport : BaseExport
         { EExportType.Emoticon, "SpriteSheet" }
     };
     
-    public TextureExport(string name, UObject asset, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
+    public TextureExport(string name, UObject asset, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : this(name, asset, [], exportType, metaData, fileMeta)
     {
+    }
+
+    public TextureExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
+    {
+        if (styles.Length > 0 && !string.Equals(styles[0].StyleName, name, StringComparison.Ordinal))
+            Name = $"{name} - {styles[0].StyleName}";
+
         var textures = new List<UTexture>();
-        switch (asset)
+        var softTextures = styles.OfType<SoftTextureStyleData>().ToArray();
+        if (softTextures.Length > 0)
         {
-            case UVirtualTextureBuilder virtualTextureBuilder:
+            foreach (var softTexture in softTextures)
             {
-                textures.AddIfNotNull(virtualTextureBuilder.Texture.Load<UVirtualTexture2D>());
-                break;
+                if (UEParse.Provider.TryLoadPackageObject(softTexture.TexturePath, out UTexture texture))
+                    textures.Add(texture);
             }
-            case UTexture texture:
+        }
+        else
+        {
+            switch (asset)
             {
-                textures.Add(texture);
-                break;
-            }
-            case UBuildingTextureData textureData:
-            {
-                textures.AddIfNotNull(textureData.Diffuse.Load<UTexture2D>());
-                textures.AddIfNotNull(textureData.Normal.Load<UTexture2D>());
-                textures.AddIfNotNull(textureData.Specular.Load<UTexture2D>());
-                break;
-            }
-            default:
-            {
-                textures.AddIfNotNull(asset.GetOrDefault<UTexture2D?>(TextureNames[exportType]) ?? asset.GetDataListItem<UTexture2D>("LargeIcon", "Icon"));
-                break;
+                case UVirtualTextureBuilder virtualTextureBuilder:
+                {
+                    textures.AddIfNotNull(virtualTextureBuilder.Texture.Load<UVirtualTexture2D>());
+                    break;
+                }
+                case UTexture texture:
+                {
+                    textures.Add(texture);
+                    break;
+                }
+                case UBuildingTextureData textureData:
+                {
+                    textures.AddIfNotNull(textureData.Diffuse.Load<UTexture2D>());
+                    textures.AddIfNotNull(textureData.Normal.Load<UTexture2D>());
+                    textures.AddIfNotNull(textureData.Specular.Load<UTexture2D>());
+                    break;
+                }
+                default:
+                {
+                    textures.AddIfNotNull(asset.GetOrDefault<UTexture2D?>(TextureNames[exportType]) ?? asset.GetDataListItem<UTexture2D>("LargeIcon", "Icon"));
+                    break;
+                }
             }
         }
 

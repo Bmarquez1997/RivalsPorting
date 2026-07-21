@@ -161,7 +161,13 @@ public static class Exporter
 
                 styles = ResolveSoftAnimStyles(styles);
 
-                if (exportObject is null && asset.CreationData.ObjectPath is { } objectPath
+                // Soft texture styles (e.g. nameplate vs playerhead) override the default ObjectPath.
+                if (styles.OfType<SoftTextureStyleData>().FirstOrDefault() is { } softTexture
+                    && UEParse.Provider.TryLoadPackageObject(softTexture.TexturePath, out var softTextureObject))
+                {
+                    exportObject = softTextureObject;
+                }
+                else if (exportObject is null && asset.CreationData.ObjectPath is { } objectPath
                     && UEParse.Provider.TryLoadPackageObject(objectPath, out var pathObject))
                 {
                     exportObject = pathObject;
@@ -319,7 +325,7 @@ public static class Exporter
         BaseExport export = primitiveType switch
         {
             EPrimitiveExportType.Mesh => new MeshExport(displayName, asset, styles, exportType, metaData, fileMeta),
-            EPrimitiveExportType.Texture => new TextureExport(displayName, asset, exportType, metaData, fileMeta),
+            EPrimitiveExportType.Texture => new TextureExport(displayName, asset, styles, exportType, metaData, fileMeta),
             EPrimitiveExportType.Sound => new SoundExport(displayName, asset, exportType, metaData, fileMeta),
             EPrimitiveExportType.Animation => new AnimExport(displayName, asset, styles, exportType, metaData, fileMeta),
             EPrimitiveExportType.Font => new FontExport(displayName, asset, exportType, metaData, fileMeta),

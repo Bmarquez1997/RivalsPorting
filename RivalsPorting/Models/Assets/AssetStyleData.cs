@@ -138,6 +138,32 @@ public class SoftAnimStyleData : BaseStyleData
     }
 }
 
+/// <summary>Holds a texture soft path so the texture is only loaded on export.</summary>
+public class SoftTextureStyleData : BaseStyleData
+{
+    public string TexturePath { get; }
+
+    public SoftTextureStyleData(string name, string texturePath, Bitmap? previewImage = null)
+    {
+        StyleName = name;
+        TexturePath = texturePath;
+        StyleDisplayImage = previewImage;
+        ShowName = true;
+    }
+
+    public override async Task CopyPath()
+    {
+        await App.Clipboard.SetTextAsync(TexturePath);
+    }
+
+    public override async Task NavigateTo()
+    {
+        Navigation.App.Open<FilesView>();
+        FilesVM.JumpTo(UEParse.Provider.FixPath(TexturePath.SubstringBefore(".")));
+        AppWM.Window.BringToTop();
+    }
+}
+
 /// <summary>Hero shape/form selection for multi-shape outfits (e.g. Cloak vs Dagger).</summary>
 public class FormStyleData : BaseStyleData
 {

@@ -371,30 +371,145 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                 // },
                 new AssetLoader(EExportType.Emoticon) // Mood
                 {
-                    ClassNames = ["Texture2D"],
-                    AllowNames = ["item_mood", "img_mood"],
-                    DisallowedNames = ["Marvel_LQ"],
-                    DisplayNameHandler = asset => asset.Name,
-                    LowResIconHandler = asset => 
-                        UEParse.Provider.LoadPackageObject<UTexture2D>(asset.GetPathName().Replace("Marvel/UI", "Marvel_LQ/UI")),
-                    HighResIconHandler = asset => (UTexture2D) asset 
+                    PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                    LoadHiddenAssets = true,
+                    AssetHandler = async loader =>
+                    {
+                        // Moods are raw Texture2Ds — not registered as item defs in the Asset Registry.
+                        // Index package files by name (same approach as emote icons).
+                        await LoadTextureFileCatalogAsync(
+                            loader,
+                            EExportType.Emoticon,
+                            namePrefixes: ["item_mood_", "img_mood_", "mood_"],
+                            skipNameContains: ["_bg"]);
+                    }
                 },
                 new AssetLoader(EExportType.Spray)
                 {
-                    ClassNames = ["Texture2D"],
-                    AllowNames = ["item_spray", "img_spray"],
-                    DisallowedNames = ["Marvel_LQ"],
-                    DisplayNameHandler = asset => asset.Name,
-                    LowResIconHandler = asset => 
-                        UEParse.Provider.LoadPackageObject<UTexture2D>(asset.GetPathName().Replace("Marvel/UI", "Marvel_LQ/UI")),
-                    HighResIconHandler = asset => (UTexture2D) asset 
+                    PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                    LoadHiddenAssets = true,
+                    AssetHandler = async loader =>
+                    {
+                        var sprayTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/UI/HeroSkin/UIHeroSprayTable");
+                        if (sprayTable?.RowMap == null)
+                        {
+                            // Fallback: scan packages if the table is missing.
+                            await LoadTextureFileCatalogAsync(
+                                loader,
+                                EExportType.Spray,
+                                namePrefixes: ["item_spray_", "img_spray_"]);
+                            return;
+                        }
+
+                        loader.TotalAssets = sprayTable.RowMap.Count;
+                        foreach (var (key, value) in sprayTable.RowMap)
+                        {
+                            if (!value.TryGetValue(out FSoftObjectPath sprayPath, "Spray")
+                                || sprayPath.AssetPathName.IsNone
+                                || string.IsNullOrEmpty(sprayPath.AssetPathName.Text))
+                            {
+                                loader.LoadedAssets++;
+                                continue;
+                            }
+
+                            var highResPath = sprayPath.AssetPathName.Text;
+                            var lowResPath = ToLowResUiPath(highResPath);
+                            var displayName = ResolveTextureTableName(value, key.Text, "img_spray_", "item_spray_");
+
+                            var assetArgs = new AssetItemCreationArgs
+                            {
+                                ID = key.Text,
+                                DisplayName = displayName,
+                                Description = string.Empty,
+                                MainColor = new FLinearColor(1, 1, 1, 1),
+                                SecondaryColor = new FLinearColor(0, 0, 0, 1),
+                                LowResIconPath = lowResPath,
+                                HighResIconPath = highResPath,
+                                ExportType = EExportType.Spray,
+                                ObjectPath = highResPath
+                            };
+
+                            var assetItem = new AssetItem(assetArgs);
+                            await assetItem.LoadBitmapAsync();
+                            assetItem.AssetInfo = new AssetInfo(assetItem);
+
+                            loader.Source.AddOrUpdate(assetItem);
+                            loader.LoadedAssets++;
+                        }
+
+                        loader.LoadedAssets = loader.TotalAssets;
+                    }
                 },
                 new AssetLoader(EExportType.Banner) // Nameplate
                 {
-                    ClassNames = ["FortHomebaseBannerIconItemDefinition"],
-                    HideRarity = true
-                    // Export Nameplate
-                    // Icon Playerhead
+                    PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                    LoadHiddenAssets = true,
+                    HideRarity = true,
+                    AssetHandler = async loader =>
+                    {
+                        var nameplateTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/UI/HeroSkin/UIHeroNameplateTable");
+                        if (nameplateTable?.RowMap == null) return;
+
+                        loader.TotalAssets = nameplateTable.RowMap.Count;
+                        foreach (var (key, value) in nameplateTable.RowMap)
+                        {
+                            // Export the nameplate strip; show the playerhead as the grid icon.
+                            var nameplatePath = GetSoftObjectPathText(value, "SlimTexture");
+                            if (nameplatePath is null)
+                            {
+                                loader.LoadedAssets++;
+                                continue;
+                            }
+
+                            var iconPath = GetSoftObjectPathText(value, "Avatar") ?? nameplatePath;
+                            var displayName = ResolveTextureTableName(
+                                value, key.Text, "img_nameplate_", "img_playerhead_");
+
+                            var assetArgs = new AssetItemCreationArgs
+                            {
+                                ID = key.Text,
+                                DisplayName = displayName,
+                                Description = string.Empty,
+                                MainColor = value.GetOrDefault("BgColor", new FLinearColor(1, 1, 1, 1)),
+                                SecondaryColor = new FLinearColor(0, 0, 0, 1),
+                                LowResIconPath = ToLowResUiPath(iconPath),
+                                HighResIconPath = iconPath,
+                                ExportType = EExportType.Banner,
+                                ObjectPath = nameplatePath
+                            };
+
+                            var assetItem = new AssetItem(assetArgs);
+                            await assetItem.LoadBitmapAsync();
+
+                            var styleDatas = new List<BaseStyleData>
+                            {
+                                new SoftTextureStyleData(
+                                    "Nameplate",
+                                    nameplatePath,
+                                    await LoadTexturePreviewAsync(nameplatePath) ?? assetItem.IconDisplayImage)
+                            };
+
+                            var avatarPath = GetSoftObjectPathText(value, "Avatar");
+                            if (avatarPath is not null)
+                            {
+                                styleDatas.Add(new SoftTextureStyleData(
+                                    "Playerhead",
+                                    avatarPath,
+                                    assetItem.IconDisplayImage));
+                            }
+
+                            assetItem.AssetInfo = styleDatas.Count > 1
+                                ? new AssetInfo(assetItem, styleDatas, "Texture")
+                                : new AssetInfo(assetItem);
+
+                            loader.Source.AddOrUpdate(assetItem);
+                            loader.LoadedAssets++;
+                        }
+
+                        loader.LoadedAssets = loader.TotalAssets;
+                    }
                 },
             ]
         },
@@ -632,6 +747,164 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         if (count == 0) return false;
         decoded = new string(chars[..count]);
         return true;
+    }
+
+    private static async Task LoadTextureFileCatalogAsync(
+        AssetLoader loader,
+        EExportType exportType,
+        string[] namePrefixes,
+        string[]? skipNameContains = null)
+    {
+        var entries = new Dictionary<string, TextureCatalogEntry>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var file in UEParse.Provider.Files.Values)
+        {
+            var name = file.NameWithoutExtension;
+            if (!namePrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            if (skipNameContains is not null
+                && skipNameContains.Any(skip => name.Contains(skip, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            var path = file.PathWithoutExtension;
+            var isLq = path.Contains("Marvel_LQ", StringComparison.OrdinalIgnoreCase);
+
+            if (!entries.TryGetValue(name, out var existing))
+                existing = new TextureCatalogEntry { Id = name };
+
+            if (isLq)
+                PreferTextureCatalogPath(ref existing.LowRes, path, namePrefixes);
+            else
+                PreferTextureCatalogPath(ref existing.HighRes, path, namePrefixes);
+
+            entries[name] = existing;
+        }
+
+        loader.TotalAssets = entries.Count;
+        foreach (var entry in entries.Values)
+        {
+            var highResPath = entry.HighRes ?? entry.LowRes;
+            if (highResPath is null)
+            {
+                loader.LoadedAssets++;
+                continue;
+            }
+
+            var lowResPath = entry.LowRes ?? ToLowResUiPath(highResPath);
+            var assetArgs = new AssetItemCreationArgs
+            {
+                ID = entry.Id,
+                DisplayName = FormatTextureDisplayName(entry.Id, namePrefixes),
+                Description = string.Empty,
+                MainColor = new FLinearColor(1, 1, 1, 1),
+                SecondaryColor = new FLinearColor(0, 0, 0, 1),
+                LowResIconPath = lowResPath,
+                HighResIconPath = highResPath,
+                ExportType = exportType,
+                ObjectPath = highResPath
+            };
+
+            var assetItem = new AssetItem(assetArgs);
+            await assetItem.LoadBitmapAsync();
+            assetItem.AssetInfo = new AssetInfo(assetItem);
+
+            loader.Source.AddOrUpdate(assetItem);
+            loader.LoadedAssets++;
+        }
+
+        loader.LoadedAssets = loader.TotalAssets;
+    }
+
+    private static void PreferTextureCatalogPath(ref string? current, string candidate, string[] namePrefixes)
+    {
+        if (current is null)
+        {
+            current = candidate;
+            return;
+        }
+
+        var currentScore = ScoreTextureCatalogPath(current, namePrefixes);
+        var candidateScore = ScoreTextureCatalogPath(candidate, namePrefixes);
+        if (candidateScore > currentScore)
+            current = candidate;
+    }
+
+    private static int ScoreTextureCatalogPath(string path, string[] namePrefixes)
+    {
+        var score = 0;
+        if (path.Contains("/Item/", StringComparison.OrdinalIgnoreCase)) score += 2;
+        if (path.Contains("/Show/", StringComparison.OrdinalIgnoreCase)) score += 1;
+        // Prefer inventory icons (item_*) when multiple prefixes match the same file set.
+        if (namePrefixes.Any(prefix =>
+                prefix.StartsWith("item_", StringComparison.OrdinalIgnoreCase)
+                && path.Contains(prefix.TrimEnd('_'), StringComparison.OrdinalIgnoreCase)))
+            score += 1;
+        return score;
+    }
+
+    private static string ToLowResUiPath(string path)
+    {
+        if (path.Contains("/Marvel_LQ/", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("Marvel_LQ/", StringComparison.OrdinalIgnoreCase))
+            return path;
+
+        var replaced = path
+            .Replace("/Marvel/UI/", "/Marvel_LQ/UI/", StringComparison.OrdinalIgnoreCase)
+            .Replace("Marvel/Content/Marvel/UI/", "Marvel/Content/Marvel_LQ/UI/", StringComparison.OrdinalIgnoreCase);
+        return replaced;
+    }
+
+    private static string ResolveTextureTableName(FStructFallback row, string fallbackId, params string[] prefixes)
+    {
+        if (row.TryGetValue(out FText nameText, "Name") && !string.IsNullOrWhiteSpace(nameText.Text))
+            return nameText.Text;
+        if (row.TryGetValue(out string nameStr, "Name") && !string.IsNullOrWhiteSpace(nameStr))
+            return nameStr;
+
+        return FormatTextureDisplayName(fallbackId, prefixes);
+    }
+
+    private static string? GetSoftObjectPathText(FStructFallback row, string propertyName)
+    {
+        if (!row.TryGetValue(out FSoftObjectPath softPath, propertyName)
+            || softPath.AssetPathName.IsNone
+            || string.IsNullOrEmpty(softPath.AssetPathName.Text))
+        {
+            return null;
+        }
+
+        return softPath.AssetPathName.Text;
+    }
+
+    private static async Task<Bitmap?> LoadTexturePreviewAsync(string path)
+    {
+        if (await UEParse.Provider.SafeLoadPackageObjectAsync<UTexture2D>(path) is not { } texture)
+            return null;
+
+        return texture.Decode()?.ToWriteableBitmap();
+    }
+
+    private static string FormatTextureDisplayName(string id, params string[] prefixes)
+    {
+        var name = id;
+        foreach (var prefix in prefixes.OrderByDescending(p => p.Length))
+        {
+            if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+            name = name[prefix.Length..];
+            break;
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+            return id;
+
+        return name.Replace('_', ' ').ToLower().TitleCase();
+    }
+
+    private sealed class TextureCatalogEntry
+    {
+        public required string Id;
+        public string? LowRes;
+        public string? HighRes;
     }
 
     private sealed record HeroDisplayInfo(string Name, string IconPath, FLinearColor MainColor, FLinearColor SecondaryColor);
