@@ -375,13 +375,13 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                     LoadHiddenAssets = true,
                     AssetHandler = async loader =>
                     {
-                        // Moods are raw Texture2Ds — not registered as item defs in the Asset Registry.
-                        // Index package files by name (same approach as emote icons).
+                        // Bundle icons (item_mood_<idNumber>) — real moods use names like item_mood_songshunv02_01.
                         await LoadTextureFileCatalogAsync(
                             loader,
                             EExportType.Emoticon,
-                            namePrefixes: ["item_mood_", "img_mood_", "mood_"],
-                            skipNameContains: ["_bg"]);
+                            namePrefixes: ["item_mood_"],
+                            skipNameContains: ["_bg"],
+                            includeName: name => !IsNumericMoodBundleTexture(name));
                     }
                 },
                 new AssetLoader(EExportType.Spray)
@@ -415,7 +415,7 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
 
                             var highResPath = sprayPath.AssetPathName.Text;
                             var lowResPath = ToLowResUiPath(highResPath);
-                            var displayName = ResolveTextureTableName(value, key.Text, "img_spray_", "item_spray_");
+                            var displayName = ResolveItemDisplayName(key.Text, value, "img_spray_", "item_spray_");
 
                             var assetArgs = new AssetItemCreationArgs
                             {
@@ -753,7 +753,8 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         AssetLoader loader,
         EExportType exportType,
         string[] namePrefixes,
-        string[]? skipNameContains = null)
+        string[]? skipNameContains = null,
+        Func<string, bool>? includeName = null)
     {
         var entries = new Dictionary<string, TextureCatalogEntry>(StringComparer.OrdinalIgnoreCase);
 
@@ -764,6 +765,8 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                 continue;
             if (skipNameContains is not null
                 && skipNameContains.Any(skip => name.Contains(skip, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            if (includeName is not null && !includeName(name))
                 continue;
 
             var path = file.PathWithoutExtension;
@@ -794,7 +797,7 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
             var assetArgs = new AssetItemCreationArgs
             {
                 ID = entry.Id,
-                DisplayName = FormatTextureDisplayName(entry.Id, namePrefixes),
+                DisplayName = ResolveItemDisplayName(entry.Id, null, namePrefixes),
                 Description = string.Empty,
                 MainColor = new FLinearColor(1, 1, 1, 1),
                 SecondaryColor = new FLinearColor(0, 0, 0, 1),
@@ -813,6 +816,20 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         }
 
         loader.LoadedAssets = loader.TotalAssets;
+    }
+
+    /// <summary>
+    /// Bundle store icons use numeric suffixes (item_mood_26000100); individual moods use
+    /// names like item_mood_songshunv02_01.
+    /// </summary>
+    private static bool IsNumericMoodBundleTexture(string name)
+    {
+        const string prefix = "item_mood_";
+        if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var rest = name[prefix.Length..];
+        return rest.Length > 0 && rest.All(char.IsDigit);
     }
 
     private static void PreferTextureCatalogPath(ref string? current, string candidate, string[] namePrefixes)
@@ -854,15 +871,85 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         return replaced;
     }
 
-    private static string ResolveTextureTableName(FStructFallback row, string fallbackId, params string[] prefixes)
+    private static string ResolveItemDisplayName(string itemId, FStructFallback? row = null, params string[] prefixes)
     {
-        if (row.TryGetValue(out FText nameText, "Name") && !string.IsNullOrWhiteSpace(nameText.Text))
-            return nameText.Text;
-        if (row.TryGetValue(out string nameStr, "Name") && !string.IsNullOrWhiteSpace(nameStr))
-            return nameStr;
+        // English (and other) names live in LocRes as MarvelItemTable_{id}_ItemName
+        // under 123_Customize_ST, or hero-specific tables like 123_Customize_1032_ST.
+        // Texture file names may be item_mood_*, img_spray_*, etc. — try stripped candidates too.
+        foreach (var candidate in GetMarvelItemIdCandidates(itemId, prefixes))
+        {
+            var localized = ResolveMarvelItemLocResName(candidate);
+            if (!string.IsNullOrWhiteSpace(localized))
+                return localized;
+        }
 
-        return FormatTextureDisplayName(fallbackId, prefixes);
+        if (row is not null)
+        {
+            if (row.TryGetValue(out FText nameText, "Name") && !string.IsNullOrWhiteSpace(nameText.Text))
+                return nameText.Text;
+            if (row.TryGetValue(out string nameStr, "Name") && !string.IsNullOrWhiteSpace(nameStr))
+                return nameStr;
+        }
+
+        return FormatTextureDisplayName(itemId, prefixes);
     }
+
+    private static string? ResolveMarvelItemLocResName(string itemId)
+    {
+        var i18n = UEParse.Provider?.Internationalization;
+        if (i18n is null) return null;
+
+        var key = $"MarvelItemTable_{itemId}_ItemName";
+
+        var shared = i18n.SafeGet("123_Customize_ST", key, string.Empty);
+        if (!string.IsNullOrWhiteSpace(shared))
+            return shared;
+
+        foreach (var ns in i18n.Keys)
+        {
+            if (ns.Equals("123_Customize_ST", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (!ns.StartsWith("123_Customize_", StringComparison.OrdinalIgnoreCase)
+                || !ns.EndsWith("_ST", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var value = i18n.SafeGet(ns, key, string.Empty);
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> GetMarvelItemIdCandidates(string itemId, string[] prefixes)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        bool Add(string value) => !string.IsNullOrWhiteSpace(value) && seen.Add(value);
+
+        if (Add(itemId))
+            yield return itemId;
+
+        // item_mood_foo → mood_foo; img_nameplate_123 → nameplate_123
+        if (itemId.StartsWith("item_", StringComparison.OrdinalIgnoreCase)
+            && Add(itemId["item_".Length..]))
+            yield return itemId["item_".Length..];
+
+        if (itemId.StartsWith("img_", StringComparison.OrdinalIgnoreCase)
+            && Add(itemId["img_".Length..]))
+            yield return itemId["img_".Length..];
+
+        // item_spray_40000150 → 40000150
+        foreach (var prefix in prefixes.OrderByDescending(p => p.Length))
+        {
+            if (!itemId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+            var stripped = itemId[prefix.Length..];
+            if (Add(stripped))
+                yield return stripped;
+        }
+    }
+
+    private static string ResolveTextureTableName(FStructFallback row, string fallbackId, params string[] prefixes)
+        => ResolveItemDisplayName(fallbackId, row, prefixes);
 
     private static string? GetSoftObjectPathText(FStructFallback row, string propertyName)
     {

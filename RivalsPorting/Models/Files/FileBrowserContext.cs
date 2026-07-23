@@ -65,7 +65,7 @@ public partial class FileBrowserContext : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SearchText), nameof(FlatViewToggleIcon), nameof(FlatViewToggleToolTip), nameof(HasSelectedFiles))]
-    private bool _useFlatView = false;
+    private bool _useFlatView = true;
 
     public MaterialIconKind FlatViewToggleIcon =>
         UseFlatView ? MaterialIconKind.Folder : MaterialIconKind.FormatListBulleted;
