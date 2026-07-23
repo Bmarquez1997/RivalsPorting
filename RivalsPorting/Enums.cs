@@ -159,6 +159,10 @@ public enum EExportType
     [CosmeticAsset]
     Kicks = ExportCategory.Cosmetic + 14,
 
+    [Description("MVP"), Export(EPrimitiveExportType.Animation)]
+    [CosmeticAsset]
+    MVP = ExportCategory.Cosmetic + 15,
+
     // CREATIVE
 
     [Description("Props"), Export(EPrimitiveExportType.Mesh)]

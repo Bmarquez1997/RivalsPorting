@@ -365,6 +365,121 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                         loader.LoadedAssets = loader.TotalAssets;
                     }
                 },
+                new AssetLoader(EExportType.MVP)
+                {
+                    ClassNames = ["DataTable"],
+                    PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                    LoadHiddenAssets = true,
+                    AssetHandler = async loader =>
+                    {
+                        var mvpTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/UI/HeroSkin/UIHeroMVPTable");
+                        var heroData = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UIHeroTable");
+                        var skinTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+                            "Marvel/Content/Marvel/Data/DataTable/HeroGallery/UISkinTable");
+
+                        if (mvpTable?.RowMap == null) return;
+
+                        var heroLookup = new Dictionary<string, HeroDisplayInfo>();
+                        if (heroData?.RowMap != null)
+                        {
+                            foreach (var (key, value) in heroData.RowMap)
+                            {
+                                var heroBasic = value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
+                                var heroIcon = value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
+                                heroLookup[key.Text] = new HeroDisplayInfo(
+                                    heroBasic.GetOrDefault("TName_10_93EE6AC745A8786CA1DF5A83B5253AC4", new FText(key.Text)).Text.ToLower().TitleCase(),
+                                    GetDataTableIconPath(heroIcon),
+                                    heroBasic.GetOrDefault("HeroInfoMainColor_60_DF3A9B7B49FBF4A7F47FDCB06DADE676", new FLinearColor(1, 1, 1, 1)),
+                                    heroBasic.GetOrDefault("HeroInfoSecondaryColor_66_9A43BF184D53A7114048DBA131305FFB", new FLinearColor(0, 0, 0, 1))
+                                );
+                            }
+                        }
+
+                        var skinNamesByItemId = BuildSkinNameLookup(skinTable);
+
+                        loader.TotalAssets = mvpTable.RowMap.Count;
+                        foreach (var (key, value) in mvpTable.RowMap)
+                        {
+                            if (!value.TryGetValue(out FStructFallback identifier, "Identifier"))
+                            {
+                                loader.LoadedAssets++;
+                                continue;
+                            }
+
+                            var heroId = identifier.GetOrDefault("HeroID", string.Empty);
+                            var skinId = identifier.GetOrDefault("SkinID", string.Empty);
+                            var preferredSkinItemId = $"{heroId}{skinId}";
+
+                            var skinBinds = value.GetOrDefault("SkinBindList", Array.Empty<FStructFallback>());
+                            var styleDatas = new List<SoftAnimStyleData>();
+                            string? primaryAnimPath = null;
+                            var foundPreferredSkin = false;
+
+                            foreach (var bind in skinBinds)
+                            {
+                                var animPath = GetSoftObjectPathText(bind, "LevelSequencePlayStyle");
+                                if (animPath is null) continue;
+
+                                var skinItemId = bind.GetOrDefault("SkinItemID", string.Empty);
+                                var styleName = ResolveSkinStyleName(skinItemId, skinNamesByItemId);
+                                styleDatas.Add(new SoftAnimStyleData(styleName, animPath));
+
+                                if (foundPreferredSkin) continue;
+
+                                if (!string.IsNullOrEmpty(preferredSkinItemId)
+                                    && skinItemId.Equals(preferredSkinItemId, StringComparison.Ordinal))
+                                {
+                                    primaryAnimPath = animPath;
+                                    foundPreferredSkin = true;
+                                }
+                                else if (primaryAnimPath is null)
+                                {
+                                    primaryAnimPath = animPath;
+                                }
+                            }
+
+                            if (primaryAnimPath is null)
+                            {
+                                loader.LoadedAssets++;
+                                continue;
+                            }
+
+                            heroLookup.TryGetValue($"{heroId}0", out var baseHero);
+                            baseHero ??= heroLookup.GetValueOrDefault($"{heroId}{identifier.GetOrDefault("ShapeID", "0")}");
+
+                            var displayName = ResolveMvpDisplayName(value, key.Text, baseHero?.Name ?? heroId);
+                            var highResIconPath = $"Marvel/Content/Marvel/UI/Textures/Item/MVP/item_mvp_{key.Text}";
+                            var lowResIconPath = $"Marvel/Content/Marvel_LQ/UI/Textures/Item/MVP/item_mvp_{key.Text}";
+
+                            var assetArgs = new AssetItemCreationArgs
+                            {
+                                ID = key.Text,
+                                DisplayName = displayName,
+                                Description = string.Empty,
+                                MainColor = baseHero?.MainColor ?? new FLinearColor(1, 1, 1, 1),
+                                SecondaryColor = baseHero?.SecondaryColor ?? new FLinearColor(0, 0, 0, 1),
+                                LowResIconPath = lowResIconPath,
+                                HighResIconPath = highResIconPath,
+                                ExportType = EExportType.MVP,
+                                ObjectPath = primaryAnimPath
+                            };
+
+                            var assetItem = new AssetItem(assetArgs);
+                            await assetItem.LoadBitmapAsync();
+
+                            assetItem.AssetInfo = styleDatas.Count > 1
+                                ? new AssetInfo(assetItem, styleDatas, "Skins")
+                                : new AssetInfo(assetItem);
+
+                            loader.Source.AddOrUpdate(assetItem);
+                            loader.LoadedAssets++;
+                        }
+
+                        loader.LoadedAssets = loader.TotalAssets;
+                    }
+                },
                 // new AssetLoader(EExportType.Backpack) //Accessory
                 // {
                 //     ClassNames = ["AthenaLoadingScreenItemDefinition"]
@@ -869,6 +984,80 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
             .Replace("/Marvel/UI/", "/Marvel_LQ/UI/", StringComparison.OrdinalIgnoreCase)
             .Replace("Marvel/Content/Marvel/UI/", "Marvel/Content/Marvel_LQ/UI/", StringComparison.OrdinalIgnoreCase);
         return replaced;
+    }
+
+    private static Dictionary<string, string> BuildSkinNameLookup(UDataTable? skinTable)
+    {
+        var lookup = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (skinTable?.RowMap == null) return lookup;
+
+        foreach (var skin in skinTable.RowMap.Values)
+        {
+            var skinItemId = skin.GetOrDefault("SkinItemID", string.Empty);
+            if (string.IsNullOrEmpty(skinItemId)) continue;
+
+            if (!skin.TryGetValue(out FStructFallback identifier, "Identifier")) continue;
+            var shapeId = identifier.GetOrDefault("ShapeID", "0");
+            if (shapeId != "0") continue;
+
+            // Prefer an existing shape-0 entry; don't overwrite with later duplicates.
+            if (lookup.ContainsKey(skinItemId)) continue;
+
+            var name = string.Empty;
+            if (skin.TryGetValue(out FText skinName, "SkinName") && !string.IsNullOrWhiteSpace(skinName.Text))
+                name = skinName.Text;
+            if (string.IsNullOrWhiteSpace(name))
+                name = ResolveMarvelItemLocResName(skinItemId) ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(name))
+                name = skinItemId;
+
+            lookup[skinItemId] = name;
+        }
+
+        return lookup;
+    }
+
+    private static string ResolveSkinStyleName(string skinItemId, Dictionary<string, string> skinNamesByItemId)
+    {
+        if (string.IsNullOrEmpty(skinItemId))
+            return "Unknown";
+
+        if (skinNamesByItemId.TryGetValue(skinItemId, out var tableName)
+            && !string.IsNullOrWhiteSpace(tableName))
+            return tableName;
+
+        var localized = ResolveMarvelItemLocResName(skinItemId);
+        if (!string.IsNullOrWhiteSpace(localized))
+            return localized;
+
+        return skinItemId;
+    }
+
+    private static string ResolveMvpDisplayName(FStructFallback mvpRow, string rowKey, string heroFallbackName)
+    {
+        var localized = ResolveMarvelItemLocResName(rowKey);
+        if (!string.IsNullOrWhiteSpace(localized))
+            return localized;
+
+        // Some MVP rows store names only on hero-specific string tables under UIHeroMVPTable_*_Name.
+        var i18n = UEParse.Provider?.Internationalization;
+        if (i18n is not null)
+        {
+            var mvpKey = $"UIHeroMVPTable_{rowKey}_Name";
+            foreach (var ns in i18n.Keys)
+            {
+                if (!ns.StartsWith("123_Customize", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var value = i18n.SafeGet(ns, mvpKey, string.Empty);
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(heroFallbackName))
+            return $"{heroFallbackName} MVP";
+
+        return rowKey;
     }
 
     private static string ResolveItemDisplayName(string itemId, FStructFallback? row = null, params string[] prefixes)

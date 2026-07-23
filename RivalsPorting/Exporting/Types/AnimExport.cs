@@ -5,6 +5,7 @@ using System.Linq;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Animation.CurveExpression;
+using CUE4Parse.UE4.Assets.Exports.LevelSequence;
 using CUE4Parse.UE4.Assets.Exports.MetaSound;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
@@ -93,6 +94,17 @@ public class AnimExport : BaseExport
                 RivalsEmoteWeaponProps.AppendForExportedAnim(Exporter, Props, asset, styles);
                 break;
             }
+            case EExportType.MVP:
+            {
+                foreach (var levelSequence in ResolveMvpLevelSequences(asset, styles))
+                {
+                    var skeleton = Skeleton;
+                    RivalsMvpExport.AppendFromLevelSequence(Exporter, levelSequence, ref skeleton, Sections, Props);
+                    Skeleton = skeleton;
+                }
+
+                break;
+            }
         }
 
         if (UEParse.Provider.TryLoadPackageObject<UCurveExpressionsDataAsset>(
@@ -126,6 +138,32 @@ public class AnimExport : BaseExport
                 break;
             }
         }
+    }
+
+    private static IEnumerable<UObject> ResolveMvpLevelSequences(UObject asset, BaseStyleData[] styles)
+    {
+        var sequences = new List<UObject>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        void TryAdd(UObject? candidate)
+        {
+            if (candidate is null) return;
+            if (candidate is not ULevelSequence
+                && !string.Equals(candidate.ExportType, "LevelSequence", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var path = candidate.GetPathName();
+            if (!seen.Add(path)) return;
+            sequences.Add(candidate);
+        }
+
+        foreach (var style in styles.OfType<AnimStyleData>())
+            TryAdd(style.StyleData);
+
+        TryAdd(asset);
+        return sequences;
     }
 
     private void AnimMontage(UAnimMontage montage)

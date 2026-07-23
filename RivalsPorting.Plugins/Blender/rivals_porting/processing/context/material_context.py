@@ -387,6 +387,9 @@ class MaterialImportContext:
             replace_shader_node("MR Translucent")
             socket_mappings = translucent_mappings
 
+            material.surface_render_method = "BLENDED"
+            material.show_transparent_back = False
+
         if "Common_Eye" in base_material_path or "Eye_Opt" in base_material_path:
             replace_shader_node("MR Eye")
             socket_mappings = eye_mappings
@@ -394,6 +397,9 @@ class MaterialImportContext:
         if any(eye_glass_master_names, lambda x: x in base_material_path) or (self.type == EExportType.OUTFIT and "SimpleGlass" in base_material_path):
             replace_shader_node("MR Eye Glass")
             socket_mappings = eye_glass_mappings
+
+            material.surface_render_method = "BLENDED"
+            material.show_transparent_back = False
 
         if "RimOnly" in base_material_path:
             replace_shader_node("MR Rim")

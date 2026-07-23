@@ -30,7 +30,7 @@ public static class RivalsEmoteWeaponProps
             var weaponName = GetStringOrName(weaponAnim, "WeaponName");
             if (string.IsNullOrEmpty(weaponName)) continue;
 
-            var component = FindWeaponComponent(showBp, weaponName);
+            var component = FindComponentByVariableName(showBp, weaponName);
             if (component is null) continue;
 
             var mesh = exporter.MeshComponent(component);
@@ -49,7 +49,7 @@ public static class RivalsEmoteWeaponProps
             {
                 Mesh = mesh,
                 AnimSections = animSections,
-                SocketName = FindWeaponAttachSocket(showBp, weaponName) ?? string.Empty,
+                SocketName = FindAttachSocket(showBp, weaponName) ?? string.Empty,
                 LocationOffset = FVector.ZeroVector,
                 RotationOffset = FRotator.ZeroRotator,
                 Scale = FVector.OneVector
@@ -119,6 +119,43 @@ public static class RivalsEmoteWeaponProps
 
         return fallback;
     }
+
+    public static UBlueprintGeneratedClass? ResolveShowActorBySkinItemId(string skinItemId, string preferredShapeId = "0")
+    {
+        if (string.IsNullOrEmpty(skinItemId)
+            || !UEParse.Provider.TryLoadPackageObject<UDataTable>(SkinTablePath, out var skinTable)
+            || skinTable.RowMap is null)
+        {
+            return null;
+        }
+
+        UBlueprintGeneratedClass? fallback = null;
+        foreach (var skin in skinTable.RowMap.Values)
+        {
+            if (!string.Equals(skin.GetOrDefault("SkinItemID", string.Empty), skinItemId, StringComparison.Ordinal))
+                continue;
+
+            if (!skin.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass"))
+                continue;
+
+            var shapeId = "0";
+            if (skin.TryGetValue(out FStructFallback identifier, "Identifier"))
+                shapeId = identifier.GetOrDefault("ShapeID", "0");
+
+            if (shapeId == preferredShapeId)
+                return showActorClass;
+
+            fallback ??= showActorClass;
+        }
+
+        return fallback;
+    }
+
+    public static UObject? FindComponentByVariableName(UBlueprintGeneratedClass showBp, string variableName)
+        => FindWeaponComponent(showBp, variableName);
+
+    public static string? FindAttachSocket(UBlueprintGeneratedClass showBp, string variableName)
+        => FindWeaponAttachSocket(showBp, variableName);
 
     public static FStructFallback? FindEmoteByAnimPath(string animPath)
     {

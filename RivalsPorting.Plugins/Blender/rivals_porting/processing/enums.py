@@ -45,6 +45,7 @@ class EExportType(IntEnum):
     EMOTE = ExportCategory.COSMETIC + 12
     SIDEKICK = ExportCategory.COSMETIC + 13
     KICKS = ExportCategory.COSMETIC + 14
+    MVP = ExportCategory.COSMETIC + 15
 
     # CREATIVE
     PROP = ExportCategory.CREATIVE + 1
