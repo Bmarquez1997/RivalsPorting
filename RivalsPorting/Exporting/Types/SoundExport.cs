@@ -4,7 +4,6 @@ using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Wwise;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
-using RivalsPorting.Extensions;
 
 namespace RivalsPorting.Exporting.Types;
 
@@ -52,7 +51,7 @@ public class SoundExport : BaseExport
         
         foreach (var exportSound in exportSounds)
         {
-            Sounds.Add(new ExportSound { Path = Exporter.Export(exportSound) });
+            Sounds.Add(new ExportSound { Path = Context.Export(exportSound) });
         }
 
         foreach (var akTrack in akAudioSounds)

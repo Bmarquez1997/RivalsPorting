@@ -1,4 +1,6 @@
 global using static RivalsPorting.Application.AppServices;
+global using RivalsPorting.CUE4Parse.Extensions;
+global using RivalsPorting.Shared.Extensions;
 
 using System.Collections.ObjectModel;
 using System.Reflection;
@@ -54,4 +56,5 @@ public static class Globals
     public const string GITHUB_URL = "https://github.com/Bmarquez1997/RivalsPorting";
     public const string KOFI_URL = "https://ko-fi.com/h4lfheart";
     public const string WEBSITE_URL = "https://fortniteporting.app";
+    public const string DOCS_URL = "https://docs.fortniteporting.app";
 }

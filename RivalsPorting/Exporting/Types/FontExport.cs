@@ -8,20 +8,20 @@ namespace RivalsPorting.Exporting.Types;
 public class FontExport : BaseExport
 {
     public string Path;
-    
+    public string? FolderPath;
+
     public FontExport(string name, UObject asset, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
         if (asset is not UFontFace fontFace) return;
 
         if (metaData.ExportLocation.IsFolder)
         {
-            var exportPath = Exporter.Export(fontFace, returnRealPath: true, synchronousExport: true);
-            App.Launch(System.IO.Path.GetDirectoryName(exportPath)!);
+            var exportPath = Context.Export(fontFace, returnRealPath: true, synchronousExport: true);
+            FolderPath = System.IO.Path.GetDirectoryName(exportPath);
         }
         else
         {
-            Path = Exporter.Export(fontFace);
+            Path = Context.Export(fontFace);
         }
     }
-    
 }

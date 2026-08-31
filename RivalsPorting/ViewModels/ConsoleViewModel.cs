@@ -79,7 +79,7 @@ public partial class ConsoleViewModel : ViewModelBase
         {
             var searchFilter = items.Item1;
             var eventType = items.Item2;
-            return MiscExtensions.Filter(logEvent.Message, searchFilter) &&
+            return FilterExtensions.Filter(logEvent.Message, searchFilter) &&
                    (eventType == ELogEventType.None || logEvent.Level == eventType);
         };
     }

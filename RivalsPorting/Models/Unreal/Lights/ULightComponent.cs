@@ -1,7 +1,7 @@
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Objects.UObject;
 
-namespace RivalsPorting.Models.Unreal.Lights;
+namespace RivalsPorting.CUE4Parse.Models.Unreal.Lights;
 
 public class ULightComponent : ULightComponentBase
 {

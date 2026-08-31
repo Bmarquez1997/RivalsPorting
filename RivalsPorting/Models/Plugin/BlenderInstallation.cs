@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using RivalsPorting.Extensions;
 using RivalsPorting.Shared.Extensions;
 using RivalsPorting.ViewModels;
 using Newtonsoft.Json;
@@ -14,7 +15,6 @@ namespace RivalsPorting.Models.Plugin;
 public partial class BlenderInstallation(string blenderExecutablePath) : ObservableObject
 {
     [ObservableProperty] private string _blenderPath = blenderExecutablePath;
-    [JsonIgnore] private bool IsValidInstallation => File.Exists(BlenderPath) && File.Exists(StartupPath);
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ExtensionVersionString))]
     [property: JsonIgnore]
@@ -28,13 +28,7 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
     private EPluginStatusType _status = EPluginStatusType.Newest;
 
     [JsonIgnore]
-    public SolidColorBrush StatusBrush => Status switch
-    {
-        EPluginStatusType.Newest => SolidColorBrush.Parse("#17854F"),
-        EPluginStatusType.UpdateAvailable => SolidColorBrush.Parse("#E0A100"),
-        EPluginStatusType.Failed => SolidColorBrush.Parse("#A61717"),
-        EPluginStatusType.Modifying => SolidColorBrush.Parse("#6F6F75"),
-    };
+    public SolidColorBrush StatusBrush => Status.Brush;
 
     [JsonIgnore]
     public Version? BlenderVersion => TryGetVersion(BlenderPath);
@@ -118,7 +112,7 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
 
         Status = EPluginStatusType.Modifying;
 
-        MiscExtensions.Copy(Path.Combine(PluginWorkingDirectory.FullName, "rivals_porting"), Path.Combine(StartupPath, "rivals_porting"));
+        FileSystemExtensions.Copy(Path.Combine(PluginWorkingDirectory.FullName, "rivals_porting"), Path.Combine(StartupPath, "rivals_porting"));
 
         if (MetaPath is not null)
             File.WriteAllText(MetaPath, JsonConvert.SerializeObject(new FPPluginMeta { Version = Globals.VersionString }));
@@ -143,8 +137,9 @@ public partial class BlenderInstallation(string blenderExecutablePath) : Observa
 
         Status = EPluginStatusType.Modifying;
 
-        if (IsValidInstallation)
-            Directory.Delete(Path.Combine(StartupPath, "rivals_porting"), true);
+        var pluginPath = Path.Combine(StartupPath, "rivals_porting");
+        if (Directory.Exists(pluginPath))
+            Directory.Delete(pluginPath, true);
     }
 
     public async Task Launch()

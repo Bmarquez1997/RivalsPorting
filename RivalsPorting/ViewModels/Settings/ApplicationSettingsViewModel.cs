@@ -20,7 +20,7 @@ using RivalsPorting.Models.Map;
 using RivalsPorting.Models.Radio;
 using RivalsPorting.Shared.Extensions;
 using RivalsPorting.Validators;
-using RivalsPorting.Windows;
+using Material.Icons;
 using NAudio.Wave;
 using Newtonsoft.Json;
 using RivalsPorting.Controls;
@@ -50,7 +50,16 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
 
     [ObservableProperty] private int _audioDeviceIndex = 0;
     [ObservableProperty] private RadioPlaylistSerializeData[] _playlists = [];
-    [ObservableProperty] private float _volume = 1.0f;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(VolumeIconKind))] private float _volume = 1.0f;
+
+    [JsonIgnore]
+    public MaterialIconKind VolumeIconKind => Volume switch
+    {
+        0.0f => MaterialIconKind.VolumeMute,
+        < 0.3f => MaterialIconKind.VolumeLow,
+        < 0.66f => MaterialIconKind.VolumeMedium,
+        _ => MaterialIconKind.VolumeHigh
+    };
 
     [ObservableProperty] private RPVersion _lastOnlineVersion = Globals.Version;
 
@@ -64,6 +73,7 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
     
     [ObservableProperty] private bool _useDefaultExportLoadType = false;
     [ObservableProperty] private EExportType _defaultExportLoadType = EExportType.Outfit;
+    [ObservableProperty] private EExportLocation _defaultExportLocation = EExportLocation.Blender;
     [ObservableProperty] private EpicAuthResponse? _epicAuth;
     
     [ObservableProperty, NotifyPropertyChangedFor(nameof(TransparencyHints))] private EThemeType _theme = EThemeType.Rose;
@@ -74,7 +84,7 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
     public string AssetPath => UseAssetsPath && Directory.Exists(AssetsPath) ? AssetsPath : App.AssetsFolder.FullName;
     
     [JsonIgnore]
-    public DirectSoundDeviceInfo[] AudioDevices => DirectSoundOut.Devices.ToArray()[1..];
+    public DirectSoundDeviceInfo[] AudioDevices => Audio.Devices;
 
     [JsonIgnore]
     public EExportType[] AssetTypes => Enum.GetValues<EExportType>().Where(type => !type.IsDisabled && type.IsAssetType).ToArray();

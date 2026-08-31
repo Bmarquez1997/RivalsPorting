@@ -3,7 +3,7 @@ using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
 
-namespace RivalsPorting.Models.Unreal.Landscape;
+namespace RivalsPorting.CUE4Parse.Models.Unreal.Landscape;
 
 public class ULandscapeLayerInfoObject : USceneComponent
 {

@@ -52,6 +52,7 @@
             <Brush x:Key="ExpanderHeaderBorderBrush">#78575757</Brush>
             <Brush x:Key="ExpanderHeaderPointerOverBorderBrush">#78575757</Brush>
             <Brush x:Key="ExpanderContentBorderBrush">#78575757</Brush>
+            <Brush x:Key="SkeletonBrush">#10FFFFFF</Brush>
 
             <FontFamily x:Key="SFTextLight">avares://RivalsPorting/Assets/Fonts/SF/SF-Pro-Text-Light.otf#SF Pro Text</FontFamily>
             <FontFamily x:Key="SFTextRegular">avares://RivalsPorting/Assets/Fonts/SF/SF-Pro-Text-Regular.otf#SF Pro Text</FontFamily>
@@ -307,6 +308,52 @@
                 <Style Selector="^:pointerover">
                     <Setter Property="Background" Value="{DynamicResource FPButtonBackgroundBrightPointerOver}" />
                 </Style>
+            </Style>
+        </Style>
+
+        <Style Selector="ToggleButton.GhostButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ClipToBounds" Value="False" />
+
+            <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="ClipToBounds" Value="False" />
+                <Setter Property="BackgroundSizing" Value="CenterBorder" />
+                <Setter Property="BoxShadow" Value="none" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Transitions">
+                    <Setter.Value>
+                        <Transitions>
+                            <BrushTransition Property="Background" Duration="0:0:0.083" />
+                        </Transitions>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="#20FFFFFF" />
+            </Style>
+
+            <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="#12FFFFFF" />
+            </Style>
+
+            <Style Selector="^:checked /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
+
+            <Style Selector="^:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="#20FFFFFF" />
+            </Style>
+
+            <Style Selector="^:checked:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="#12FFFFFF" />
+            </Style>
+
+            <Style Selector="^:disabled">
+                <Setter Property="Opacity" Value="0.3" />
             </Style>
         </Style>
 
@@ -779,11 +826,36 @@
             <Setter Property="CornerRadius" Value="16" />
             <Setter Property="ClipToBounds" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions" Value="{x:Null}" />
 
             <Style Selector="^ /template/ Border#RootBorder">
+                <Setter Property="Background" Value="{DynamicResource FPButtonBackground}" />
                 <Setter Property="ClipToBounds" Value="False" />
                 <Setter Property="BackgroundSizing" Value="CenterBorder" />
                 <Setter Property="BoxShadow" Value="{DynamicResource FPCardShadow}" />
+                <Setter Property="Transitions" Value="{x:Null}" />
+            </Style>
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Background" Value="{DynamicResource FPButtonBackgroundPointerOver}" />
+            </Style>
+
+            <Style Selector="^:pointerover /template/ Border#RootBorder">
+                <Setter Property="Background" Value="{DynamicResource FPButtonBackgroundPointerOver}" />
+                <Setter Property="Transitions" Value="{x:Null}" />
+            </Style>
+
+            <Style Selector="^:pressed">
+                <Setter Property="Background" Value="{DynamicResource FPButtonBackgroundPressed}" />
+            </Style>
+
+            <Style Selector="^:pressed /template/ Border#RootBorder">
+                <Setter Property="Background" Value="{DynamicResource FPButtonBackgroundPressed}" />
+                <Setter Property="Transitions" Value="{x:Null}" />
+            </Style>
+
+            <Style Selector="^:disabled">
+                <Setter Property="Opacity" Value="0.5" />
             </Style>
         </Style>
 
@@ -982,6 +1054,20 @@
             </Style>
         </Style>
 
+        <Style Selector="Button.Primary">
+            <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="{DynamicResource FPAccentBrush}" />
+            </Style>
+
+            <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="{DynamicResource FPAccentBrush}" />
+            </Style>
+
+            <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="{DynamicResource FPAccentBrush}" />
+            </Style>
+        </Style>
+
         <Style Selector="editing|SearchPanel[IsVisible=True] /template/ Border#PART_Border">
             <Setter Property="Background" Value="{DynamicResource FPPopupContentCardBackground}" />
             <Setter Property="Margin" Value="{ext:Space 0, 1, 0, 0}" />
@@ -1145,6 +1231,11 @@
         <Style Selector="TextBlock.BodyStrongTextBlockStyle">
             <Setter Property="FontSize" Value="14" />
             <Setter Property="FontFamily" Value="{StaticResource SFTextSemiBold}" />
+        </Style>
+
+        <Style Selector="TextBlock.BodyLargeTextBlockStyle">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontFamily" Value="{StaticResource SFTextBold}" />
         </Style>
 
         <Style Selector="TextBlock.SubtitleTextBlockStyle">

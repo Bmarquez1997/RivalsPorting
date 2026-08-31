@@ -1,9 +1,7 @@
-using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
 using FluentAvalonia.UI.Controls;
-using RivalsPorting.Framework;
 using RivalsPorting.Models.Plugin;
 using RivalsPorting.Services;
 using RivalsPorting.Shared.Extensions;
@@ -14,26 +12,15 @@ using RivalsPorting.Services;
 
 namespace RivalsPorting.ViewModels.Plugin;
 
-public partial class UnrealPluginViewModel : ViewModelBase
+public partial class UnrealPluginViewModel : PluginInstallationViewModelBase<UnrealInstallation>
 {
-    [ObservableProperty] private bool _automaticallySync = true;
-    [ObservableProperty] private ObservableCollection<UnrealInstallation> _installations = [];
+    protected override DirectoryInfo PluginWorkingDirectory => UnrealInstallation.PluginWorkingDirectory;
 
-    public override async Task Initialize()
-    {
-        if (!UnrealInstallation.PluginWorkingDirectory.Exists)
-            UnrealInstallation.PluginWorkingDirectory.Create();
+    protected override bool TrySyncVersion(UnrealInstallation installation) => installation.SyncVersion();
 
-        foreach (var installation in Installations.ToArray())
-        {
-            if (installation.SyncVersion()) continue;
+    protected override void Uninstall(UnrealInstallation installation) => installation.Uninstall();
 
-            installation.Uninstall();
-            Installations.Remove(installation);
-        }
-    }
-
-    public async Task AddInstallation()
+    public override async Task AddInstallation()
     {
         if (await App.BrowseFileDialog(fileTypes: Globals.UnrealProjectFileType) is not { } projectPath) return;
 
@@ -52,21 +39,7 @@ public partial class UnrealPluginViewModel : ViewModelBase
         });
     }
 
-    public async Task RemoveInstallation(UnrealInstallation installation)
-    {
-        TaskService.Run(() =>
-        {
-            installation.Uninstall();
-            Installations.Remove(installation);
-        });
-    }
-
-    public async Task SyncInstallations()
-    {
-        await SyncInstallations(true);
-    }
-
-    public async Task SyncInstallations(bool verbose)
+    public override async Task SyncInstallations(bool verbose)
     {
         var currentVersion = Globals.Version.ToVersion();
         foreach (var installation in Installations)

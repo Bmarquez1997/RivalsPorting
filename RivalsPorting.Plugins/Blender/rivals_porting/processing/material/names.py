@@ -44,6 +44,11 @@ vertex_crunch_names = ["MI_VertexCrunch", "M_VertexCrunch", "MI_Hide", "M_Hide"]
 
 hero_master_names = ["_Body", "_Skin", "Common_Cape", "Common_Crystal", "1028001_Arms"]
 
+legacy_vertex_crunch_node_groups = [
+    ("FPv3 Vertex Crunch", "FPv4 Vertex Crunch"),
+    ("FPv3 Full Vertex Crunch", "FPv4 Full Vertex Crunch"),
+]
+
 toon_outline_names = ["Outline", "Toon_Lines"]
 toon_outline_disable_names = ["MI_OutlineLove"]
 

@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
              xmlns:ext="clr-namespace:RivalsPorting.Extensions;assembly=RivalsPorting"
-             xmlns:enums="clr-namespace:CUE4Parse_Conversion.UEFormat.Enums;assembly=CUE4Parse-Conversion"
+             xmlns:enums="clr-namespace:CUE4Parse_Conversion.Writers.UEFormat.Enums;assembly=CUE4Parse-Conversion"
              xmlns:settings="clr-namespace:RivalsPorting.ViewModels.Settings"
              xmlns:rivalsPorting="clr-namespace:RivalsPorting"
              xmlns:controls="clr-namespace:RivalsPorting.Controls.Settings"

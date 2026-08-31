@@ -4,6 +4,8 @@ using System.Linq;
 using CUE4Parse.GameTypes.FN.Assets.Exports.DataAssets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Texture;
+using RivalsPorting.CUE4Parse.Extensions;
+using RivalsPorting.CUE4Parse.Models.Unreal.VirtualTexture;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
 using RivalsPorting.Extensions;
@@ -11,7 +13,6 @@ using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Fortnite;
 using RivalsPorting.Models.Unreal;
 using RivalsPorting.Shared.Extensions;
-using RivalsPorting.ViewModels.Settings;
 using Path = System.IO.Path;
 
 namespace RivalsPorting.Exporting.Types;
@@ -19,7 +20,8 @@ namespace RivalsPorting.Exporting.Types;
 public class TextureExport : BaseExport
 {
     public List<ExportTexture> Textures = [];
-    
+    public List<string> FolderPaths = [];
+
     private static readonly Dictionary<EExportType, string> TextureNames = new()
     {
         { EExportType.Spray, "DecalTexture" },
@@ -76,27 +78,19 @@ public class TextureExport : BaseExport
             }
         }
 
-        var textureOpenPaths = new HashSet<string>();
         foreach (var texture in textures)
         {
             if (metaData.ExportLocation.IsFolder)
             {
-                var exportPath = Exporter.Export(texture, returnRealPath: true, synchronousExport: true);
+                var exportPath = Context.Export(texture, returnRealPath: true, synchronousExport: true);
                 if (Path.GetDirectoryName(exportPath) is { } exportFolder)
-                    textureOpenPaths.Add(exportFolder);
+                    FolderPaths.Add(exportFolder);
             }
             else
             {
-                Textures.Add(new ExportTexture(Exporter.Export(texture), texture.SRGB, texture.CompressionSettings));
+                Textures.Add(new ExportTexture(Context.Export(texture), texture.SRGB, texture.CompressionSettings));
             }
         }
-
-        if (metaData.ExportLocation.IsFolder &&
-            metaData.Settings is FolderSettingsViewModel { OpenFoldersOnExport: true })
-        {
-            textureOpenPaths.ForEach(path => App.Launch(path));
-        }
-       
     }
     
 }

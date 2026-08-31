@@ -11,6 +11,7 @@ class SoundImportContext:
             path = sound.get("Path")
             self.import_sound(path, time_to_frame(sound.get("Time")))
 
+    # TODO fix usage with sequencer for blender 5.0
     def import_sound(self, path: str, time):
         path = path[1:] if path.startswith("/") else path
         file_path, name = path.split(".")
@@ -19,10 +20,10 @@ class SoundImportContext:
 
         ext = ESoundFormat(self.options.get("SoundFormat")).name.lower()
         sound_path = os.path.join(self.assets_root, f"{file_path}.{ext}")
-
-        if sequence_editor := get_sequence_editor():
-            sound = get_sequence_strips(sequence_editor).new_sound(name, sound_path, 0, time)
+        
+        if sequence_editor := get_sequence_editor(self.version_profile):
+            sound = get_sequence_collection(sequence_editor, self.version_profile).new_sound(name, sound_path, 0, time)
             sound["FPSound"] = True
             return sound
-
+            
         return None

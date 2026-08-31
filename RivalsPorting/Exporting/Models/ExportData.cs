@@ -10,15 +10,20 @@ public class ExportData
     public BaseExport[] Exports;
 }
 
-public class ExportDataMeta
+public class ExportDataMeta : IDisposable
 {
-    public string Version = Globals.VersionString;
+    public string Version = string.Empty;
     public string AssetsRoot;
-    public BaseExportSettings Settings;
+    public ExportSettings Settings = new();
 
     [JsonIgnore] public EExportLocation ExportLocation;
     [JsonIgnore] public string? CustomPath;
     [JsonIgnore] public EWorldFlags WorldFlags = EWorldFlags.Actors | EWorldFlags.WorldPartitionGrids | EWorldFlags.Landscape | EWorldFlags.InstancedFoliage | EWorldFlags.HLODs;
+    [JsonIgnore] public IExportAssetProvider Provider = null!;
+
+    private readonly CancellationTokenSource _cancellationSource = new();
+
+    [JsonIgnore] public CancellationToken CancellationToken => _cancellationSource.Token;
 
     public event ExportProgressUpdate UpdateProgress;
 
@@ -26,6 +31,10 @@ public class ExportDataMeta
     {
         UpdateProgress?.Invoke(name, current, total);
     }
+
+    public void Cancel() => _cancellationSource.Cancel();
+
+    public void Dispose() => _cancellationSource.Dispose();
 }
 
 public delegate void ExportProgressUpdate(string name, int current, int total);

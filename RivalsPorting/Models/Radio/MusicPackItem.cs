@@ -111,7 +111,7 @@ public partial class MusicPackItem : ObservableObject
     
     public bool Match(string filter)
     {
-        return MiscExtensions.Filter(TrackName, filter) || MiscExtensions.Filter(Id, filter);
+        return FilterExtensions.Filter(TrackName, filter) || FilterExtensions.Filter(Id, filter);
     }
 
 
@@ -137,7 +137,8 @@ public partial class MusicPackItem : ObservableObject
     {
         await TaskService.RunAsync(async () =>
         {
-            if (!SoundExtensions.TrySaveSoundToAssets(SoundWave.Load<USoundWave>(), AppSettings.Application.AssetPath, out string wavPath)) return;
+            if (!SoundExtensions.TrySaveSoundToAssets(SoundWave.Load<USoundWave>(), AppSettings.Application.AssetPath, out string wavPath,
+                    Dependencies.BinkaDecoderFile, Dependencies.RadaDecoderFile, Dependencies.VgmStreamFile)) return;
 
             if (File.Exists(path)) return;
 

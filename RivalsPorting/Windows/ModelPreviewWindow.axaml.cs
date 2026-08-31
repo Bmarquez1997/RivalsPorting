@@ -1,41 +1,72 @@
-using System;
 using System.Collections.Generic;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Animation;
 using RivalsPorting.Framework;
-using RivalsPorting.Services;
+using RivalsPorting.Models.Viewers;
 using RivalsPorting.WindowModels;
 
 namespace RivalsPorting.Windows;
 
-public partial class ModelPreviewWindow : WindowBase<ModelPreviewWindowModel>, IPreviewWindow
+public partial class ModelPreviewWindow : PreviewWindowBase<ModelPreviewWindow, ModelPreviewWindowModel>
 {
-    public static ModelPreviewWindow? Instance;
-    
     public ModelPreviewWindow()
     {
         InitializeComponent();
-        DataContext = WindowModel;
-        Owner = App.Lifetime.MainWindow;
-        
+
         WindowModel.InitializeContext();
+
+        ScrubSlider.AddHandler(PointerPressedEvent, OnScrubPointerPressed, RoutingStrategies.Tunnel);
+        ScrubSlider.AddHandler(PointerReleasedEvent, OnScrubPointerReleased, RoutingStrategies.Tunnel);
+        ScrubSlider.AddHandler(PointerCaptureLostEvent, OnScrubPointerCaptureLost, RoutingStrategies.Tunnel);
     }
 
-    public static void Preview(IEnumerable<UObject> objects)
+    public static void Preview(IEnumerable<UObject> objects, UAnimationAsset? animation = null)
     {
-        if (Instance is null)
-        {
-            Instance = new ModelPreviewWindow();
-            Instance.Show();
-        }
-        
-        Instance.WindowModel.LoadScene(objects);
-        Instance.BringToTop();
+        var window = WindowManager.GetOrShowPreview(() => new ModelPreviewWindow());
+        window.WindowModel.LoadScene(objects, animation);
     }
 
-    protected override void OnClosed(EventArgs e)
+    public static bool TryApplyAnimation(UAnimationAsset animation)
     {
-        base.OnClosed(e);
+        var existing = WindowManager.FindOpen<ModelPreviewWindow>();
+        if (existing?.WindowModel is not { HasSkeletalMesh: true })
+            return false;
 
-        Instance = null;
+        existing.WindowModel.ApplyAnimation(animation);
+        existing.BringToTop();
+        return true;
+    }
+
+    private void OnScrubPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        WindowModel.BeginScrub();
+    }
+
+    private void OnScrubPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        WindowModel.EndScrub();
+    }
+
+    private void OnScrubPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        WindowModel.EndScrub();
+    }
+
+    private void OnScrubValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (sender is not Slider) return;
+        WindowModel.ScrubTo((float) e.NewValue);
+    }
+
+    private void OnSectionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ListBox { SelectedItem: AnimSectionItem section })
+            return;
+
+        WindowModel.JumpToSection(section.Name);
     }
 }

@@ -1,9 +1,9 @@
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Component;
 using CUE4Parse.UE4.Objects.Core.Math;
-using EpicManifestParser.UE;
+using CUE4Parse.UE4.Objects.Core.Misc;
 
-namespace RivalsPorting.Models.Unreal.Lights;
+namespace RivalsPorting.CUE4Parse.Models.Unreal.Lights;
 
 public class ULightComponentBase : USceneComponent
 {

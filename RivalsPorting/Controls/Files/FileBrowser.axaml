@@ -105,22 +105,88 @@
                                         <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
                                                   Content="{Binding Title}" />
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel VerticalAlignment="Stretch"
-                                                    HorizontalAlignment="Stretch" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
-                        </Flyout>
-                    </DropDownButton.Flyout>
+                                </Setter>
+                            </Style>
+                        </ComboBox.Styles>
+                    </ComboBox>
 
-                    <StackPanel Orientation="Horizontal">
-                        <material:MaterialIcon Kind="PackageVariant" Margin="{ext:Space 0, 0, 1, 0}" />
-                        <TextBlock Text="Container Filters" />
-                    </StackPanel>
-                </DropDownButton>
+                    <DropDownButton HorizontalAlignment="Stretch">
+                        <DropDownButton.Flyout>
+                            <Flyout VerticalOffset="4" Placement="BottomEdgeAlignedLeft">
+                                <Grid Width="560" MaxHeight="420" RowDefinitions="Auto,*">
+                                    <Grid Grid.Row="0" Margin="{ext:Space 0, 0, 0, 1}"
+                                          ColumnDefinitions="*,Auto,Auto">
+                                        <controls:SearchBar Grid.Column="0"
+                                                            Text="{Binding VfsFilterSearchText, Mode=TwoWay}"
+                                                            Watermark="Search..."
+                                                            Margin="{ext:Space 0, 0, 1, 0}" />
+
+                                        <ToggleButton Grid.Column="1"
+                                                      Margin="{ext:Space 0, 0, 1, 0}"
+                                                      IsChecked="{Binding DescendingVfsSort}"
+                                                      ToolTip.Tip="Ascending or Descending">
+                                            <material:MaterialIcon Kind="{Binding VfsSortIcon}" />
+                                        </ToggleButton>
+
+                                        <Button Grid.Column="2"
+                                                Content="{controls:IconText 'Clear Selection', Trash}"
+                                                Command="{Binding ClearVfsSelectionCommand}" />
+                                    </Grid>
+
+                                    <controls:DynamicFadeScrollViewer Grid.Row="1"
+                                                                      HorizontalScrollBarVisibility="Disabled"
+                                                                      VerticalScrollBarVisibility="Auto">
+                                        <Panel>
+                                            <ItemsControl ItemsSource="{Binding VfsFilterGroups}"
+                                                          IsVisible="{Binding HasVisibleVfsGroups}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="files:VfsFilterGroup">
+                                                        <StackPanel Margin="{ext:Space 0, 0, 0, 1}">
+                                                            <TextBlock Text="{Binding Header}"
+                                                                       Classes="BodyStrongTextBlockStyle"
+                                                                       Margin="{ext:Space 0, 0, 0, 0.5}" />
+                                                            <ItemsControl ItemsSource="{Binding Items}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate DataType="files:VfsFilterItem">
+                                                                        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                                                  Content="{Binding VfsName}"
+                                                                                  Margin="{ext:Space 0, 0.25}" />
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <StackPanel />
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+
+                                            <TextBlock Text="No Containers Found"
+                                                       IsVisible="{Binding !HasVisibleVfsGroups}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="{ext:Space 2}"
+                                                       Classes="BodyTextBlockStyle TextFillColorSecondaryBrush" />
+                                        </Panel>
+                                    </controls:DynamicFadeScrollViewer>
+                                </Grid>
+                            </Flyout>
+                        </DropDownButton.Flyout>
+
+                        <StackPanel Orientation="Horizontal">
+                            <material:MaterialIcon Kind="PackageVariant" Margin="{ext:Space 0, 0, 1, 0}" />
+                            <TextBlock Text="{Binding ContainersButtonText}" />
+                        </StackPanel>
+                    </DropDownButton>
+                </StackPanel>
 
                 <controls:SearchBar Grid.Column="3" Text="{Binding SearchText, Mode=TwoWay}" Watermark="Search"
                                     KeyDown="OnSearchKeyDown" />
@@ -319,7 +385,39 @@
                                          AutoScrollToSelectedItem="True" DoubleTapped="OnFlatItemDoubleTapped">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate DataType="files:FlatItem">
-                                            <ContentControl ToolTip.Tip="{Binding VfsName, StringFormat='Vfs: {0}'}">
+                                            <ContentControl PointerEntered="OnFlatItemPointerEntered">
+                                                <ToolTip.Tip>
+                                                    <Border ClipToBounds="True" MaxWidth="420">
+                                                        <Grid Margin="{ext:Space 0.5}"
+                                                              ColumnDefinitions="Auto,*"
+                                                              RowDefinitions="Auto,Auto">
+                                                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                                                    Width="64" Height="64"
+                                                                    CornerRadius="8" ClipToBounds="True"
+                                                                    VerticalAlignment="Center"
+                                                                    IsVisible="{Binding PreviewIcon, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                                <Image Source="{Binding PreviewIcon}" Stretch="Uniform"
+                                                                       RenderOptions.BitmapInterpolationMode="MediumQuality" />
+                                                            </Border>
+
+                                                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                                                       Margin="{ext:Space 1.5, 0, 0, 0}"
+                                                                       Classes="BodyStrongTextBlockStyle"
+                                                                       VerticalAlignment="Bottom"
+                                                                       TextWrapping="NoWrap"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Text="{Binding ResolvedDisplayName}" />
+
+                                                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                                                       Margin="{ext:Space 1.5, 0, 0, 0}"
+                                                                       Classes="BodyTextBlockStyle TextFillColorSecondaryBrush"
+                                                                       VerticalAlignment="Top"
+                                                                       TextWrapping="NoWrap"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Text="{Binding ExportType}" />
+                                                        </Grid>
+                                                    </Border>
+                                                </ToolTip.Tip>
                                                 <ContentControl.ContextMenu>
                                                     <ContextMenu>
                                                         <MenuItem Header="Copy Path With Extension"
@@ -349,7 +447,8 @@
                                     </ListBox.ItemsPanel>
                                 </ListBox>
 
-                                <TextBlock IsVisible="{Binding !FlatViewCollection.Count}" Text="No Files Found"
+                                <TextBlock IsVisible="{Binding !FlatViewCollection.Count}"
+                                           Text="{Binding FlatViewEmptyMessage}"
                                            Classes="BodyTextBlockStyle TextFillColorTertiaryBrush"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>

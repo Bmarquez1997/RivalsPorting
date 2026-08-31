@@ -8,8 +8,11 @@ from ..enums import *
 from ..utils import *
 from ...utils import *
 from ...logger import Log
-from ...ueformat.importer.logic import UEFormatImport
+from ...ueformat.importer.import_context import UEFormatImport
 from ...ueformat.options import UEModelOptions
+
+VERTEX_CRUNCH_NAME = "FPv4 Vertex Crunch"
+FULL_VERTEX_CRUNCH_NAME = "FPv4 Full Vertex Crunch"
 
 class MeshImportContext:
     def import_mesh_data(self, data):
@@ -48,25 +51,24 @@ class MeshImportContext:
                 self.parent_deform_bones(imported_mesh["Skeleton"], ["dfrm_", "deform_"])
                 self.parent_bones(imported_mesh["Skeleton"], extra_deform_mappings)
             
-        master_skeleton = None
-        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT]: # and self.options.get("MergeArmatures"):
-            master_skeleton = get_selected_armature()
+        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT] and self.options.get("MergeArmatures"):
+            master_skeleton = merge_parts(self.imported_meshes)
             master_mesh = get_armature_mesh(master_skeleton)
             # Update attribute to account for joined mesh
             self.update_preskinned_bounds(master_mesh)
             
             for material, elements in self.partial_vertex_crunch_materials.items():
-                vertex_crunch_modifier = master_mesh.modifiers.new("FP Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FP Vertex Crunch")
+                vertex_crunch_modifier = master_mesh.modifiers.new(VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(VERTEX_CRUNCH_NAME)
 
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
                 for name, value in elements.items():
-                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
+                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1, self.version_profile)
                     
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FP Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FP Full Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                vertex_crunch_modifier = master_mesh.modifiers.new(FULL_VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(FULL_VERTEX_CRUNCH_NAME)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
 
             if self.add_toon_outline:
                 master_mesh.data.materials.append(bpy.data.materials.get("M_FP_Outline"))
@@ -80,30 +82,24 @@ class MeshImportContext:
                 solidify.material_offset = len(master_mesh.data.materials) - 1
                 
             if rig_type == ERigType.TASTY:
-                self.create_tasty_rig(master_skeleton)
+                self.create_tasty_rig(master_skeleton, self.get_metadata("MasterSkeletalMesh"))
 
-        # Lobby poses are nested on Outfit exports; apply even when MergeArmatures is off.
-        if self.type in [EExportType.OUTFIT, EExportType.FALL_GUYS_OUTFIT]:
             if anim_data := data.get("Animation"):
-                if master_skeleton is None and self.imported_meshes:
-                    body_part = first(self.imported_meshes, lambda p: p.get("Type") == EFortCustomPartType.BODY)
-                    master_skeleton = (body_part or self.imported_meshes[0]).get("Skeleton")
-                if master_skeleton is not None:
-                    self.import_anim_data(anim_data, master_skeleton)
+                self.import_anim_data(anim_data, master_skeleton)
 
         if self.type in [EExportType.SIDEKICK]:
             master_mesh = self.imported_meshes[0]["Mesh"]
             for material in self.full_vertex_crunch_materials:
-                vertex_crunch_modifier = master_mesh.modifiers.new("FP Full Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FP Full Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                vertex_crunch_modifier = master_mesh.modifiers.new(FULL_VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(FULL_VERTEX_CRUNCH_NAME)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
 
             for material, elements in self.partial_vertex_crunch_materials.items():
-                vertex_crunch_modifier = master_mesh.modifiers.new("FP Vertex Crunch", type="NODES")
-                vertex_crunch_modifier.node_group = bpy.data.node_groups.get("FP Vertex Crunch")
-                set_geo_nodes_param(vertex_crunch_modifier, "Material", material)
+                vertex_crunch_modifier = master_mesh.modifiers.new(VERTEX_CRUNCH_NAME, type="NODES")
+                vertex_crunch_modifier.node_group = bpy.data.node_groups.get(VERTEX_CRUNCH_NAME)
+                set_geo_nodes_param(vertex_crunch_modifier, "Material", material, self.version_profile)
                 for name, value in elements.items():
-                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1)
+                    set_geo_nodes_param(vertex_crunch_modifier, name, value == 1, self.version_profile)
 
             shape_keys = master_mesh.data.shape_keys
             if (len(self.override_morph_targets) > 0) and shape_keys is not None:
@@ -198,7 +194,7 @@ class MeshImportContext:
             mesh_data.vertices.foreach_get("co", positions)
             mesh_data.vertices.foreach_get("normal", normals)
 
-            # Bulk foreach_set — per-vertex bpy writes were multi-minute on Lobby meshes.
+            # Bulk foreach_set ΓÇö per-vertex bpy writes are multi-minute on large meshes.
             preskinned_pos = mesh_data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_POSITION")
             preskinned_normal = mesh_data.attributes.new(domain="POINT", type="FLOAT_VECTOR", name="PS_LOCAL_NORMAL")
             preskinned_pos.data.foreach_set("vector", positions)
@@ -245,14 +241,14 @@ class MeshImportContext:
 
         meta["TextureData"] = mesh.get("TextureData")
         
-        for material in mesh.get("Materials") or []:
+        for material in mesh.get("Materials"):
             index = material.get("Slot")
             if index >= len(imported_mesh.material_slots):
                 continue
 
             self.import_material(imported_mesh.material_slots[index], material, meta)
 
-        for override_material in mesh.get("OverrideMaterials") or []:
+        for override_material in mesh.get("OverrideMaterials"):
             index = override_material.get("Slot")
             if index >= len(imported_mesh.material_slots):
                 continue
@@ -263,7 +259,7 @@ class MeshImportContext:
             for slot in slots:
                 self.import_material(slot, override_material, meta)
 
-        for variant_override_material in self.override_materials or []:
+        for variant_override_material in self.override_materials:
             material_name_to_swap = variant_override_material.get("MaterialNameToSwap")
             
             slots = where(imported_mesh.material_slots,
@@ -271,7 +267,7 @@ class MeshImportContext:
             for slot in slots:
                 self.import_material(slot, variant_override_material.get("Material"), meta)
                 
-        for texture_data in mesh.get("TextureData") or []:
+        for texture_data in mesh.get("TextureData"):
             if not (td_override_material := texture_data.get("OverrideMaterial")):
                 continue
                 
@@ -289,10 +285,10 @@ class MeshImportContext:
                 
         self.import_light_data(mesh.get("Lights"), imported_object)
 
-        for child in mesh.get("Children") or []:
+        for child in mesh.get("Children"):
             self.import_model(child, parent=imported_object)
             
-        instances = mesh.get("Instances") or []
+        instances = mesh.get("Instances")
         if len(instances) > 0:
             mesh_data = imported_mesh.data
 
@@ -442,5 +438,4 @@ class MeshImportContext:
 
         mesh_path = os.path.join(self.assets_root, path.split(".")[0] + ".uemodel")
 
-        mesh, mesh_data = UEFormatImport(options).import_file(mesh_path)
-        return mesh
+        return UEFormatImport(options).import_file(mesh_path)

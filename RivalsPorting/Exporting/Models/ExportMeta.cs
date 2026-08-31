@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CUE4Parse.UE4.Objects.Core.Math;
-using RivalsPorting.Models.Fortnite;
+using RivalsPorting.CUE4Parse.Models.Fortnite;
+using RivalsPorting.CUE4Parse.Models.Fortnite.Enums;
 
 namespace RivalsPorting.Exporting.Models;
 

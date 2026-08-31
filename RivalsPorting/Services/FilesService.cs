@@ -1,27 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CUE4Parse_Conversion.Textures;
-using CUE4Parse.UE4.Assets;
-using CUE4Parse.UE4.Assets.Exports;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using CUE4Parse.UE4.Objects.UObject;
 using DynamicData;
-using RivalsPorting.Exporting;
-using RivalsPorting.Extensions;
 using RivalsPorting.Framework;
 using RivalsPorting.Models.Files;
-using RivalsPorting.Shared.Extensions;
-using Avalonia.Platform;
 using CUE4Parse.UE4.VirtualFileSystem;
-using Serilog;
 
 namespace RivalsPorting.Services;
 
 public partial class FilesService : ObservableObject, IService, IResettable
 {
+    private const int ProgressBatchSize = 2048;
+
     public FileNode RootFileNode { get; } = new("Files", string.Empty, ENodeType.Folder);
 
     public SourceCache<FlatItem, string> FlatViewAssetCache = new(item => item.Path);
@@ -42,53 +33,73 @@ public partial class FilesService : ObservableObject, IService, IResettable
         IsLoading = true;
     }
 
-    public void Initialize()
+    public async Task Initialize()
     {
         if (UEParse.Provider is null) return;
 
-        IsLoading = true;
-        LoadedFiles = 0;
-        BuildFileList();
-        IsLoading = false;
+        await TaskService.RunDispatcherAsync(() =>
+        {
+            IsLoading = true;
+            LoadedFiles = 0;
+        });
+
+        await TaskService.RunAsync(BuildFileList);
+
+        await TaskService.RunDispatcherAsync(() => IsLoading = false);
     }
 
     private void BuildFileList()
     {
-        TotalFiles = UEParse.Provider.Files.Count;
+        var totalFiles = UEParse.Provider.Files.Count;
+        TaskService.RunDispatcher(() => TotalFiles = totalFiles);
 
-        var flatItems = new List<FlatItem>(TotalFiles);
+        var flatItems = new List<FlatItem>(totalFiles);
+        var processed = 0;
+        var lastReported = 0;
 
         foreach (var (_, file) in UEParse.Provider.Files)
         {
-            LoadedFiles++;
+            processed++;
 
             var path = file.Path;
-            if (!IsValidFilePath(path))
-                continue;
-
-            var sourceVfsName = string.Empty;
-            if (file is VfsEntry vfsEntry)
-                sourceVfsName = vfsEntry.Vfs.Name;
-
-            flatItems.Add(new FlatItem(path, sourceVfsName));
-
-            var parts = path.Split("/", StringSplitOptions.RemoveEmptyEntries);
-
-            var parentNode = RootFileNode;
-            for (var i = 0; i < parts.Length; i++)
+            if (IsValidFilePath(path))
             {
-                var part = parts[i];
-                if (!parentNode.TryGetChild(part, out var childNode))
-                {
-                    var isFile = i == parts.Length - 1;
-                    var nodePath = isFile
-                        ? path
-                        : string.Concat(path.AsSpan(0, path.IndexOf(part, StringComparison.Ordinal)), part);
-                    childNode = new FileNode(part, nodePath, isFile ? ENodeType.File : ENodeType.Folder, sourceVfsName);
-                    parentNode.AddChild(part, childNode);
-                }
+                var sourceVfsName = string.Empty;
+                if (file is VfsEntry vfsEntry)
+                    sourceVfsName = vfsEntry.Vfs.Name;
 
-                parentNode = childNode;
+                flatItems.Add(new FlatItem(path, sourceVfsName));
+
+                var parts = path.Split("/", StringSplitOptions.RemoveEmptyEntries);
+
+                var parentNode = RootFileNode;
+                RootFileNode.AddVfsName(sourceVfsName);
+                for (var i = 0; i < parts.Length; i++)
+                {
+                    var part = parts[i];
+                    if (!parentNode.TryGetChild(part, out var childNode))
+                    {
+                        var isFile = i == parts.Length - 1;
+                        var nodePath = isFile
+                            ? path
+                            : string.Concat(path.AsSpan(0, path.IndexOf(part, StringComparison.Ordinal)), part);
+                        childNode = new FileNode(part, nodePath, isFile ? ENodeType.File : ENodeType.Folder, sourceVfsName);
+                        parentNode.AddChild(part, childNode);
+                    }
+                    else
+                    {
+                        childNode.AddVfsName(sourceVfsName);
+                    }
+
+                    parentNode = childNode;
+                }
+            }
+
+            if (processed - lastReported >= ProgressBatchSize || processed == totalFiles)
+            {
+                lastReported = processed;
+                var report = processed;
+                TaskService.RunDispatcher(() => LoadedFiles = report);
             }
         }
 

@@ -55,7 +55,13 @@
                 </controls:SettingsItem.Footer>
             </controls:SettingsItem>
             
-            <controls:SettingsItem Title="Default Asset Type" Description="The asset type that should be automatically preloaded and selected.">
+            <TextBlock Text="Display"
+                       Classes="BodyLargeTextBlockStyle"
+                       HorizontalAlignment="Left"
+                       Margin="{ext:Space 1, 2, 0, 0}"/>
+            
+            <controls:SettingsItem Title="Theme"
+                                   Description="The theme that should be used for Fortnite Porting.">
                 <controls:SettingsItem.Footer>
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsChecked="{Binding UseDefaultExportLoadType}"/>
@@ -75,6 +81,24 @@
                 </controls:SettingsItem.Footer>
             </controls:SettingsItem>
             
+            <controls:SettingsItem Title="Tab Transitions" Description="Toggles the transition that plays when switching between tabs.">
+                <controls:SettingsItem.Footer>
+                    <ToggleSwitch IsChecked="{Binding UseTabTransitions}"/>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
+
+            <controls:SettingsItem Title="Video Previews"
+                                   Description="Shows Fortnite.gg video previews in asset tooltips when available.">
+                <controls:SettingsItem.Footer>
+                    <ToggleSwitch IsChecked="{Binding ShowVideoPreviews}"/>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
+            
+            <TextBlock Text="Audio"
+                       Classes="BodyLargeTextBlockStyle"
+                       HorizontalAlignment="Left"
+                       Margin="{ext:Space 1, 2, 0, 0}"/>
+            
             <controls:SettingsItem Title="Audio Device" Description="The device that should be used for audio playback.">
                 <controls:SettingsItem.Footer>
                     <ComboBox ItemsSource="{Binding AudioDevices}" 
@@ -89,13 +113,72 @@
 
                 </controls:SettingsItem.Footer>
             </controls:SettingsItem>
-            
-            <controls:SettingsItem Title="Tab Transitions" Description="Toggles the transition that plays when switching between tabs.">
+
+            <controls:SettingsItem Title="Volume" Description="The output volume used for audio playback.">
                 <controls:SettingsItem.Footer>
-                    <ToggleSwitch IsChecked="{Binding UseTabTransitions}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <avalonia:MaterialIcon Kind="{Binding VolumeIconKind}"
+                                               Width="20" Height="20"
+                                               VerticalAlignment="Center"
+                                               Margin="{ext:Space 0, 0, 1, 0}"/>
+                        <Slider Value="{Binding Volume}" MinWidth="200"
+                                Minimum="0" Maximum="1"
+                                TickFrequency="0.05" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="True"/>
+                    </StackPanel>
                 </controls:SettingsItem.Footer>
             </controls:SettingsItem>
             
+            <TextBlock Text="Loading"
+                       Classes="BodyLargeTextBlockStyle"
+                       HorizontalAlignment="Left"
+                       Margin="{ext:Space 1, 2, 0, 0}"/>
+            
+            <controls:SettingsItem Title="Default Asset Type" Description="The asset type that should be automatically preloaded and selected.">
+                <controls:SettingsItem.Footer>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding UseDefaultExportLoadType}"/>
+                        <ComboBox ItemsSource="{Binding AssetTypes}" 
+                                  IsEnabled="{Binding UseDefaultExportLoadType}"
+                                  SelectedItem="{Binding DefaultExportLoadType}"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate DataType="rivalsPorting:EExportType">
+                                    <controls1:ImageText Text="{Binding Converter={StaticResource EnumToRecord}}" 
+                                                         Image="{Binding Converter={StaticResource ExportTypeIcon}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
+
+            <controls:SettingsItem Title="Default Export Location" Description="The default export location used on startup.">
+                <controls:SettingsItem.Footer>
+                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type rivalsPorting:EExportLocation}}"
+                              SelectedItem="{Binding DefaultExportLocation, Converter={StaticResource EnumToRecord}}"
+                              HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ComboBox.ItemContainerTheme>
+                            <ControlTheme x:DataType="ext:EnumRecord" TargetType="ComboBoxItem"
+                                          BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                                <Setter Property="IsEnabled" Value="{Binding !IsDisabled}" />
+                            </ControlTheme>
+                        </ComboBox.ItemContainerTheme>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="ext:EnumRecord">
+                                <controls1:IconText Text="{Binding Description}"
+                                                    Icon="{Binding Icon}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsItem.Footer>
+            </controls:SettingsItem>
+            
+            <TextBlock Text="Other"
+                       Classes="BodyLargeTextBlockStyle"
+                       HorizontalAlignment="Left"
+                       Margin="{ext:Space 1, 2, 0, 0}"/>
             
             <controls:SettingsItem Title="Show Developer Settings" Description="Enables the developer settings tab.">
                 <controls:SettingsItem.Footer>

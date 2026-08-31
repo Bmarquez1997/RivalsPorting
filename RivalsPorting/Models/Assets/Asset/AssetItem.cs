@@ -7,12 +7,13 @@ using CUE4Parse.GameTypes.FN.Enums;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
+using RivalsPorting.CUE4Parse.Models.Fortnite;
+using RivalsPorting.CUE4Parse.Models.Fortnite.Styles;
 using RivalsPorting.Exporting;
 using RivalsPorting.Extensions;
 using RivalsPorting.Framework;
 using RivalsPorting.Models.Chat;
 using RivalsPorting.Models.Clipboard;
-using RivalsPorting.Models.Fortnite;
 using RivalsPorting.Services;
 using RivalsPorting.Views;
 using RivalsPorting.Windows;
@@ -103,6 +104,20 @@ public class AssetItem : Base.BaseAssetItem
             IconDisplayImage = iconBitmap.ToWriteableBitmap();
 
         BackgroundImage ??= CreateBackgroundImage();
+    }
+
+    private static async Task<WriteableBitmap?> TryLoadIconBitmapAsync(string iconPath)
+    {
+        try
+        {
+            var texture = await UEParse.Provider!.SafeLoadPackageObjectAsync<UTexture2D>(iconPath);
+            using var iconBitmap = texture?.Decode()?.ToSkBitmap();
+            return iconBitmap?.ToWriteableBitmap();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     protected sealed override WriteableBitmap CreateBackgroundImage()

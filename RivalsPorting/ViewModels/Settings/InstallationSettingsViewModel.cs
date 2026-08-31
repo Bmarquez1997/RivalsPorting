@@ -42,6 +42,7 @@ public partial class InstallationSettingsViewModel : SettingsViewModelBase
         Profiles.CollectionChanged += (sender, args) => OnPropertyChanged(nameof(CanRemoveProfiles));
     }
 
+    [RelayCommand]
     public async Task AddProfile()
     {
         var profile = new Installation_InstallationProfile { ProfileName = "Unnammed" };
@@ -49,21 +50,62 @@ public partial class InstallationSettingsViewModel : SettingsViewModelBase
         Profiles.Add(profile);
         SelectedEditProfile = profile;
     }
-    
-    public async Task RemoveProfile()
+
+    [RelayCommand]
+    public async Task DuplicateProfile(InstallationProfile? profile = null)
     {
-        var indexToRemove = Profiles.IndexOf(SelectedEditProfile);
-        var isCurrentProfile = SelectedEditProfile.IsSelected;
+        profile ??= SelectedEditProfile;
+        if (profile is null) return;
+
+        var duplicate = JsonConvert.DeserializeObject<InstallationProfile>(JsonConvert.SerializeObject(profile))!;
+        duplicate.ProfileName = $"{profile.ProfileName} Copy";
+        duplicate.IsSelected = false;
+
+        Profiles.Add(duplicate);
+        SelectedEditProfile = duplicate;
+    }
     
-        Profiles.Remove(SelectedEditProfile);
-    
-        if (isCurrentProfile && Profiles.Count > 0)
-        {
-            Profiles[0].IsSelected = true;
-        }
-    
-        var newIndex = Math.Min(indexToRemove, Profiles.Count - 1);
-        SelectedEditProfile = Profiles[newIndex];
+    [RelayCommand]
+    public async Task RemoveProfile(InstallationProfile? profile = null)
+    {
+        profile ??= SelectedEditProfile;
+        if (profile is null || !CanRemoveProfiles) return;
+
+        var profileToRemove = profile;
+        var wasEditing = SelectedEditProfile == profileToRemove;
+        Info.Dialog("Delete Profile",
+            $"Are you sure you want to delete \"{profileToRemove.ProfileName}\"? This cannot be undone.",
+            buttons:
+            [
+                new DialogButton
+                {
+                    Text = "Delete",
+                    IsPrimary = true,
+                    Action = () =>
+                    {
+                        var indexToRemove = Profiles.IndexOf(profileToRemove);
+                        if (indexToRemove < 0) return;
+
+                        var isCurrentProfile = profileToRemove.IsSelected;
+                        Profiles.Remove(profileToRemove);
+
+                        if (isCurrentProfile && Profiles.Count > 0)
+                        {
+                            Profiles[0].IsSelected = true;
+                        }
+
+                        if (wasEditing)
+                        {
+                            var newIndex = Math.Min(indexToRemove, Profiles.Count - 1);
+                            SelectedEditProfile = Profiles[newIndex];
+                        }
+                    }
+                },
+                new DialogButton
+                {
+                    Text = "Cancel"
+                }
+            ]);
     }
 
     [RelayCommand]
@@ -76,12 +118,17 @@ public partial class InstallationSettingsViewModel : SettingsViewModelBase
                 new DialogButton
                 {
                     Text = "Reload",
+                    IsPrimary = true,
                     Action = () => TaskService.Run(async () =>
                     {
                         AppSettings.Save();
                         Navigation.App.Open<HomeView>();
                         await App.ReloadInstallationAsync();
                     })
+                },
+                new DialogButton
+                {
+                    Text = "Cancel"
                 }
             ]);
     }

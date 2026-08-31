@@ -1,12 +1,7 @@
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CUE4Parse_Conversion;
-using CUE4Parse_Conversion.Animations;
-using CUE4Parse_Conversion.Meshes;
-using CUE4Parse_Conversion.UEFormat.Enums;
-using CUE4Parse.UE4.Assets.Exports.Nanite;
-using CUE4Parse.UE4.Versions;
-using FluentAvalonia.UI.Controls;
+using CUE4Parse_Conversion.Options;
+using CUE4Parse_Conversion.Writers.UEFormat.Enums;
 using RivalsPorting.Application;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Framework;
@@ -39,6 +34,20 @@ public partial class ExportSettingsViewModel : ViewModelBase
         };
     }
 
+    public ExportDataMeta CreateExportMeta(EExportLocation exportLocation = EExportLocation.Blender, string? customPath = null)
+    {
+        var viewModel = GetSettingsViewModel(exportLocation);
+        return new ExportDataMeta
+        {
+            Version = Globals.VersionString,
+            ExportLocation = exportLocation,
+            AssetsRoot = AppSettings.Application.AssetPath,
+            Settings = viewModel.ToExportSettings(),
+            Provider = ExportAssets,
+            CustomPath = customPath
+        };
+    }
+
     public override async Task OnViewExited()
     {
         if (AppSettings.ShouldSaveOnExit) 
@@ -57,21 +66,23 @@ public partial class BaseExportSettings : ViewModelBase
     [ObservableProperty] private bool _exportNanite;
     [ObservableProperty] private bool _importInstancedFoliage = true;
     
-    [ObservableProperty] private EAnimFormat _animFormat = EAnimFormat.UEFormat;
     [ObservableProperty] private bool _importLobbyPoses = false;
     [ObservableProperty] private bool _importGameModel = false;
     
     [ObservableProperty] private ESoundFormat _soundFormat = ESoundFormat.WAV;
-    
-    public virtual ExporterOptions CreateExportOptions()
-    {
-        return new ExporterOptions()
-        {
-            MeshFormat = MeshFormat,
-            AnimFormat = AnimFormat,
-            CompressionFormat = CompressionFormat,
-            NaniteMeshFormat = ExportNanite ? ENaniteMeshFormat.NaniteSeparateFile : ENaniteMeshFormat.OnlyNormalLODs
-        };
-    }
-}
 
+    public virtual ExportOptions CreateExportOptions() => ToExportSettings().CreateExportOptions();
+
+    public virtual ExportSettings ToExportSettings() => new()
+    {
+        CompressionFormat = CompressionFormat,
+        ImageFormat = ImageFormat,
+        ExportMaterials = ExportMaterials,
+        MeshFormat = MeshFormat,
+        MeshQuality = EMeshQuality.All,
+        ExportNanite = ExportNanite,
+        ImportInstancedFoliage = ImportInstancedFoliage,
+        ImportLobbyPoses = ImportLobbyPoses,
+        SoundFormat = SoundFormat
+    };
+}

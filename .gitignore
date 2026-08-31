@@ -404,3 +404,8 @@ FodyWeavers.xsd
 
 # Supabase
 FortnitePorting/supabase.toml
+RivalsPorting/supabase.toml
+
+# UEFormat plugins copied from Dependencies/UEFormat at build time
+RivalsPorting.Plugins/Blender/rivals_porting/ueformat/
+RivalsPorting.Plugins/Unreal/UEFormat/

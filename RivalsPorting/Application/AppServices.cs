@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using RivalsPorting.Framework;
 using RivalsPorting.Services;
+using RivalsPorting.Providers;
 using RivalsPorting.ViewModels;
 using RivalsPorting.WindowModels;
 
@@ -37,7 +38,10 @@ public static class AppServices
     public static AssetLoaderService AssetLoading => Services.GetRequiredService<AssetLoaderService>();
     public static FilesService Files => Services.GetRequiredService<FilesService>();
     public static ExportClientService ExportClient => Services.GetRequiredService<ExportClientService>();
+    public static ExportService Exporter => Services.GetRequiredService<ExportService>();
+    public static ExportAssetProvider ExportAssets => Services.GetRequiredService<ExportAssetProvider>();
     public static WindowManagerService WindowManager => Services.GetRequiredService<WindowManagerService>();
+    public static AudioPlaybackService Audio => Services.GetRequiredService<AudioPlaybackService>();
    
     // ViewModels
     public static AppWindowModel AppWM => Services.GetRequiredService<AppWindowModel>();
@@ -55,7 +59,7 @@ public static class AppServiceExtensions
 {
     extension(ServiceCollection collection)
     {
-        public  void AddCommonServices()
+        public void AddCommonServices()
         {
             var serviceTypes = Assembly.GetAssembly(typeof(IService))?
                 .GetTypes()

@@ -1,5 +1,4 @@
 import bpy
-import re
 
 from ..utils import *
 from ...utils import *
@@ -8,7 +7,6 @@ from ...ueformat.importer.reorient_utils import *
 from ..mappings import allowed_reorient_children
 
 from mathutils import Matrix, Vector, Euler, Quaternion
-from math import radians
 
 class Lazy:
     def __init__(self, getter):
@@ -47,9 +45,10 @@ class DriverBuilder:
             target.data_path = variable.path
 
 class TastyRigOptions:
-    def __init__(self, scale: float = 0.01, use_dynamic_bone_shape=True):
+    def __init__(self, scale: float = 0.01, use_dynamic_bone_shape=True, master_skeleton=None):
         self.scale = scale
         self.use_dynamic_bone_shape = use_dynamic_bone_shape
+        self.master_skeleton = master_skeleton
 
 class CustomShape:
     def __init__(self, bone_name, object_name, palette_name, wire_width=2.5, offset=(0.0, 0.0, 0.0), rotation=(0.0, 0.0, 0.0), scale=1.0, scale_to_bone_length=False, collection=None):
@@ -99,10 +98,10 @@ class TastyImportContext:
         target_skeleton.rotation_euler = Euler((0, 0, 0))
         target_skeleton.scale = Vector((1, 1, 1))
 
-        self.create_tasty_rig(target_skeleton)
+        self.create_tasty_rig(target_skeleton, data.get("MasterSkeletalMesh"))
 
 
-    def create_tasty_rig(self, target_skeleton):
+    def create_tasty_rig(self, target_skeleton, master_skeleton_mesh):
         target_skeleton.data["is_tasty"] = True
         armature_data = target_skeleton.data
         is_metahuman = any(armature_data.bones, lambda bone: bone.name == "FACIAL_C_FacialRoot")
@@ -116,13 +115,43 @@ class TastyImportContext:
         twist_collection = armature_data.collections.new("Twist")
         dynamic_collection = armature_data.collections.new("Dynamic")
         deform_collection = armature_data.collections.new("Deform")
-        tail_collection = armature_data.collections.new("Tail")
         extra_collection = armature_data.collections.new("Extra")
-        base_collection.is_visible = False
         extra_collection.is_visible = False
+    
+        # remove existing ik bones
+        bpy.context.view_layer.objects.active = target_skeleton
+        target_skeleton.select_set(True)
+    
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.armature.select_all(action='DESELECT')
+        bpy.ops.object.select_pattern(pattern="*ik_*")
+        bpy.ops.armature.delete()
+        bpy.ops.object.mode_set(mode='OBJECT')
+        target_skeleton.select_set(False)
+    
+        # fill missing ik parts from master skel
+        master_skeletal_mesh = self.import_model(master_skeleton_mesh)
+        master_skeletal_mesh.select_set(False)
+    
+        for child in master_skeletal_mesh.children:
+            child.select_set(True)
+        bpy.ops.object.delete()
+    
+        bpy.context.view_layer.objects.active = master_skeletal_mesh
+        master_skeletal_mesh.select_set(True)
+    
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.armature.select_all(action='DESELECT')
+        bpy.ops.object.select_pattern(pattern="*ik_*")
+        bpy.ops.armature.select_all(action='INVERT')
+        bpy.ops.armature.delete()
+    
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.context.view_layer.objects.active = target_skeleton
+        target_skeleton.select_set(True)
+        master_skeletal_mesh.select_set(True)
+        bpy.ops.object.join()
 
-        # Expect IK bones already present on the imported Rivals skeleton
-        # (unlike Fortnite, there is no master skeleton to graft from).
 
         target_skeleton["use_ik_hand_r"] = True
         target_skeleton["use_ik_hand_l"] = True
@@ -347,8 +376,6 @@ class TastyImportContext:
         pose_bones = target_skeleton.pose.bones
 
         def add_copy_rotation(bone, target_skeleton, subtarget, axes, invert_z=False, space="LOCAL"):
-            if not pose_bones.get(subtarget):
-                return None
             constraint = bone.constraints.new("COPY_ROTATION")
             constraint.target = target_skeleton
             constraint.subtarget = subtarget
@@ -403,8 +430,6 @@ class TastyImportContext:
         
             for config in roll_configs:
                 if bone := pose_bones.get(config['name']):
-                    if not pose_bones.get(ctrl_bone_name):
-                        continue
                     add_copy_rotation(
                         bone, target_skeleton, ctrl_bone_name,
                         axes=config['copy_axes'],
@@ -413,33 +438,32 @@ class TastyImportContext:
                     add_limit_rotation(bone, config['limit_axis'], *config['limits'])
         
             if ball_roll_bone := pose_bones.get(f"ik_ball_roll_{suffix}"):
-                if pose_bones.get(ctrl_bone_name):
-                    transformation = ball_roll_bone.constraints.new("TRANSFORM")
-                    transformation.target = target_skeleton
-                    transformation.subtarget = ctrl_bone_name
-                    transformation.target_space = "LOCAL"
-                    transformation.owner_space = "LOCAL"
+                transformation = ball_roll_bone.constraints.new("TRANSFORM")
+                transformation.target = target_skeleton
+                transformation.subtarget = ctrl_bone_name
+                transformation.target_space = "LOCAL"
+                transformation.owner_space = "LOCAL"
         
-                    transformation.map_from = "LOCATION"
-                    transformation.from_min_x = 0
-                    transformation.from_max_x = 0.1
+                transformation.map_from = "LOCATION"
+                transformation.from_min_x = 0
+                transformation.from_max_x = 0.1
         
-                    transformation.map_to = "ROTATION"
-                    transformation.map_to_z_from = "X"
-                    transformation.to_min_z_rot = 0
-                    transformation.to_max_z_rot = radians(-55)
+                transformation.map_to = "ROTATION"
+                transformation.map_to_z_from = "X"
+                transformation.to_min_z_rot = 0
+                transformation.to_max_z_rot = radians(-55)
         
             if ball_bone := pose_bones.get(f"ball_{suffix}"):
                 copy_rotation = add_copy_rotation(
                     ball_bone, target_skeleton, f"ik_ball_ctrl_{suffix}",
                     axes='xyz', space='WORLD'
                 )
-                if copy_rotation is not None:
-                    driver = DriverBuilder("loc > 0", [
-                        DriverVariable("loc", "SINGLE_PROP", target_skeleton,
-                                       f'pose.bones["ik_foot_ctrl_{suffix}"].location[0]')
-                    ])
-                    driver.add_to(copy_rotation, "influence")
+        
+                driver = DriverBuilder("loc > 0", [
+                    DriverVariable("loc", "SINGLE_PROP", target_skeleton,
+                                   f'pose.bones["ik_foot_ctrl_{suffix}"].location[0]')
+                ])
+                driver.add_to(copy_rotation, "influence")
         
             if ctrl_bone := pose_bones.get(ctrl_bone_name):
                 limit_location = ctrl_bone.constraints.new("LIMIT_LOCATION")
@@ -670,8 +694,6 @@ class TastyImportContext:
 
         for ik_bone in ik_bones:
             if not (bone := pose_bones.get(ik_bone.bone_name)): continue
-            if not pose_bones.get(ik_bone.target_name): continue
-            if ik_bone.pole_name and not pose_bones.get(ik_bone.pole_name): continue
     
             constraint = bone.constraints.new("IK")
             constraint.name = ik_bone.name
@@ -766,7 +788,6 @@ class TastyImportContext:
     
         for bone_name, target_name, target_space, owner_space, mix, weight, driver in copy_rotation_bones:
             if not (bone := pose_bones.get(bone_name)): continue
-            if not pose_bones.get(target_name): continue
     
             constraint = bone.constraints.new("COPY_ROTATION")
             constraint.target = target_skeleton
@@ -816,7 +837,6 @@ class TastyImportContext:
 
         for bone_name, target_name, space, weight, *optional_driver in copy_location_bones:
             if not (bone := pose_bones.get(bone_name)): continue
-            if not pose_bones.get(target_name): continue
         
             constraint = bone.constraints.new("COPY_LOCATION")
             constraint.target = target_skeleton
@@ -838,7 +858,6 @@ class TastyImportContext:
 
         for bone_name, target_name, space, weight, *optional_driver in copy_scale_bones:
             if not (bone := pose_bones.get(bone_name)): continue
-            if not pose_bones.get(target_name): continue
 
             constraint = bone.constraints.new("COPY_SCALE")
             constraint.target = target_skeleton
@@ -856,7 +875,6 @@ class TastyImportContext:
     
         for bone_name, target_name in track_bones:
             if not (bone := pose_bones.get(bone_name)): continue
-            if not pose_bones.get(target_name): continue
     
             constraint = bone.constraints.new('TRACK_TO')
             constraint.target = target_skeleton
@@ -873,7 +891,6 @@ class TastyImportContext:
     
         for bone_name, target_name in damped_track_bones:
             if not (bone := pose_bones.get(bone_name)): continue
-            if not pose_bones.get(target_name): continue
     
             constraint = bone.constraints.new('DAMPED_TRACK')
             constraint.target = target_skeleton
@@ -903,10 +920,10 @@ class TastyImportContext:
             CustomShape("clavicle_l", "CTRL_Clavicle", "THEME04"),
             CustomShape("ball_r", "CTRL_Toe", "THEME01"),
             CustomShape("ball_l", "CTRL_Toe", "THEME04"),
-            CustomShape("ik_foot_pole_r", "CTRL_Pole", "THEME01"),
-            CustomShape("ik_foot_pole_l", "CTRL_Pole", "THEME04"),
-            CustomShape("ik_hand_pole_r", "CTRL_Pole", "THEME01"),
-            CustomShape("ik_hand_pole_l", "CTRL_Pole", "THEME04"),
+            CustomShape("ik_foot_pole_r", "CTRL_Pole_Leg", "THEME01"),
+            CustomShape("ik_foot_pole_l", "CTRL_Pole_Leg", "THEME04"),
+            CustomShape("ik_hand_pole_r", "CTRL_Pole_Arm", "THEME01"),
+            CustomShape("ik_hand_pole_l", "CTRL_Pole_Arm", "THEME04"),
             CustomShape("ik_foot_ctrl_r", "CTRL_Foot_Ctrl", "THEME01"),
             CustomShape("ik_foot_ctrl_l", "CTRL_Foot_Ctrl", "THEME04"),
     
@@ -964,9 +981,6 @@ class TastyImportContext:
             CustomShape("FACIAL_R_Eye", "CTRL_Eye", "THEME02", collection=face_collection),
             CustomShape("FACIAL_L_Eye", "CTRL_Eye", "THEME02", collection=face_collection),
             CustomShape("FACIAL_C_Jaw", "CTRL_Jaw", "THEME02", collection=face_collection),
-            CustomShape("r_eye_ball", "CTRL_Eye", "THEME02", collection=face_collection),
-            CustomShape("l_eye_ball", "CTRL_Eye", "THEME02", collection=face_collection),
-            CustomShape("jaw", "CTRL_Jaw", "THEME02", scale=1.25, rotation=(radians(60), radians(90), 0), collection=face_collection),
     
             # reserve to not be affected by automatic facial bone detection
             CustomShape("R_eye_lid_upper_mid", None, "THEME02", collection=face_collection),
@@ -1073,76 +1087,55 @@ class TastyImportContext:
             base_collection.assign(pose_bone)
             pose_bone.color.palette = "THEME10"
     
-        face_root_bones = ["faceAttach", "FACIAL_C_FacialRoot", "M_Head_A_jnt", "facial_master"]
-        dynamic_bone_names = ["_jnt", "hair", "whiskers", "brow", "hat", "fins", "skirt", "bow", "chain", "ear", "beard"]
+        face_root_bones = ["faceAttach", "FACIAL_C_FacialRoot"]
         for pose_bone in pose_bones:
             existing_collections = pose_bone.bone.collections
             if any(existing_collections, lambda col: col.name == "Sockets"):
                 pose_bone.custom_shape = bpy.data.objects.get("CTRL_Socket")
                 pose_bone.custom_shape_scale_xyz = (0.25, 0.25, 0.25)
-
+    
             if len(existing_collections) > 0:
                 continue
-
+    
             has_vertex_group = pose_bone.color.palette != "THEME14"
-            bone_name_cf = pose_bone.name.casefold()
-
-            if "tail" in bone_name_cf and "hair" not in bone_name_cf:
-                tail_collection.assign(pose_bone)
-
-                matches = re.findall(r"\d+", pose_bone.name)
-                if (int(matches[-1]) if matches else 1) % 2 == 0:
-                    pose_bone.custom_shape = bpy.data.objects.get("CTRL_Deform")
-                    pose_bone.custom_shape_scale_xyz = (0.05, 0.05, 0.05)
-                    pose_bone.use_custom_shape_bone_size = False
-                else:
-                    pose_bone.custom_shape = bpy.data.objects.get("CTRL_Twist")
-                    pose_bone.use_custom_shape_bone_size = False
-                    pose_bone.custom_shape_wire_width = 2.5
-                pose_bone.color.palette = "THEME06"
-                continue
-
-            if ("_fix_" in bone_name_cf or "deform_" in pose_bone.name or "_Fix_" in pose_bone.name) and has_vertex_group:
-                deform_collection.assign(pose_bone)
-
-                pose_bone.custom_shape = bpy.data.objects.get("CTRL_Deform")
-                pose_bone.color.palette = "THEME07"
-                pose_bone.custom_shape_scale_xyz = (0.25, 0.25, 0.25)
-                continue
-
-            if "twist_" in pose_bone.name and has_vertex_group:
-                twist_collection.assign(pose_bone)
-
-                pose_bone.custom_shape = bpy.data.objects.get("CTRL_Twist")
-                pose_bone.color.palette = "THEME01" if pose_bone.name.endswith("_r") else "THEME04"
-                pose_bone.use_custom_shape_bone_size = False
-                pose_bone.custom_shape_wire_width = 2.5
-                continue
-
-            if any(pose_bone.bone.parent_recursive, lambda parent: parent.name.casefold() in [name.casefold() for name in face_root_bones]):
-                pose_bone.custom_shape = bpy.data.objects.get("CTRL_Face")
-                pose_bone.use_custom_shape_bone_size = False
-                if not is_metahuman:
-                    pose_bone.custom_shape_scale_xyz = (3, 3, 3)
-
-                face_collection.assign(pose_bone)
-                pose_bone.color.palette = "THEME02"
-                continue
-
-            is_dyn = (
-                ("dyn_" in pose_bone.name and "_mstr" not in bone_name_cf)
-                or "tentacle_" in pose_bone.name
-                or any(dynamic_bone_names, lambda x: x in bone_name_cf)
-            )
-            if is_dyn:
+    
+            if "dyn_" in pose_bone.name and "_mstr" not in pose_bone.name.casefold() or "tentacle_" in pose_bone.name:
                 dynamic_collection.assign(pose_bone)
-
+    
                 if options.use_dynamic_bone_shape:
                     pose_bone.custom_shape = bpy.data.objects.get("CTRL_Dynamic")
                     pose_bone.custom_shape_translation = (0.0, 0.025, 0.0)
                 pose_bone.color.palette = "THEME07"
+    
                 continue
-
+    
+            if "deform_" in pose_bone.name and has_vertex_group:
+                deform_collection.assign(pose_bone)
+    
+                pose_bone.custom_shape = bpy.data.objects.get("CTRL_Deform")
+                pose_bone.color.palette = "THEME07"
+                pose_bone.custom_shape_scale_xyz = (0.25, 0.25, 0.25)
+    
+                continue
+    
+            if ("twist_" in pose_bone.name or "bend_" in pose_bone.name) and has_vertex_group:
+                twist_collection.assign(pose_bone)
+    
+                pose_bone.custom_shape = bpy.data.objects.get("CTRL_Twist")
+                pose_bone.color.palette = "THEME01" if pose_bone.name.endswith("_r") else "THEME04"
+                pose_bone.use_custom_shape_bone_size = False
+                pose_bone.custom_shape_wire_width = 2.5
+    
+                continue
+    
+            if any(pose_bone.bone.parent_recursive, lambda parent: parent.name.casefold() in [name.casefold() for name in face_root_bones]):
+                face_collection.assign(pose_bone)
+    
+                pose_bone.custom_shape = bpy.data.objects.get("CTRL_Face")
+                pose_bone.color.palette = "THEME02"
+                pose_bone.use_custom_shape_bone_size = False
+                continue
+    
             extra_collection.assign(pose_bone)
 
 
@@ -1225,13 +1218,13 @@ class TastyImportContext:
             ('ik_hand_gun', hide_ik_hand_gun_driver)
         ]
 
-        # Bone viewport visibility moved from Bone -> PoseBone in Blender 5.0.
-        hide_targets = pose_bones if bpy.app.version >= (5, 0, 0) else target_skeleton.data.bones
+        bones = target_skeleton.data.bones
+        hide_bone_collection = bones if self.version_profile.uses_data_bone_hide else pose_bones
 
         for bone_name, driver in driver_hide_bones:
-            if not (bone := hide_targets.get(bone_name)): continue
+            if not (bone := hide_bone_collection.get(bone_name)): continue
             driver.add_to(bone, 'hide')
-
+    
         hide_bones = [
             "ik_foot_roll_inner_r",
             "ik_foot_roll_outer_r",
@@ -1243,7 +1236,7 @@ class TastyImportContext:
             "ik_ball_ctrl_r",
             "ik_dog_ball_r",
             "ik_wolf_ball_r",
-
+    
             "ik_foot_roll_inner_l",
             "ik_foot_roll_outer_l",
             "ik_foot_roll_front_l",
@@ -1254,13 +1247,15 @@ class TastyImportContext:
             "ik_ball_ctrl_l",
             "ik_dog_ball_l",
             "ik_wolf_ball_l",
-
+    
             "ik_hand_parent_r",
             "ik_hand_parent_l",
         ]
-
+    
         for bone_name in hide_bones:
-            if not (bone := hide_targets.get(bone_name)): continue
+            if not (bone := bones.get(bone_name)): continue
             bone.hide = True
-
+    
+    
         bpy.ops.object.mode_set(mode='OBJECT')
+        

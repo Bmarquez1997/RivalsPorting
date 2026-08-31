@@ -150,8 +150,18 @@ public partial class InfoService : ObservableObject, IService, ILogEventSink
         Dialog("An unhandled exception has occurred", exceptionString, buttons: [
             new DialogButton
             {
+                Text = "Continue",
+                IsPrimary = true
+            },
+            new DialogButton
+            {
                 Text = "Open Console",
-                Action = () => Navigation.App.Open<ConsoleView>()
+                Action = () => TaskService.Run(async () =>
+                {
+                    Navigation.App.Open<SettingsView>();
+                    await Task.Delay(250);
+                    Navigation.Settings.Open<ConsoleView>();
+                })
             },
             new DialogButton
             {

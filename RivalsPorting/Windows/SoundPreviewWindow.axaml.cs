@@ -8,15 +8,11 @@ using RivalsPorting.WindowModels;
 
 namespace RivalsPorting.Windows;
 
-public partial class SoundPreviewWindow : WindowBase<SoundPreviewWindowModel>, IPreviewWindow
+public partial class SoundPreviewWindow : PreviewWindowBase<SoundPreviewWindow, SoundPreviewWindowModel>
 {
-    public static SoundPreviewWindow? Instance;
-    
     public SoundPreviewWindow(USoundWave soundWave)
     {
         InitializeComponent();
-        DataContext = WindowModel;
-        Owner = App.Lifetime.MainWindow;
 
         WindowModel.SoundName = soundWave.Name;
         WindowModel.SoundWave = soundWave;
@@ -25,29 +21,19 @@ public partial class SoundPreviewWindow : WindowBase<SoundPreviewWindowModel>, I
 
     public static void Preview(USoundWave soundWave)
     {
-        if (Instance is not null)
-        {
-            Instance.WindowModel.SoundName = soundWave.Name;
-            Instance.WindowModel.SoundWave = soundWave;
-            TaskService.Run(Instance.WindowModel.Play);
-            Instance.BringToTop();
-            return;
-        }
-
         TaskService.RunDispatcher(() =>
         {
-            Instance = new SoundPreviewWindow(soundWave);
-            Instance.Show();
-            Instance.BringToTop();
+            if (WindowManager.FindOpen<SoundPreviewWindow>() is { } existing)
+            {
+                existing.WindowModel.SoundName = soundWave.Name;
+                existing.WindowModel.SoundWave = soundWave;
+                TaskService.Run(existing.WindowModel.Play);
+                existing.BringToTop();
+                return;
+            }
+
+            WindowManager.GetOrShowPreview(() => new SoundPreviewWindow(soundWave));
         });
-    }
-
-    protected override void OnClosed(EventArgs e)
-    {
-        base.OnClosed(e);
-
-        Instance?.WindowModel.OutputDevice.Dispose();
-        Instance = null;
     }
 
     private void OnSliderValueChanged(object? sender, RangeBaseValueChangedEventArgs e)

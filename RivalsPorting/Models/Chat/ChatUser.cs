@@ -35,15 +35,7 @@ public partial class ChatUser : ObservableObject
     public bool CanMute => SupaBase.Permissions.Role >= ESupabaseRole.Staff && SupaBase.Permissions.Role > Role;
     public string MuteHeader => IsMuted ? "Unmute" : "Mute";
 
-    public SolidColorBrush Brush => new(IsMuted ? Color.Parse("#d23940") : Role switch
-    {
-        ESupabaseRole.System => Color.Parse("#B040FF"),
-        ESupabaseRole.Owner => Color.Parse("#83c4db"),
-        ESupabaseRole.Support => Color.Parse("#635fd4"),
-        ESupabaseRole.Staff => Color.Parse("#9856a2"),
-        ESupabaseRole.Verified => Color.Parse("#00ff97"),
-        ESupabaseRole.User => Colors.White
-    });
+    public SolidColorBrush Brush => Role.Brush(IsMuted);
     
     [RelayCommand]
     public async Task CopyID()
@@ -79,6 +71,7 @@ public partial class ChatUser : ObservableObject
             new DialogButton
             {
                 Text = "Change Role",
+                IsPrimary = true,
                 Action = async () =>
                 {
                     var role = Enum.GetValues<ESupabaseRole>().FirstOrDefault(role => role.Description.Equals(comboBox.SelectedItem));
@@ -87,6 +80,10 @@ public partial class ChatUser : ObservableObject
                         Role = role,
                     });
                 }
+            },
+            new DialogButton
+            {
+                Text = "Cancel"
             }
         ]);
     }

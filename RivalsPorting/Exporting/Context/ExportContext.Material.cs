@@ -105,17 +105,21 @@ public partial class ExportContext
     }
     
 
-    public List<ExportOverrideParameters>? OverrideColors(AssetColorStyleData colorStyle)
+    public List<ExportOverrideParameters>? OverrideColors(ExportColorStyle colorStyle)
     {
-        var materialsToAlter = colorStyle.StyleData.Get<FSoftObjectPath[]>("MaterialsToAlter");
-        if (materialsToAlter.Any(mat => mat.AssetPathName.IsNone)) return null;
+        var materialsToAlter = colorStyle.StyleData.GetOrDefault<FSoftObjectPath[]>("MaterialsToAlter", [])
+            .Where(path => !path.AssetPathName.IsNone)
+            .ToArray();
+        
+        if (materialsToAlter.Length == 0) 
+            return null;
 
         return colorStyle.IsParamSet
             ? ProcessParamSetOverride(colorStyle, materialsToAlter)
             : ProcessColorSwatchOverride(colorStyle, materialsToAlter);
     }
     
-    private List<ExportOverrideParameters>? ProcessColorSwatchOverride(AssetColorStyleData colorStyle, FSoftObjectPath[] materialsToAlter)
+    private List<ExportOverrideParameters>? ProcessColorSwatchOverride(ExportColorStyle colorStyle, FSoftObjectPath[] materialsToAlter)
     {
         var overrideColorValue = colorStyle.ColorData.GetOrDefault<FLinearColor>("ColorValue");
         var paramName = colorStyle.StyleData.GetOrDefault("ColorParamName", new FName(overrideColorValue.Hex));
@@ -134,7 +138,7 @@ public partial class ExportContext
         return returnParams;
     }
     
-    private List<ExportOverrideParameters>? ProcessParamSetOverride(AssetColorStyleData colorStyle, FSoftObjectPath[] materialsToAlter)
+    private List<ExportOverrideParameters>? ProcessParamSetOverride(ExportColorStyle colorStyle, FSoftObjectPath[] materialsToAlter)
     {
         var exportParamsTemplate = new ExportOverrideParameters();
         var paramsToApply = colorStyle.ColorData.GetOrDefault<FStructFallback>("MaterialParamsToApply");
@@ -281,7 +285,7 @@ public partial class ExportContext
     {
         // TODO use uefn data and custom FPackageIndex resolver to start reading material tree 
         var parameters = new CMaterialParams2();
-        material.GetParams(parameters, EMaterialFormat.AllLayers);
+        material.GetParams(parameters, EMaterialDepth.AllLayers);
                 
         foreach (var (name, value) in parameters.Textures)
         {

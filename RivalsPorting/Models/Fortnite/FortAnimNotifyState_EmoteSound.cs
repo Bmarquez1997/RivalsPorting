@@ -2,7 +2,7 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.MetaSound;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 
-namespace RivalsPorting.Models.Fortnite;
+namespace RivalsPorting.CUE4Parse.Models.Fortnite.AnimNotifies;
 
 public class FortAnimNotifyState_EmoteSound : UObject
 {

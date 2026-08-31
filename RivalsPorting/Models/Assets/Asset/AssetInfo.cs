@@ -9,6 +9,8 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
+using RivalsPorting.CUE4Parse.Models.Fortnite;
+using RivalsPorting.CUE4Parse.Models.Fortnite.Enums;
 using RivalsPorting.Extensions;
 using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Fortnite;

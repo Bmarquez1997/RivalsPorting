@@ -51,38 +51,17 @@
                 <sidebar:SidebarItemButton Text="Mesh" Icon="VectorSquare">
                     <sidebar:SidebarItemButton.Tag>
                         <StackPanel Spacing="{ext:Space 0, 0, 0, 1}">
-                            <controls:SettingsItem Title="Mesh Format"
-                                                   Description="The file type that meshes should be exported as.">
+                            <controls:SettingsItem Title="LOD Quality"
+                                                   Description="Which LOD models should be exported.">
                                 <controls:SettingsItem.Footer>
-                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type meshes:EMeshFormat}}"
-                                              SelectedItem="{Binding MeshFormat, Converter={StaticResource EnumToRecord}}"/>
-                                </controls:SettingsItem.Footer>
-                            </controls:SettingsItem>
-                            <controls:SettingsItem Title="LOD Format"
-                                                   Description="The way in which LOD models should be exported.">
-                                <controls:SettingsItem.Footer>
-                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type meshes:ELodFormat}}"
-                                              SelectedItem="{Binding LodFormat, Converter={StaticResource EnumToRecord}}"/>
+                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type options:EMeshQuality}}"
+                                              SelectedItem="{Binding MeshQuality, Converter={StaticResource EnumToRecord}}"/>
                                 </controls:SettingsItem.Footer>
                             </controls:SettingsItem>
                             <controls:SettingsItem Title="Export Nanite"
                                                    Description="Determines whether nanite meshes should be exported if available.">
                                 <controls:SettingsItem.Footer>
                                     <ToggleSwitch IsChecked="{Binding ExportNanite}"/>
-                                </controls:SettingsItem.Footer>
-                            </controls:SettingsItem>
-                        </StackPanel>
-                    </sidebar:SidebarItemButton.Tag>
-                </sidebar:SidebarItemButton>
-
-                <sidebar:SidebarItemButton Text="Animation" Icon="Motion">
-                    <sidebar:SidebarItemButton.Tag>
-                        <StackPanel Spacing="{ext:Space 0, 0, 0, 1}">
-                            <controls:SettingsItem Title="Animation Format"
-                                                   Description="The file type that animations should be exported as.">
-                                <controls:SettingsItem.Footer>
-                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type animations:EAnimFormat}}"
-                                              SelectedItem="{Binding AnimFormat, Converter={StaticResource EnumToRecord}}"/>
                                 </controls:SettingsItem.Footer>
                             </controls:SettingsItem>
                         </StackPanel>

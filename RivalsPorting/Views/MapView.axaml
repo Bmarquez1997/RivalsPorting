@@ -9,6 +9,7 @@
              xmlns:map="clr-namespace:RivalsPorting.Models.Map"
              xmlns:views="clr-namespace:RivalsPorting.Views"
              xmlns:sidebar="clr-namespace:RivalsPorting.Controls.Navigation.Sidebar"
+             xmlns:loading="clr-namespace:RivalsPorting.Controls.Loading"
              xmlns:tables="clr-namespace:RivalsPorting.Models.Supabase.Tables"
              d:DesignHeight="770" d:DesignWidth="1160"
              x:Class="RivalsPorting.Views.MapView"
@@ -36,9 +37,16 @@
                                                IsVisible="{Binding SupaBase.Permissions.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
                 </sidebar:Sidebar.Items>
                 <sidebar:Sidebar.Footer>
-                    <ToggleButton HorizontalAlignment="Stretch" Content="{controls:IconText 'Map Creator', Paintbrush}"
-                                  IsChecked="{Binding UseMapInfoCreator}"
-                                  IsVisible="{Binding SupaBase.Permissions.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
+                    <StackPanel Spacing="{ext:Space 1}">
+                        <Button HorizontalAlignment="Stretch" Content="{controls:IconText 'Reload Maps', Reload}"
+                                IsEnabled="{Binding !IsLoading}"
+                                Command="{Binding ReloadMapsCommand}"/>
+
+                        <ToggleButton HorizontalAlignment="Stretch" Content="{controls:IconText 'Map Creator', Paintbrush}"
+                                                                           IsChecked="{Binding UseMapInfoCreator}"
+                                                                           IsVisible="{Binding SupaBase.Permissions.Role, Converter={StaticResource EnumGreaterOrEqual}, ConverterParameter={x:Static tables:ESupabaseRole.Staff}}"/>
+                        
+                    </StackPanel>
                 </sidebar:Sidebar.Footer>
             </sidebar:Sidebar>
             
@@ -186,7 +194,9 @@
                                 </StackPanel>
                             </DropDownButton>
 
-                            <SplitButton Grid.Column="2" HorizontalAlignment="Stretch" IsEnabled="{Binding !!SelectedMap.SelectedMaps.Count}"
+                            <SplitButton Grid.Column="2" HorizontalAlignment="Stretch"
+                                         IsEnabled="{Binding !!SelectedMap.SelectedMaps.Count}"
+                                         IsVisible="{Binding !SelectedMap.IsExporting}"
                                          Command="{Binding SelectedMap.ExportCommand}">
                                 <SplitButton.Flyout>
                                     <MenuFlyout
@@ -203,24 +213,31 @@
                                                 <Setter Property="StaysOpenOnClick" Value="False" />
                                                 <Setter Property="Icon">
                                                     <Template>
-                                                        <Grid>
-                                                            <material:MaterialIcon Kind="Check"
-                                                                                   IsVisible="{Binding $parent[views:MapView].((viewModels:MapViewModel)DataContext).ExportLocation, 
-                                                        Converter={StaticResource EnumEquals}, 
-                                                        ConverterParameter={Binding $parent[MenuItem].((ext:EnumRecord)DataContext).Value}}" />
-                                                        </Grid>
+                                                        <material:MaterialIcon Kind="{Binding Icon}" />
                                                     </Template>
                                                 </Setter>
                                             </ControlTheme>
                                         </MenuFlyout.ItemContainerTheme>
                                     </MenuFlyout>
                                 </SplitButton.Flyout>
-                                <StackPanel Orientation="Horizontal">
-                                    <material:MaterialIcon Kind="Download" Margin="{ext:Space 0, 0, 1, 0}" />
-                                    <TextBlock
-                                        Text="{Binding ExportLocation, Converter={StaticResource EnumToRecord}, StringFormat='Export to {0}'}" />
-                                </StackPanel>
+                                <ContentControl Content="{Binding ExportLocation, Converter={StaticResource EnumToRecord}}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate x:DataType="ext:EnumRecord">
+                                            <controls:IconText Text="{Binding Description, StringFormat='Export to {0}'}"
+                                                               Icon="{Binding Icon}" />
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
                             </SplitButton>
+
+                            <Button Grid.Column="2" HorizontalAlignment="Stretch" Margin="{ext:Space 0, 0.25}"
+                                    IsVisible="{Binding SelectedMap.IsExporting}"
+                                    Command="{Binding SelectedMap.CancelExportCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <material:MaterialIcon Kind="Cancel" Margin="{ext:Space 0, 0, 1, 0}" />
+                                    <TextBlock Text="Cancel" />
+                                </StackPanel>
+                            </Button>
 
                             <Button Grid.Column="4" ToolTip.Tip="Export Settings"
                                     Content="{material:MaterialIconExt Settings}"
@@ -382,7 +399,7 @@
                                           Height="{Binding Bounds.Width, ElementName=MapBorder}"/>
 
                     <Grid Height="{Binding Bounds.Width, ElementName=MapBorder}">
-                        <ToggleButton Content="{controls:IconText 'Include Main Level', Landscape}" IsCheckedChanged="OnMainLevelIncludeChanged"
+                        <ToggleButton Content="{controls:IconText 'Include Terrain', Landscape}" IsCheckedChanged="OnMainLevelIncludeChanged"
                                       HorizontalAlignment="Center" VerticalAlignment="Bottom" IsChecked="{Binding SelectedMap.IncludeMainLevel}"
                                       Margin="{ext:Space 0, 0, 0, 1}" IsVisible="{Binding !UseMapInfoCreator}"/>
                     </Grid>
@@ -395,48 +412,10 @@
             </Grid>
         </Grid>
         
-        <Grid VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding IsLoading, FallbackValue=True}">
-            <Ellipse Width="600" Height="600" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Ellipse.Styles>
-                    <Style Selector="Ellipse">
-                        <Style.Animations>
-                            <Animation Duration="0:0:3" IterationCount="Infinite" PlaybackDirection="Alternate"
-                                       Easing="SineEaseInOut">
-                                <KeyFrame Cue="0%">
-                                    <Setter Property="Opacity" Value="0.2"/>
-                                </KeyFrame>
-                                <KeyFrame Cue="100%">
-                                    <Setter Property="Opacity" Value="0.5"/>
-                                </KeyFrame>
-                            </Animation>
-                        </Style.Animations>
-                    </Style>
-                </Ellipse.Styles>
-                <Ellipse.Fill>
-                    <RadialGradientBrush>
-                        <GradientStop Color="#33A855F7" Offset="0"/>
-                        <GradientStop Color="#1AA855F7" Offset="0.5"/>
-                        <GradientStop Color="#00A855F7" Offset="1"/>
-                    </RadialGradientBrush>
-                </Ellipse.Fill>
-            </Ellipse>
-            
-            <StackPanel Spacing="{ext:Space 1}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding CurrentlyLoadingMap, StringFormat='Loading {0}', TargetNullValue=' Loading Maps'}" 
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           FontFamily="{StaticResource SFDisplaySemibold}"
-                           FontSize="20"/>
-
-                <TextBlock Text="{Binding LoadingPercentageText}" 
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Classes="BodyTextBlockStyle TextFillColorSecondaryBrush" Margin="{ext:Space 0, 0, 0, 1}"/>
-                                       
-                <ProgressBar HorizontalAlignment="Center" VerticalAlignment="Center" Height="8"
-                             MinWidth="400"
-                             Value="{Binding LoadedMaps}"
-                             Minimum="0"
-                             Maximum="{Binding TotalMaps}" />
-            </StackPanel>
-        </Grid>
+        <loading:LoadingIndicator IsVisible="{Binding IsLoading, FallbackValue=True}"
+                                Status="{Binding CurrentlyLoadingMap, StringFormat='Loading {0}', TargetNullValue=' Loading Maps'}"
+                                Subtitle="{Binding LoadingPercentageText}"
+                                Value="{Binding LoadedMaps}"
+                                Maximum="{Binding TotalMaps}" />
     </Grid>
 </UserControl>

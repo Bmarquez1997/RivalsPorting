@@ -7,8 +7,8 @@ from ..utils import *
 from ..mappings import *
 from ...utils import *
 from ...logger import Log
-from ...ueformat.importer.logic import UEFormatImport
-from ...ueformat.importer.classes import UEAnim
+from ...ueformat.importer.dto.anim import AnimDto
+from ...ueformat.importer.import_context import UEFormatImport
 from ...ueformat.options import UEAnimOptions
 from ...server import Server
 
@@ -47,12 +47,12 @@ class AnimImportContext:
             else:
                 active_mesh.data.shape_keys.animation_data_create()
             
-            
-        if sequence_editor := get_sequence_editor():
-            strips = get_sequence_strips(sequence_editor)
-            sequences_to_remove = where(strips, lambda seq: seq.get("FPSound"))
+
+        if sequence_editor := get_sequence_editor(self.version_profile):
+            sequences = get_sequence_collection(sequence_editor, self.version_profile)
+            sequences_to_remove = where(sequences, lambda seq: seq.get("FPSound"))
             for sequence in sequences_to_remove:
-                strips.remove(sequence)
+                sequences.remove(sequence)
 
         bpy.context.scene.frame_set(0)
 
@@ -89,7 +89,6 @@ class AnimImportContext:
 
                 strip = track.strips.new(section_name, frame, action)
                 strip.repeat = loop_count
-                bind_nla_action_slot(strip, action)
 
                 if len(anim_data.curves) > 0 and active_mesh.data.shape_keys is not None and is_main_skeleton:
                     key_blocks = active_mesh.data.shape_keys.key_blocks
@@ -232,10 +231,7 @@ class AnimImportContext:
                     is_anim_legacy = any(anim_data.curves, lambda curve: curve.name in legacy_curve_names)
                     is_anim_metahuman = any(anim_data.curves, lambda curve: curve.name.lower() == "is_3l")
                     
-                    # Include case where it isn't a fortnite human animation
-                    is_fortnite_human_anim = (is_anim_legacy or is_anim_metahuman) and (is_skeleton_legacy or is_skeleton_metahuman)
-                    
-                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman) or not is_fortnite_human_anim:  
+                    if (is_skeleton_legacy and is_anim_legacy) or (is_anim_metahuman and is_anim_metahuman):
                         for curve in anim_data.curves:
                             if target_block := best(key_blocks, lambda block: block.name.lower(), curve.name.lower()):
                                 for key in curve.keys:
@@ -250,11 +246,9 @@ class AnimImportContext:
 
                     if active_mesh.data.shape_keys.animation_data.action is not None:
                         try:
-                            shape_action = active_mesh.data.shape_keys.animation_data.action
-                            strip = mesh_track.strips.new(section_name, frame, shape_action)
+                            strip = mesh_track.strips.new(section_name, frame, active_mesh.data.shape_keys.animation_data.action)
                             strip.name = section_name
                             strip.repeat = loop_count
-                            bind_nla_action_slot(strip, shape_action)
                         except Exception:
                             pass
 
@@ -301,18 +295,20 @@ class AnimImportContext:
                 path = sound.get("Path")
                 self.import_sound(path, time_to_frame(sound.get("Time")))
 
-    def import_anim(self, path: str, override_skeleton=None) -> tuple[bpy.types.Action, UEAnim]:
+    def import_anim(self, path: str, override_skeleton=None) -> tuple[bpy.types.Action, AnimDto]:
         path = path[1:] if path.startswith("/") else path
         file_path, name = path.split(".")
         if (existing := bpy.data.actions.get(name)) and existing["Skeleton"] == override_skeleton.name and not existing["HasCurves"]:
-            return existing, UEAnim()
+            return existing, AnimDto()
 
         anim_path = os.path.join(self.assets_root, file_path + ".ueanim")
         options = UEAnimOptions(link=False,
                                 override_skeleton=override_skeleton,
                                 scale_factor=self.scale,
                                 import_curves=False)
-        action, anim_data = UEFormatImport(options).import_file(anim_path)
+        action, anim_data = UEFormatImport(options).import_file_with_dto(anim_path)
+        assert isinstance(action, bpy.types.Action)
+        assert isinstance(anim_data, AnimDto)
         action["Skeleton"] = override_skeleton.name
         action["HasCurves"] = len(anim_data.curves) > 0
         return action, anim_data

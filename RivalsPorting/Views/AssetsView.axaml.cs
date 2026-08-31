@@ -1,15 +1,17 @@
 using System;
+using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using RivalsPorting.Controls.Navigation.Sidebar;
 using RivalsPorting.Controls.WrapPanel;
 using RivalsPorting.Framework;
 using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Assets.Asset;
-using RivalsPorting.Models.Assets.Custom;
 using RivalsPorting.Models.Assets.Filters;
 using RivalsPorting.Services;
 using RivalsPorting.ViewModels;
@@ -36,14 +38,11 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
             ChangeTab(enumType);
         });
 
-        PointerWheelChangedEvent.AddClassHandler<TopLevel>((sender, args) =>
+        PointerWheelChangedEvent.AddClassHandler<TopLevel>((_, args) =>
         {
             if ((args.KeyModifiers & KeyModifiers.Control) == 0) return;
 
-            var delta = args.Delta.Y;
-            AppSettings.Application.AssetScale =
-                float.Clamp(AppSettings.Application.AssetScale + (delta > 0 ? 0.25f : -0.25f), 0.5f, 4.0f);
-
+            ViewModel.AdjustAssetScale(args.Delta.Y > 0);
             args.Handled = true;
         }, handledEventsToo: true);
 
@@ -54,27 +53,16 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
 
     private void ChangeTab(EExportType assetType)
     {
-        if (ViewModel.AssetLoader.ActiveLoader?.Type == assetType) return;
-
         AssetsListBox.SelectedItems?.Clear();
-        Discord.Update(assetType);
-
-        var loaders = ViewModel.AssetLoader.Categories.SelectMany(category => category.Loaders);
-        foreach (var loader in loaders)
-        {
-            if (loader.Type == assetType)
-                loader.Unpause();
-            else
-                loader.Pause();
-        }
-
-        TaskService.Run(async () => await ViewModel.AssetLoader.Load(assetType));
+        ViewModel.ChangeTab(assetType);
     }
 
     private void OnRandomButtonPressed(object? sender, RoutedEventArgs routedEventArgs)
     {
-        AssetsListBox.SelectedIndex = Random.Shared.Next(0, AssetsListBox.Items.Count);
+        var index = ViewModel.GetRandomIndex(AssetsListBox.Items.Count);
+        if (index < 0) return;
 
+        AssetsListBox.SelectedIndex = index;
         if (AssetsListBox.SelectedItem is not AssetItem item) return;
         if (item.IconDisplayImage is not null) return;
 
@@ -128,7 +116,7 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
     {
         if (sender is not CheckBox { Content: not null, IsChecked: { } isChecked, DataContext: FilterItem filterItem }) return;
 
-        ViewModel.AssetLoader.ActiveLoader.UpdateFilters(filterItem, isChecked);
+        ViewModel.UpdateFilter(filterItem, isChecked);
     }
 
     private void OnItemSelected(object? sender, SidebarItemSelectedArgs e)
@@ -151,6 +139,16 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
 
         assetStyleInfo.SelectedStyleIndex = -1;
         assetStyleInfo.SelectedItems.Clear();
+    }
+
+    private void OnStyleFlyoutItemPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (sender is not ListBox listBox) return;
+        if (e.InitialPressMouseButton != MouseButton.Left) return;
+        if (e.Source is not Control source || source.FindAncestorOfType<ListBoxItem>() is null) return;
+
+        if (listBox.FindAncestorOfType<FlyoutPresenter>()?.Parent is Popup popup)
+            popup.IsOpen = false;
     }
 
     private void OnAssetItemPressed(object? sender, PointerPressedEventArgs e)
@@ -215,11 +213,7 @@ public partial class AssetsView : ViewBase<AssetsViewModel>
 
     private async Task StartDragAsync(PointerEventArgs e)
     {
-        var paths = ViewModel.AssetLoader.ActiveLoader!.SelectedAssetInfos
-            .OfType<AssetInfo>()
-            .Select(asset => asset.Asset.CreationData.Object.GetPathName())
-            .ToArray();
-
+        var paths = ViewModel.GetSelectedAssetPaths();
         var dragDropInfoFile = await WriteDragDropInfoAsync(paths);
 
         TaskService.Run(ExportClient.DiscoverAsync);

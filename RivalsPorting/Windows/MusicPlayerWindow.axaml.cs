@@ -9,8 +9,6 @@ namespace RivalsPorting.Windows;
 
 public partial class MusicPlayerWindow : WindowBase<MusicPlayerWindowModel>, IPreviewWindow
 {
-    public static MusicPlayerWindow? Instance;
-
     public MusicPlayerWindow()
     {
         InitializeComponent();
@@ -18,24 +16,15 @@ public partial class MusicPlayerWindow : WindowBase<MusicPlayerWindowModel>, IPr
         Owner = App.Lifetime.MainWindow;
     }
 
-    public static void Open()
+    public static MusicPlayerWindow Open()
     {
-        if (Instance is not null)
-        {
-            Instance.BringToTop();
-            return;
-        }
-
-        Instance = new MusicPlayerWindow();
-
-        Instance.Show();
+        return WindowManager.GetOrShowPreview(() => new MusicPlayerWindow());
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        WindowModel.Stop(suppressClose: true);
         base.OnClosed(e);
-        WindowModel.Stop();
-        Instance = null;
     }
 
     private void OnPlaybackSliderChanged(object? sender, RangeBaseValueChangedEventArgs e)

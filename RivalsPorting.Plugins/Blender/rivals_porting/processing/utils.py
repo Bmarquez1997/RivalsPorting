@@ -6,6 +6,7 @@ from ..utils import *
 from math import radians
 from mathutils import Matrix, Vector, Euler, Quaternion
 from bpy_extras import anim_utils
+from ..export_profile import resolve_export_profile
 
 def merge_armatures(base_armature, extra_armatures):
     bpy.ops.object.select_all(action='DESELECT')
@@ -266,11 +267,6 @@ def make_quat(data):
 def make_euler(data):
     return Euler((radians(data.get("Roll")), -radians(data.get("Pitch")), -radians(data.get("Yaw"))))
 
-
-def is_zero_transform(data):
-    return data.get("X") == 0 and data.get("Y") == 0 and data.get("Z") == 0
-
-
 def time_to_frame(time, fps = 30):
     return int(round(time * fps))
 
@@ -291,7 +287,8 @@ def clear_children_bone_transforms(skeleton, anim, bone_name):
             dispose_paths.append(f'pose.bones["{bone.name}"].scale')
             pose_bones[bone.name].matrix_basis = Matrix()
             
-        if bpy.app.version < (5, 0, 0):
+        profile = resolve_export_profile(bpy.app.version)
+        if profile.uses_legacy_action_curves:
             dispose_curves = [fcurve for fcurve in anim.fcurves if fcurve.data_path in dispose_paths]
             for fcurve in dispose_curves:
                 anim.fcurves.remove(fcurve)
@@ -302,34 +299,30 @@ def clear_children_bone_transforms(skeleton, anim, bone_name):
                 channelbag.fcurves.remove(fcurve)
     bpy.ops.object.mode_set(mode='OBJECT')
 
-def set_geo_nodes_param(geo_node_modifier, name, value):
+def set_geo_nodes_param(geo_node_modifier, name, value, version_profile=None):
     identifier = geo_node_modifier.node_group.interface.items_tree[name].identifier
-    if bpy.app.version < (5, 2, 0):
+    profile = version_profile or resolve_export_profile(bpy.app.version)
+    if profile.uses_id_property_geo_nodes_inputs:
         geo_node_modifier[identifier] = value
     else:
         getattr(geo_node_modifier.properties.inputs, identifier).value = value
-
-
-def get_sequence_editor():
-    if bpy.app.version >= (5, 0, 0):
+    
+    
+def get_sequence_editor(version_profile=None):
+    profile = version_profile or resolve_export_profile(bpy.app.version)
+    if profile.uses_scene_sequence_editor:
+        seq_scene = bpy.context.scene
+    else:
         if not bpy.context.workspace.sequencer_scene:
             bpy.context.workspace.sequencer_scene = bpy.context.scene
         seq_scene = bpy.context.workspace.sequencer_scene
-    else:
-        seq_scene = bpy.context.scene
-
+    
     if not seq_scene.sequence_editor:
         seq_scene.sequence_editor_create()
-
+        
     return seq_scene.sequence_editor
 
 
-def get_sequence_strips(sequence_editor):
-    if bpy.app.version < (4, 5, 0):
-        return sequence_editor.sequences
-    return sequence_editor.strips
-
-
-def bind_nla_action_slot(strip, action):
-    if bpy.app.version >= (5, 0, 0) and action is not None and getattr(action, "slots", None) and len(action.slots) > 0:
-        strip.action_slot = action.slots[0]
+def get_sequence_collection(sequence_editor, version_profile=None):
+    profile = version_profile or resolve_export_profile(bpy.app.version)
+    return sequence_editor.sequences if profile.uses_legacy_sequence_api else sequence_editor.strips

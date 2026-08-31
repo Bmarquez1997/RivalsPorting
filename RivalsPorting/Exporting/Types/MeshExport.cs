@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using CUE4Parse_Conversion.Meshes;
 using CUE4Parse.GameTypes.FN.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Animation;
@@ -22,10 +21,7 @@ using CUE4Parse.Utils;
 using RivalsPorting.Exporting;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
-using RivalsPorting.Extensions;
-using RivalsPorting.Models.Assets;
-using RivalsPorting.Models.Assets.Custom;
-using RivalsPorting.Models.Fortnite;
+using RivalsPorting.Exporting.Styles;
 using RivalsPorting.Shared.Extensions;
 using Path = System.IO.Path;
 
@@ -41,7 +37,7 @@ public class MeshExport : BaseExport
     public ExportLightCollection Lights = new();
     public AnimExport? Animation;
     
-    public MeshExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
+    public MeshExport(string name, UObject asset, ExportStyleBase[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
         if (styles.Length > 0 && !string.Equals(styles[0].StyleName, name, StringComparison.Ordinal))
             Name = $"{name} - {styles[0].StyleName}";
@@ -68,7 +64,7 @@ public class MeshExport : BaseExport
                     Export(objectStyle.StyleData, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
                 }
             }
-            
+
             return;
         }
 
@@ -78,12 +74,12 @@ public class MeshExport : BaseExport
         ExportStyles(asset, assetStyles);
     }
 
-    public MeshExport(CustomAsset customAsset, EExportType exportType, ExportDataMeta metaData) : base(customAsset.Name, exportType, metaData)
+    public MeshExport(string name, MeshDefinition mesh, Func<string, Stream> openCustomAssetResource, EExportType exportType, ExportDataMeta metaData) : base(name, exportType, metaData)
     {
         string ExportCustom(string path)
         {
-            var stream = Avalonia.Platform.AssetLoader.Open(new Uri($"avares://RivalsPorting/{path}"));
-            
+            using var stream = openCustomAssetResource(path);
+
             var outPathPortion = path.SubstringAfter("Assets/");
             var outPath = Path.Combine(metaData.AssetsRoot, outPathPortion);
             Directory.CreateDirectory(outPath.SubstringBeforeLast("/"));
@@ -92,10 +88,8 @@ public class MeshExport : BaseExport
             return outPathPortion;
         }
         
-        var mesh = customAsset.Mesh;
-
         var exportMesh = new ExportMesh();
-        exportMesh.Name = customAsset.Name;
+        exportMesh.Name = name;
         exportMesh.Path = ExportCustom(mesh.Path);
 
         for (var matIndex = 0; matIndex < mesh.Materials.Length; matIndex++)
@@ -155,7 +149,7 @@ public class MeshExport : BaseExport
             }
             case EExportType.CharacterPart:
             {
-                Meshes.AddIfNotNull(Exporter.CharacterPart(asset));
+                Meshes.AddIfNotNull(Context.CharacterPart(asset));
                 
                 break;
             }
@@ -164,7 +158,7 @@ public class MeshExport : BaseExport
                 var parts = asset.GetOrDefault("CharacterParts", Array.Empty<UObject>());
                 foreach (var part in parts)
                 {
-                    Meshes.AddIfNotNull(Exporter.CharacterPart(part));
+                    Meshes.AddIfNotNull(Context.CharacterPart(part));
                 }
                 
                 break;
@@ -174,7 +168,7 @@ public class MeshExport : BaseExport
                 var weapon = asset.GetOrDefault<UObject?>("WeaponDefinition");
                 if (weapon is null) break;
 
-                Meshes.AddRange(Exporter.WeaponDefinition(weapon));
+                Meshes.AddRange(Context.WeaponDefinition(weapon));
                 break;
             }
             case EExportType.Glider:
@@ -182,13 +176,13 @@ public class MeshExport : BaseExport
                 var mesh = asset.GetOrDefault<USkeletalMesh?>("SkeletalMesh");
                 if (mesh is null) break;
 
-                var part = Exporter.Mesh(mesh);
+                var part = Context.Mesh(mesh);
                 if (part is null) break;
 
                 var overrideMaterials = asset.GetOrDefault("MaterialOverrides", Array.Empty<FStructFallback>());
                 foreach (var overrideMaterial in overrideMaterials)
                 {
-                    part.OverrideMaterials.AddIfNotNull(Exporter.OverrideMaterial(overrideMaterial));
+                    part.OverrideMaterials.AddIfNotNull(Context.OverrideMaterial(overrideMaterial));
                 }
 
                 Meshes.Add(part);
@@ -198,18 +192,18 @@ public class MeshExport : BaseExport
             {
                 // backpack meshes
                 var parts = asset.GetOrDefault("CharacterParts", Array.Empty<UObject>());
-                foreach (var part in parts) Meshes.AddIfNotNull(Exporter.CharacterPart(part));
+                foreach (var part in parts) Meshes.AddIfNotNull(Context.CharacterPart(part));
 
                 // pet mesh
                 var petAsset = asset.Get<UObject>("DefaultPet");
                 var prefabClassPath = petAsset.Get<FSoftObjectPath>("PetPrefabClass");
-                var prefabExports = UEParse.Provider.LoadAllObjects(prefabClassPath.AssetPathName.Text.SubstringBeforeLast("."));
+                var prefabExports = Context.Meta.Provider.Provider.LoadAllObjects(prefabClassPath.AssetPathName.Text.SubstringBeforeLast("."));
                 if (prefabExports.FirstOrDefault(export => export.Name.Equals("PetMesh0")) is not USkeletalMeshComponentBudgeted meshComponent) break;
                 
                 var mesh = meshComponent.GetSkeletalMesh().Load<USkeletalMesh>();
                 if (mesh is null) break;
 
-                var exportMesh = Exporter.Mesh<ExportPart>(mesh);
+                var exportMesh = Context.Mesh<ExportPart>(mesh);
                 if (exportMesh is null) break;
                 
                 var meta = new ExportPoseAssetMeta();
@@ -218,7 +212,7 @@ public class MeshExport : BaseExport
                     var animBlueprintData = animBlueprint.ClassDefaultObject.Load()!;
                     if (animBlueprintData.TryGetValue(out UPoseAsset poseAsset, "FacePoseAsset"))
                     {
-                        meta.PoseAsset = Exporter.Export(poseAsset); // most pets have empty pose assets now but whatever
+                        meta.PoseAsset = Context.Export(poseAsset); // most pets have empty pose assets now but whatever
                     }
                 }
 
@@ -236,7 +230,7 @@ public class MeshExport : BaseExport
                 exportComponent ??= GetComponent(actor.SuperStruct.Load<UBlueprintGeneratedClass>());
                 if (exportComponent is null) break;
 
-                Meshes.AddIfNotNull(Exporter.MeshComponent(exportComponent));
+                Meshes.AddIfNotNull(Context.MeshComponent(exportComponent));
                 break;
 
                 UStaticMeshComponent? GetComponent(UBlueprintGeneratedClass? blueprint)
@@ -259,7 +253,7 @@ public class MeshExport : BaseExport
             case EExportType.Prop:
             {
                 var levelSaveRecord = asset.Get<ULevelSaveRecord>("ActorSaveRecord");
-                AddObjects(Exporter.LevelSaveRecord(levelSaveRecord));
+                AddObjects(Context.LevelSaveRecord(levelSaveRecord));
                 break;
             }
             case EExportType.Prefab:
@@ -277,6 +271,8 @@ public class MeshExport : BaseExport
                 var currentProp = 0;
                 foreach (var prop in props)
                 {
+                    if (Context.CancellationToken.IsCancellationRequested) break;
+                    
                     currentProp++;
                     
                     var levelSaveRecord = prop.GetOrDefault<UObject?>("LevelSaveRecord");
@@ -286,7 +282,7 @@ public class MeshExport : BaseExport
                     if (targetSaveRecord is null) continue;
                     
                     var transform = prop.GetOrDefault<FTransform>("Transform");
-                    var objects = Exporter.LevelSaveRecord(targetSaveRecord);
+                    var objects = Context.LevelSaveRecord(targetSaveRecord);
                     foreach (var mesh in objects)
                     {
                         mesh.Location += transform.Translation;
@@ -294,7 +290,7 @@ public class MeshExport : BaseExport
                         mesh.Scale *= transform.Scale3D;
                     }
                     
-                    Exporter.Meta.OnUpdateProgress(objects.FirstOrDefault()?.Name ?? "Prop", currentProp, totalProps);
+                    Context.Meta.OnUpdateProgress(objects.FirstOrDefault()?.Name ?? "Prop", currentProp, totalProps);
 
                     AddObjects(objects);
                 }
@@ -306,11 +302,11 @@ public class MeshExport : BaseExport
             {
                 if (asset is UBlueprintGeneratedClass blueprintGeneratedClass)
                 {
-                    AddObjects(Exporter.Blueprint(blueprintGeneratedClass));
+                    AddObjects(Context.Blueprint(blueprintGeneratedClass));
                 }
                 else
                 {
-                    Meshes.AddIfNotNull(Exporter.Mesh(asset));
+                    Meshes.AddIfNotNull(Context.Mesh(asset));
                 }
                 break;
             }
@@ -319,17 +315,17 @@ public class MeshExport : BaseExport
                 if (asset is not UWorld world) break;
 
                 Name = world.Owner?.Name.SubstringAfterLast("/") ?? world.Name;
-                Meshes.AddRange(Exporter.World(world));
+                Meshes.AddRange(Context.World(world));
                 break;
             }
             case EExportType.Item:
             {
-                Meshes.AddRange(Exporter.WeaponDefinition(asset));
+                Meshes.AddRange(Context.WeaponDefinition(asset));
                 break;
             }
             case EExportType.Resource:
             {
-                Meshes.AddRange(Exporter.WeaponDefinition(asset));
+                Meshes.AddRange(Context.WeaponDefinition(asset));
                 break;
             }
             case EExportType.Trap:
@@ -340,14 +336,14 @@ public class MeshExport : BaseExport
                 var staticMesh = actor.GetOrDefault<UBaseBuildingStaticMeshComponent?>("StaticMeshComponent");
                 if (staticMesh is not null)
                 {
-                    Meshes.AddIfNotNull(Exporter.MeshComponent(staticMesh));
+                    Meshes.AddIfNotNull(Context.MeshComponent(staticMesh));
                 }
 
-                var components = UEParse.Provider.LoadAllObjects(actor.GetPathName().SubstringBeforeLast("."));
+                var components = Context.Meta.Provider.Provider.LoadAllObjects(actor.GetPathName().SubstringBeforeLast("."));
                 foreach (var component in components)
                 {
                     if (component.Name.Equals(staticMesh?.Name)) continue;
-                    Meshes.AddIfNotNull(Exporter.MeshComponent(component));
+                    Meshes.AddIfNotNull(Context.MeshComponent(component));
                 }
 
                 break;
@@ -355,10 +351,10 @@ public class MeshExport : BaseExport
             case EExportType.Sprite:
             {
                 var mesh = asset.GetDataListItem<USkeletalMesh>("SkeletalMesh");
-                var exportMesh = Exporter.Mesh(mesh);
+                var exportMesh = Context.Mesh(mesh);
 
                 var material = asset.GetDataListItem<UMaterialInterface>("Material");
-                var exportMaterial = Exporter.Material(material, 0);
+                var exportMaterial = Context.Material(material, 0);
                 exportMesh?.OverrideMaterials.AddIfNotNull(exportMaterial);
 
                 Meshes.AddIfNotNull(exportMesh);
@@ -370,7 +366,7 @@ public class MeshExport : BaseExport
                 var parts = asset.GetOrDefault("BaseCharacterParts", Array.Empty<UObject>());
                 foreach (var part in parts)
                 {
-                    Meshes.AddIfNotNull(Exporter.CharacterPart(part));
+                    Meshes.AddIfNotNull(Context.CharacterPart(part));
                 }
 
                 var bodyParams = new ExportOverrideParameters {MaterialNameToAlter = "MI_BeanChar_Body_Base"};
@@ -469,7 +465,7 @@ public class MeshExport : BaseExport
                             4 => 1
                         };
 
-                        var offset = UEParse.BeanstalkAtlasTextureUVs[index];
+                        var offset = Context.Meta.Provider.BeanstalkAtlasTextureUVs[index];
                         parameterSet.Vectors.Add(new VectorParameter(shaderName, new FLinearColor(offset.X, offset.Y, offset.Z, 0)));
                     }
 
@@ -477,7 +473,7 @@ public class MeshExport : BaseExport
                     {
                         if (!field.TryGetValue(out int index, propertyName)) return;
                     
-                        var color = UEParse.BeanstalkColors[index];
+                        var color = Context.Meta.Provider.BeanstalkColors[index];
                         parameterSet.Vectors.Add(new VectorParameter(shaderName, color.ToLinearColor()));
                     }
                     
@@ -485,7 +481,7 @@ public class MeshExport : BaseExport
                     {
                         if (!field.TryGetValue(out int index, propertyName)) return;
                     
-                        var color = UEParse.BeanstalkMaterialProps[index];
+                        var color = Context.Meta.Provider.BeanstalkMaterialProps[index];
                         parameterSet.Vectors.Add(new VectorParameter(shaderName, color));
                     }
                     
@@ -494,7 +490,7 @@ public class MeshExport : BaseExport
                         if (!field.TryGetValue(out UTexture2D texture, propertyName)) return;
                     
                         parameterSet.Textures.AddUnique(new TextureParameter(shaderName, 
-                            new ExportTexture(Exporter.Export(texture), texture.SRGB, texture.CompressionSettings)));
+                            new ExportTexture(Context.Export(texture), texture.SRGB, texture.CompressionSettings)));
                     }
                 }
                     
@@ -523,34 +519,34 @@ public class MeshExport : BaseExport
             {
                 if (asset.TryGetValue(out USkeletalMesh mesh, "Mesh"))
                 {
-                    var exportMesh = Exporter.Mesh(mesh);
+                    var exportMesh = Context.Mesh(mesh);
 
                     var material = asset.GetOrDefault<UMaterialInterface>("Material");
-                    exportMesh?.Materials.AddIfNotNull(Exporter.Material(material, 0));
+                    exportMesh?.Materials.AddIfNotNull(Context.Material(material, 0));
 
                     Meshes.AddIfNotNull(exportMesh);
                 }
 
                 if (asset.TryGetValue(out USkeletalMesh leftHandMesh, "LeftHandMesh"))
                 {
-                    var exportMesh = Exporter.Mesh(leftHandMesh);
+                    var exportMesh = Context.Mesh(leftHandMesh);
 
                     var material = asset.GetOrDefault<UMaterialInterface>("LeftHandMaterial");
-                    exportMesh?.Materials.AddIfNotNull(Exporter.Material(material, 0));
+                    exportMesh?.Materials.AddIfNotNull(Context.Material(material, 0));
 
                     Meshes.AddIfNotNull(exportMesh);
                 }
 
                 if (asset.TryGetValue(out USkeletalMesh auxiliaryMesh, "AuxiliaryMesh"))
                 {
-                    var exportMesh = Exporter.Mesh(auxiliaryMesh);
+                    var exportMesh = Context.Mesh(auxiliaryMesh);
                     if (exportMesh is null) break;
 
                     if (asset.TryGetValue(out UMaterialInterface auxMaterial, "AuxiliaryMaterial"))
-                        exportMesh?.Materials.AddIfNotNull(Exporter.Material(auxMaterial, 0));
+                        exportMesh?.Materials.AddIfNotNull(Context.Material(auxMaterial, 0));
 
                     if (asset.TryGetValue(out UMaterialInterface auxMaterial2, "AuxiliaryMaterial2"))
-                        exportMesh?.Materials.AddIfNotNull(Exporter.Material(auxMaterial2, 1));
+                        exportMesh?.Materials.AddIfNotNull(Context.Material(auxMaterial2, 1));
 
                     Meshes.AddIfNotNull(exportMesh);
                 }
@@ -560,13 +556,13 @@ public class MeshExport : BaseExport
             }
             case EExportType.Wildlife:
             {
-                Meshes.AddIfNotNull(Exporter.Mesh(asset));
+                Meshes.AddIfNotNull(Context.Mesh(asset));
                 break;
             }
             case EExportType.Vehicle:
             {
                 var blueprint = asset.Get<UBlueprintGeneratedClass>("VehicleActorClass");
-                AddObjects(Exporter.Blueprint(blueprint));
+                AddObjects(Context.Blueprint(blueprint));
                 
                 break;
             }
@@ -575,7 +571,7 @@ public class MeshExport : BaseExport
                 var parts = asset.GetOrDefault<UObject[]>("CharacterParts", []);
                 foreach (var part in parts)
                 {
-                    Meshes.AddIfNotNull(Exporter.CharacterPart(part));
+                    Meshes.AddIfNotNull(Context.CharacterPart(part));
                 }
                 
                 break;
@@ -600,8 +596,8 @@ public class MeshExport : BaseExport
                         .Get<FSoftObjectPath>("ParameterValue")
                         .LoadOrDefault<UMaterialInterface>();
 
-                    var exportMesh = Exporter.Mesh(skeletalMesh);
-                    exportMesh?.Materials.AddIfNotNull(Exporter.Material(material, 0));
+                    var exportMesh = Context.Mesh(skeletalMesh);
+                    exportMesh?.Materials.AddIfNotNull(Context.Material(material, 0));
                     Meshes.AddIfNotNull(exportMesh);
                 }
                 
@@ -689,7 +685,7 @@ public class MeshExport : BaseExport
         }
     }
     
-    private void ExportStyles(UObject asset, IEnumerable<AssetStyleData> styles)
+    private void ExportStyles(UObject asset, IEnumerable<ExportStructStyle> styles)
     {
         var metaTagsToApply = new List<FGameplayTag>();
         var metaTagsToRemove = new List<FGameplayTag>();
@@ -726,31 +722,31 @@ public class MeshExport : BaseExport
 
         foreach (var style in styleDatas) ExportStyleData(style);
 
-        var colorStyles = styles.Where(style => style is AssetColorStyleData)
-                                                 .Select(style => (AssetColorStyleData)style)
+        var colorStyles = styles.Where(style => style is ExportColorStyle)
+                                                 .Select(style => (ExportColorStyle)style)
                                                  .ToArray();
-        foreach (var colorStyle in colorStyles) OverrideParameters.AddRangeIfNotNull(Exporter.OverrideColors(colorStyle));
+        foreach (var colorStyle in colorStyles) OverrideParameters.AddRangeIfNotNull(Context.OverrideColors(colorStyle));
     }
 
     private void ExportStyleData(FStructFallback style)
     {
         var variantParts = style.GetOrDefault("VariantParts", Array.Empty<UObject>());
-        foreach (var part in variantParts) OverrideMeshes.AddIfNotNull(Exporter.CharacterPart(part));
+        foreach (var part in variantParts) OverrideMeshes.AddIfNotNull(Context.CharacterPart(part));
 
         var variantMaterials = style.GetOrDefault("VariantMaterials", Array.Empty<FStructFallback>());
-        foreach (var material in variantMaterials) OverrideMaterials.AddIfNotNull(Exporter.OverrideMaterialSwap(material));
+        foreach (var material in variantMaterials) OverrideMaterials.AddIfNotNull(Context.OverrideMaterialSwap(material));
 
         var variantParameters = style.GetOrDefault("VariantMaterialParams", Array.Empty<FStructFallback>());
-        foreach (var parameters in variantParameters) OverrideParameters.AddRangeIfNotNull(Exporter.OverrideParameters(parameters));
+        foreach (var parameters in variantParameters) OverrideParameters.AddRangeIfNotNull(Context.OverrideParameters(parameters));
         
         var variantMeshes = style.GetOrDefault("VariantMeshes", Array.Empty<FStructFallback>());
         foreach (var mesh in variantMeshes)
         {
             var overrideMesh = mesh.GetOrDefault<USkeletalMesh>("OverrideMesh");
-            OverrideMeshes.AddIfNotNull(Exporter.Mesh(overrideMesh));
+            OverrideMeshes.AddIfNotNull(Context.Mesh(overrideMesh));
         }
 
         var variantMorphTargets = style.GetOrDefault("MorphTargets", Array.Empty<FStructFallback>());
-        foreach (var morphTarget in variantMorphTargets) OverrideMorphTargets.AddIfNotNull(Exporter.OverrideMorphTargets(morphTarget));
+        foreach (var morphTarget in variantMorphTargets) OverrideMorphTargets.AddIfNotNull(Context.OverrideMorphTargets(morphTarget));
     }
 }

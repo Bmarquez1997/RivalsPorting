@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CUE4Parse_Conversion.Dto;
+using CUE4Parse_Conversion.Options;
 using CUE4Parse.GameTypes.FN.Assets.Exports.DataAssets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Actor;
@@ -103,6 +105,8 @@ public partial class ExportContext
         
         foreach (var actorLazy in level.Actors)
         {
+            if (CancellationToken.IsCancellationRequested) break;
+            
             currentActor++;
             if (actorLazy is null || actorLazy.IsNull) continue;
 
@@ -184,7 +188,7 @@ public partial class ExportContext
                 {
                     var basePath = template.GetPathName().SubstringBeforeLast(".");
                     var blueprintPath = $"{basePath}.{basePath.SubstringAfterLast("/")}_C";
-                    if (UEParse.Provider.TryLoadPackageObject(blueprintPath, out var templateBlueprintGeneratedClass))
+                    if (FileProvider.TryLoadPackageObject(blueprintPath, out var templateBlueprintGeneratedClass))
                     {
                         exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
                         exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
@@ -210,7 +214,7 @@ public partial class ExportContext
                 {
                     var basePath = template.GetPathName().SubstringBeforeLast(".");
                     var blueprintPath = $"{basePath}.{basePath.SubstringAfterLast("/")}_C";
-                    if (UEParse.Provider.TryLoadPackageObject(blueprintPath, out var templateBlueprintGeneratedClass))
+                    if (FileProvider.TryLoadPackageObject(blueprintPath, out var templateBlueprintGeneratedClass))
                     {
                         exportMesh.AddChildren(ConstructionScript(templateBlueprintGeneratedClass));
                         exportMesh.AddChildren(InheritableComponentHandler(templateBlueprintGeneratedClass));
@@ -232,21 +236,17 @@ public partial class ExportContext
         if (Meta.WorldFlags.HasFlag(EWorldFlags.Landscape) && actor is ALandscapeProxy landscapeProxy && landscapeProxy.ExportType != "Landscape")
         {
             var transform = landscapeProxy.GetAbsoluteTransformFromRootComponent();
-            var landscapeProcessor = new LandscapeProcessor(landscapeProxy);
-
+            using var landscapeMesh = new LandscapeMeshDto(landscapeProxy, ELandscapeFlags.Mesh);
             var exportMesh = new ExportMesh
             {
                 Name = landscapeProxy.Name,
                 Path = Export(landscapeProxy, embeddedAsset: true, synchronousExport: true),
                 Location = transform.Translation,
-                Scale = transform.Scale3D
+                Scale = transform.Scale3D,
+                NumLods = LodCount(landscapeMesh)
             };
-            
-            for (var i = 0; i < landscapeProcessor.Components.Length; i++)
-            {
-                exportMesh.Materials.AddIfNotNull(Material(landscapeProcessor.Materials[i], i));
-            }
 
+            AddMeshMaterials(exportMesh, landscapeMesh);
             meshes.Add(exportMesh);
         }
 

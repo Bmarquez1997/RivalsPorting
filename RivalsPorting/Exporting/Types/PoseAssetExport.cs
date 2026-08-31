@@ -9,7 +9,7 @@ namespace RivalsPorting.Exporting.Types;
 public class PoseAssetExport : BaseExport
 {
     public string PoseAsset;
-    
+
     public PoseAssetExport(string name, UObject asset, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
         if (metaData.ExportLocation.IsFolder)

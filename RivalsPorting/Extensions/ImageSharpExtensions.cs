@@ -1,13 +1,10 @@
-using System;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SkiaSharp;
 
-namespace RivalsPorting.Extensions;
-
-public delegate void PixelReference<T>(ref T pixel, int index) where T : IPixel;
+namespace RivalsPorting.CUE4Parse.Extensions;
 
 public static class ImageSharpExtensions
 {
@@ -19,13 +16,13 @@ public static class ImageSharpExtensions
             {
                 throw new NotSupportedException("Virtual textures cannot be exported as .tga at this time.");
             }
-        
+
             var mip = texture.GetFirstMip();
             if (mip is null) return null;
-        
+
             using var bitmap = texture.Decode(mip)?.ToSkBitmap();
             if (bitmap is null) return null;
-        
+
             Image returnImage = bitmap.ColorType switch
             {
                 SKColorType.Rgba8888 => Image.LoadPixelData<Rgba32>(bitmap.GetPixelSpan(), mip.SizeX, mip.SizeY),

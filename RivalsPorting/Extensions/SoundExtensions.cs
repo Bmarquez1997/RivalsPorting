@@ -12,15 +12,16 @@ using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.UE4.Wwise;
 using CUE4Parse.Utils;
+using RivalsPorting.CUE4Parse.Extensions;
 using RivalsPorting.Shared.Extensions;
 using Log = Serilog.Log;
 
-namespace RivalsPorting.Extensions;
+namespace RivalsPorting.Exporting.Extensions;
 
 public static class SoundExtensions
 {
-    
-    public static bool TrySaveSoundToPath(USoundWave soundWave, string path)
+    public static bool TrySaveSoundToPath(USoundWave soundWave, string path,
+        FileInfo? binkaDecoder = null, FileInfo? radaDecoder = null, FileInfo? vgmStream = null)
     {
         soundWave.Decode(true, out var format, out var data);
         if (data is null) soundWave.Decode(false, out format, out data);
@@ -29,22 +30,23 @@ public static class SoundExtensions
         switch (format.ToLower())
         {
             case "adpcm":
-                SaveADPCMAsWav(data, path);
+                SaveADPCMAsWav(data, path, vgmStream);
                 break;
             case "binka":
-                SaveBinkaAsWav(data, path);
+                SaveBinkaAsWav(data, path, binkaDecoder);
                 break;
             case "rada":
-                SaveRadaAsWav(data, path);
+                SaveRadaAsWav(data, path, radaDecoder);
                 break;
         }
 
         return true;
     }
-    
-    public static bool TrySaveSoundToPath(USoundWave soundWave, string path, out Stream stream)
+
+    public static bool TrySaveSoundToPath(USoundWave soundWave, string path, out Stream stream,
+        FileInfo? binkaDecoder = null, FileInfo? radaDecoder = null, FileInfo? vgmStream = null)
     {
-        if (File.Exists(path) || TrySaveSoundToPath(soundWave, path))
+        if (File.Exists(path) || TrySaveSoundToPath(soundWave, path, binkaDecoder, radaDecoder, vgmStream))
         {
             stream = new FileStream(path, FileMode.Open, FileAccess.Read);
             return true;
@@ -53,26 +55,28 @@ public static class SoundExtensions
         stream = null;
         return false;
     }
-    
-    public static bool TrySaveSoundToAssets(USoundWave soundWave, string assetsRoot, out string path)
+
+    public static bool TrySaveSoundToAssets(USoundWave soundWave, string assetsRoot, out string path,
+        FileInfo? binkaDecoder = null, FileInfo? radaDecoder = null, FileInfo? vgmStream = null)
     {
-        path = Path.Combine(assetsRoot, CUE4ParseExtensions.GetCleanedExportPath(soundWave) + ".wav");
+        path = Path.Combine(assetsRoot, soundWave.GetCleanedExportPath() + ".wav");
         Directory.CreateDirectory(path.SubstringBeforeLast("/"));
-        
-        if (File.Exists(path) || TrySaveSoundToPath(soundWave, path))
+
+        if (File.Exists(path) || TrySaveSoundToPath(soundWave, path, binkaDecoder, radaDecoder, vgmStream))
         {
             return true;
         }
 
         return false;
     }
-    
-    public static bool TrySaveSoundToAssets(USoundWave soundWave, string assetsRoot, out Stream stream)
+
+    public static bool TrySaveSoundToAssets(USoundWave soundWave, string assetsRoot, out Stream stream,
+        FileInfo? binkaDecoder = null, FileInfo? radaDecoder = null, FileInfo? vgmStream = null)
     {
-        var path = Path.Combine(assetsRoot, CUE4ParseExtensions.GetCleanedExportPath(soundWave) + ".wav");
+        var path = Path.Combine(assetsRoot, soundWave.GetCleanedExportPath() + ".wav");
         Directory.CreateDirectory(path.SubstringBeforeLast("/"));
-        
-        if (File.Exists(path) || TrySaveSoundToPath(soundWave, path))
+
+        if (File.Exists(path) || TrySaveSoundToPath(soundWave, path, binkaDecoder, radaDecoder, vgmStream))
         {
             stream = new FileStream(path, FileMode.Open, FileAccess.Read);
             return true;
@@ -81,9 +85,10 @@ public static class SoundExtensions
         stream = null;
         return false;
     }
-    
-    public static void SaveBinkaAsWav(byte[] data, string outPath)
+
+    public static void SaveBinkaAsWav(byte[] data, string outPath, FileInfo? binkaDecoder = null)
     {
+        if (binkaDecoder is null) return;
         var binkaPath = Path.ChangeExtension(outPath, "binka");
         File.WriteAllBytes(binkaPath, data);
 
@@ -91,7 +96,7 @@ public static class SoundExtensions
         {
             binkaProcess.StartInfo = new ProcessStartInfo
             {
-                FileName = Dependencies.BinkaDecoderFile.FullName,
+                FileName = binkaDecoder.FullName,
                 Arguments = $"-i \"{binkaPath}\" -o \"{outPath}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -100,12 +105,13 @@ public static class SoundExtensions
             binkaProcess.Start();
             binkaProcess.WaitForExit();
         }
-        
-        MiscExtensions.TryDeleteFile(binkaPath);
+
+        FileSystemExtensions.TryDeleteFile(binkaPath);
     }
-    
-    public static void SaveRadaAsWav(byte[] data, string outPath)
+
+    public static void SaveRadaAsWav(byte[] data, string outPath, FileInfo? radaDecoder = null)
     {
+        if (radaDecoder is null) return;
         var radaPath = Path.ChangeExtension(outPath, "rada");
         File.WriteAllBytes(radaPath, data);
 
@@ -113,7 +119,7 @@ public static class SoundExtensions
         {
             radaProcess.StartInfo = new ProcessStartInfo
             {
-                FileName = Dependencies.RadaDecoderFile.FullName,
+                FileName = radaDecoder.FullName,
                 Arguments = $"-i \"{radaPath}\" -o \"{outPath}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -123,12 +129,13 @@ public static class SoundExtensions
             radaProcess.Start();
             radaProcess.WaitForExit();
         }
-        
-        MiscExtensions.TryDeleteFile(radaPath);
+
+        FileSystemExtensions.TryDeleteFile(radaPath);
     }
-    
-    public static void SaveADPCMAsWav(byte[] data, string outPath)
+
+    public static void SaveADPCMAsWav(byte[] data, string outPath, FileInfo? vgmStream = null)
     {
+        if (vgmStream is null) return;
         var adpcmPath = Path.ChangeExtension(outPath, "adpcm");
         File.WriteAllBytes(adpcmPath, data);
 
@@ -136,7 +143,7 @@ public static class SoundExtensions
         {
             adpcmProcess.StartInfo = new ProcessStartInfo
             {
-                FileName = Dependencies.VgmStreamFile.FullName,
+                FileName = vgmStream.FullName,
                 Arguments = $"-o \"{outPath}\" \"{adpcmPath}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -145,8 +152,8 @@ public static class SoundExtensions
             adpcmProcess.Start();
             adpcmProcess.WaitForExit();
         }
-        
-        MiscExtensions.TryDeleteFile(adpcmPath);
+
+        FileSystemExtensions.TryDeleteFile(adpcmPath);
     }
 
     public static List<string> HandleSoundBnk(UAkAudioEvent akAudio, string assetsRoot, string? customPath, ESoundFormat soundFormat = ESoundFormat.WAV)
@@ -276,8 +283,8 @@ public static class SoundExtensions
             return sounds;
         }
     }
-    
-    
+
+
     public static Sound CreateSound(USoundNodeWavePlayer player, float timeOffset = 0)
     {
         return new Sound(player.SoundWave, timeOffset, player.GetOrDefault("bLooping", false));
