@@ -6,6 +6,7 @@ from .server import Server
 from .processing.importer import Importer
 from .operator.tasty_op import TASTY_PT_RigSettings
 from .operator import drag_drop_op
+from .operator import utils_op
 
 from .ueformat import register as ueformat_register, unregister as ueformat_unregister
 
@@ -65,6 +66,7 @@ def register():
 
     bpy.utils.register_class(TASTY_PT_RigSettings)
     drag_drop_op.register()
+    utils_op.register()
     ueformat_register()
 
 
@@ -75,4 +77,5 @@ def unregister():
 
     bpy.utils.unregister_class(TASTY_PT_RigSettings)
     drag_drop_op.unregister()
+    utils_op.unregister()
     ueformat_unregister()
