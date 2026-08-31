@@ -48,12 +48,12 @@ public abstract partial class BaseAssetItem : ObservableObject
         
         return this switch
         {
-            AssetItem assetItem => MiscExtensions.Filter(assetItem.CreationData.DisplayName, filter)
-                                   || MiscExtensions.Filter(assetItem.CreationData.DisplayName, filter)
-                                   || MiscExtensions.Filter(assetItem.CreationData.ID, filter)
-                                   || (assetItem.SetName is not null && MiscExtensions.Filter(assetItem.SetName, filter))
-                                   || (assetItem.Series is not null && MiscExtensions.Filter(assetItem.Series.DisplayName.Text, filter)),
-            CustomAssetItem customAssetItem => MiscExtensions.Filter(customAssetItem.CreationData.DisplayName, filter),
+            AssetItem assetItem => FilterExtensions.Filter(assetItem.CreationData.DisplayName, filter)
+                                   || FilterExtensions.Filter(assetItem.CreationData.DisplayName, filter)
+                                   || FilterExtensions.Filter(assetItem.CreationData.ID, filter)
+                                   || (assetItem.SetName is not null && FilterExtensions.Filter(assetItem.SetName, filter))
+                                   || (assetItem.Series is not null && FilterExtensions.Filter(assetItem.Series.DisplayName.Text, filter)),
+            CustomAssetItem customAssetItem => FilterExtensions.Filter(customAssetItem.CreationData.DisplayName, filter),
             _ => true
         };
     }

@@ -1,4 +1,4 @@
-namespace RivalsPorting.Models.Fortnite;
+namespace RivalsPorting.CUE4Parse.Models.Fortnite.Enums;
 
 public enum EFortCustomPartType : byte
 {

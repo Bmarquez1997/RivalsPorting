@@ -55,6 +55,8 @@
     <ItemGroup>
         <ProjectReference Include="..\Dependencies\CUE4Parse\CUE4Parse-Conversion\CUE4Parse-Conversion.csproj" />
         <ProjectReference Include="..\Dependencies\CUE4Parse\CUE4Parse\CUE4Parse.csproj" />
+        <ProjectReference Include="..\RivalsPorting.CUE4Parse\RivalsPorting.CUE4Parse.csproj" />
+        <ProjectReference Include="..\RivalsPorting.Exporting\RivalsPorting.Exporting.csproj" />
         <ProjectReference Include="..\RivalsPorting.Plugins\RivalsPorting.Plugins.csproj" />
         <ProjectReference Include="..\RivalsPorting.Rendering\RivalsPorting.Rendering.csproj" />
         <ProjectReference Include="..\RivalsPorting.Shared\RivalsPorting.Shared.csproj" />

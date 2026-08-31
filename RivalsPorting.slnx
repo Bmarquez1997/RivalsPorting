@@ -5,6 +5,8 @@
     <Project Path="Dependencies/FluentAvalonia.BreadcrumbBar/FluentAvalonia.BreadcrumbBar/FluentAvalonia.BreadcrumbBar.csproj" />
   </Folder>
   <Folder Name="/Libraries/">
+    <Project Path="RivalsPorting.Exporting/RivalsPorting.Exporting.csproj" />
+    <Project Path="RivalsPorting.CUE4Parse/RivalsPorting.CUE4Parse.csproj" />
     <Project Path="RivalsPorting.Rendering/RivalsPorting.Rendering.csproj" />
     <Project Path="RivalsPorting.Shared/RivalsPorting.Shared.csproj" />
   </Folder>
