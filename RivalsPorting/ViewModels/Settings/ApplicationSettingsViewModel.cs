@@ -64,7 +64,7 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
     [ObservableProperty] private bool _dontAskAboutKofi;
     [ObservableProperty] private DateTime _nextKofiAskDate = DateTime.Today;
     [ObservableProperty] private bool _showAssetNames;
-    [ObservableProperty] private bool _showVideoPreviews = true;
+    [ObservableProperty] private bool _showVideoPreviews = false;
     
     [ObservableProperty] private bool _useDefaultExportLoadType = false;
     [ObservableProperty] private EExportType _defaultExportLoadType = EExportType.Outfit;

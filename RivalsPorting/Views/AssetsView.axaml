@@ -248,8 +248,8 @@
                                                                    Classes="TextFillColorSecondaryBrush"
                                                                    HorizontalAlignment="Left" />
                                                         
-                                                        <assetControls:AssetVideoPreview Width="220"
-                                                                                   CosmeticId="{Binding CreationData.ID}" />
+                                                        <!-- <assetControls:AssetVideoPreview Width="220" -->
+                                                        <!--                            CosmeticId="{Binding CreationData.ID}" /> -->
                                                     </StackPanel>
                                                 </ToolTip.Tip>
                                                 <Grid>

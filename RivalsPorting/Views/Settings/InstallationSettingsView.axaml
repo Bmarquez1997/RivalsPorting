@@ -110,22 +110,22 @@
                            HorizontalAlignment="Left"
                            Margin="{ext:Space 1, 2, 0, 0}"/>
 
-                <controls:SettingsItem Title="Fetch Data"
-                                       Description="Download encryption keys and mappings for a specific Fortnite version and apply them to this profile."
-                                       IsVisible="{Binding IsCustom}">
-                    <controls:SettingsItem.Footer>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBox Text="{Binding FetchVersion}"
-                                     Watermark="Ex. 32.10"  MinWidth="200"/>
-                            <Button Margin="4 0 0 0"
-                                    ToolTip.Tip="Fetch"
-                                    IsEnabled="{Binding CanFetchVersion}"
-                                    Command="{Binding FetchVersionData}">
-                                <material:MaterialIcon Kind="Download"/>
-                            </Button>
-                        </StackPanel>
-                    </controls:SettingsItem.Footer>
-                </controls:SettingsItem>
+                <!-- <controls:SettingsItem Title="Fetch Data" -->
+                <!--                        Description="Download encryption keys and mappings for a specific Fortnite version and apply them to this profile." -->
+                <!--                        IsVisible="{Binding IsCustom}"> -->
+                <!--     <controls:SettingsItem.Footer> -->
+                <!--         <StackPanel Orientation="Horizontal"> -->
+                <!--             <TextBox Text="{Binding FetchVersion}" -->
+                <!--                      Watermark="Ex. 32.10"  MinWidth="200"/> -->
+                <!--             <Button Margin="4 0 0 0" -->
+                <!--                     ToolTip.Tip="Fetch" -->
+                <!--                     IsEnabled="{Binding CanFetchVersion}" -->
+                <!--                     Command="{Binding FetchVersionData}"> -->
+                <!--                 <material:MaterialIcon Kind="Download"/> -->
+                <!--             </Button> -->
+                <!--         </StackPanel> -->
+                <!--     </controls:SettingsItem.Footer> -->
+                <!-- </controls:SettingsItem> -->
                 <controls:SettingsItem Title="Unreal Version"
                                        Description="The Unreal Version that aligns with your Rivals installation."
                                        IsVisible="{Binding UnrealVersionEnabled}">
@@ -203,13 +203,13 @@
                                   SelectedItem="{Binding GameLanguage, Converter={StaticResource EnumToRecord}}" />
                     </controls:SettingsItem.Footer>
                 </controls:SettingsItem>
-                <controls:SettingsItem Title="On-Demand Assets"
-                                       Description="Allows the streaming of on-demand assets, served from Fortnite's servers."
-                                       IsVisible="{Binding TextureStreamingEnabled}">
-                    <controls:SettingsItem.Footer>
-                        <ToggleSwitch IsChecked="{Binding UseTextureStreaming}" />
-                    </controls:SettingsItem.Footer>
-                </controls:SettingsItem>
+                <!-- <controls:SettingsItem Title="On-Demand Assets" -->
+                <!--                        Description="Allows the streaming of on-demand assets, served from Fortnite's servers." -->
+                <!--                        IsVisible="{Binding TextureStreamingEnabled}"> -->
+                <!--     <controls:SettingsItem.Footer> -->
+                <!--         <ToggleSwitch IsChecked="{Binding UseTextureStreaming}" /> -->
+                <!--     </controls:SettingsItem.Footer> -->
+                <!-- </controls:SettingsItem> -->
                 
                 <controls:SettingsItem Title="Load Nanite Data"
                                        Description="Enable the loading and exporting of Nanite geometry.">
@@ -218,13 +218,13 @@
                     </controls:SettingsItem.Footer>
                 </controls:SettingsItem>
 
-                <controls:SettingsItem Title="Load Installed Bundles"
-                                       Description="Whether or not to load installed bundles from Rivals's AppData directory."
-                                       IsVisible="{Binding LoadInstalledBundlesEnabled}">
-                    <controls:SettingsItem.Footer>
-                        <ToggleSwitch IsChecked="{Binding LoadInstalledBundles}" />
-                    </controls:SettingsItem.Footer>
-                </controls:SettingsItem>
+                <!-- <controls:SettingsItem Title="Load Installed Bundles" -->
+                <!--                        Description="Whether or not to load installed bundles from Rivals's AppData directory." -->
+                <!--                        IsVisible="{Binding LoadInstalledBundlesEnabled}"> -->
+                <!--     <controls:SettingsItem.Footer> -->
+                <!--         <ToggleSwitch IsChecked="{Binding LoadInstalledBundles}" /> -->
+                <!--     </controls:SettingsItem.Footer> -->
+                <!-- </controls:SettingsItem> -->
             </StackPanel>
         </ScrollViewer>
     </Grid>
