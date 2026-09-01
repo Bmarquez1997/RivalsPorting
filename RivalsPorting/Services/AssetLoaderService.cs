@@ -151,13 +151,8 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                                 .Where(shape => shapesWithSkins.Contains(shape.ShapeId))
                                 .ToList();
 
-                            // Skip shape 0 only when there are multiple other shapes (e.g. C&D 1+2, Banner 1-3).
-                            // Heroes with a single alt form (e.g. Magik) keep shape 0 in Forms.
-                            var nonZeroShapes = validShapes.Where(shape => shape.ShapeId != "0").ToList();
-                            var formShapes = nonZeroShapes.Count > 1 ? nonZeroShapes : validShapes;
-
                             var formStyles = new List<FormStyleData>();
-                            foreach (var shape in formShapes)
+                            foreach (var shape in validShapes)
                             {
                                 var shapeBasic = shape.Value.GetOrDefault<FStructFallback>("HeroBasic_84_5082D460476D0C101A47818F6EE3DC2E");
                                 var shapeIcon = shape.Value.GetOrDefault<FStructFallback>("HeroHead_80_B82E1E9744B6FE24DF708982FF5B46D0");
