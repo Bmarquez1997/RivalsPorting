@@ -117,6 +117,18 @@ public class ExportService(
             {
                 var asset = assetInfo.Asset;
                 var baseStyles = metaData.ExportLocation.IsFolder ? assetInfo.GetAllStyles() : assetInfo.GetSelectedStyles();
+                if (!metaData.ExportLocation.IsFolder
+                    && asset.CreationData.ExportType is EExportType.Outfit
+                    && assetInfo.ResolveOutfitSkin() is { } resolvedSkin
+                    && asset.IconDisplayImage is { } preview)
+                {
+                    baseStyles =
+                    [
+                        ..baseStyles.Where(style => style is not AssetStyleData),
+                        new AssetStyleData(resolvedSkin, preview)
+                    ];
+                }
+
                 var exportStyles = ConvertStyles(baseStyles, metaData.Provider.Provider);
                 var exportType = asset.CreationData.ExportType;
 
@@ -222,14 +234,14 @@ public class ExportService(
     private BaseExport CreateExportWithProgress(
         ExportSession session,
         string displayName,
-        UObject asset,
+        UObject? asset,
         EExportType exportType,
         ExportStyleBase[] styles,
         ExportDataMeta metaData,
         IExportFileMeta? fileMeta = null)
     {
-        var path = asset.GetPathName();
-        info.Message(displayName, asset.Name, id: path, autoClose: false);
+        var path = asset?.GetPathName() ?? displayName;
+        info.Message(displayName, asset?.Name ?? displayName, id: path, autoClose: false);
 
         ExportProgressUpdate updateDelegate = (name, current, total) =>
         {
@@ -316,6 +328,11 @@ public class ExportService(
                 StyleName = formStyle.StyleName,
                 HeroId = formStyle.HeroId,
                 ShapeId = formStyle.ShapeId
+            },
+            ModelStyleData modelStyle => new ExportRivalsModelStyle
+            {
+                StyleName = modelStyle.StyleName,
+                UseGameModel = modelStyle.UseGameModel
             },
             _ => throw new NotSupportedException($"Unknown style type: {style.GetType().Name}")
         }).ToArray();

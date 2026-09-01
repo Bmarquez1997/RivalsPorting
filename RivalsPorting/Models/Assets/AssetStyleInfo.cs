@@ -36,6 +36,12 @@ public partial class AssetStyleInfo : ObservableObject
     public BaseStyleData SelectedStyle => StyleDatas[SelectedStyleIndex];
     
     [ObservableProperty] private bool _requiredSelection = true;
+
+    /// <summary>
+    /// When true, folder exports use the selected option only (e.g. Lobby vs Game)
+    /// instead of exporting every option in the channel.
+    /// </summary>
+    public bool ExportSelectedOnly { get; set; }
     
     public AssetStyleInfo(string channelName, FStructFallback[] styles, Bitmap fallbackPreviewImage, bool addDefault = false)
     {

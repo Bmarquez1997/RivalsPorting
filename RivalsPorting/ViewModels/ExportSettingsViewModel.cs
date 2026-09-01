@@ -58,7 +58,6 @@ public partial class BaseExportSettings : ViewModelBase
     [ObservableProperty] private bool _importInstancedFoliage = true;
     
     [ObservableProperty] private bool _importLobbyPoses = false;
-    [ObservableProperty] private bool _importGameModel = false;
     
     [ObservableProperty] private ESoundFormat _soundFormat = ESoundFormat.WAV;
 

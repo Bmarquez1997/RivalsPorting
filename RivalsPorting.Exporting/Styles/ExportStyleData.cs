@@ -30,3 +30,8 @@ public class ExportRivalsFormStyle : ExportStyleBase
     public string HeroId = string.Empty;
     public string ShapeId = "0";
 }
+
+public class ExportRivalsModelStyle : ExportStyleBase
+{
+    public bool UseGameModel;
+}

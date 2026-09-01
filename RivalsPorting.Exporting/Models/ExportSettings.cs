@@ -12,7 +12,6 @@ public class ExportSettings
     public EMeshQuality MeshQuality { get; set; } = EMeshQuality.All;
     public bool ExportNanite { get; set; } = false;
     public bool ImportInstancedFoliage { get; set; } = true;
-    public bool ImportGameModel { get; set; } = false;
     public bool ImportLobbyPoses { get; set; } = false;
     public ESoundFormat SoundFormat { get; set; } = ESoundFormat.WAV;
     public bool OpenFoldersOnExport { get; set; } = false;

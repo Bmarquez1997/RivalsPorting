@@ -49,12 +49,20 @@ public class ExportSession
 
     public BaseExport CreateExport(
         string displayName,
-        UObject asset,
+        UObject? asset,
         EExportType exportType,
         ExportStyleBase[] styles,
         IExportFileMeta? fileMeta = null)
     {
         var primitiveType = exportType.PrimitiveType;
+        if (asset is null)
+        {
+            if (primitiveType is not EPrimitiveExportType.Mesh)
+                throw new ArgumentNullException(nameof(asset));
+
+            return new MeshExport(displayName, null, styles, exportType, Meta, fileMeta);
+        }
+
         return primitiveType switch
         {
             EPrimitiveExportType.Mesh => new MeshExport(displayName, asset, styles, exportType, Meta, fileMeta),

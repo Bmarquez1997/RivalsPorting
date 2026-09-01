@@ -43,12 +43,6 @@
                                     <ToggleSwitch IsChecked="{Binding ImportAt3DCursor}"/>
                                 </controls:SettingsItem.Footer>
                             </controls:SettingsItem>
-                            <controls:SettingsItem Title="Import Game Models"
-                                                   Description="Whether or not to import the in-game model instead of the lobby model.">
-                                <controls:SettingsItem.Footer>
-                                    <ToggleSwitch IsChecked="{Binding ImportGameModel}"/>
-                                </controls:SettingsItem.Footer>
-                            </controls:SettingsItem>
                             <controls:SettingsItem Title="Compression"
                                                    Description="The type of compression that should be used on 'UE Format' assets.">
                                 <controls:SettingsItem.Footer>

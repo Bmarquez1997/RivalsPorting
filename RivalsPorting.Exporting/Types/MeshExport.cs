@@ -39,36 +39,43 @@ public class MeshExport : BaseExport
     public ExportLightCollection Lights = new();
     public AnimExport? Animation;
     
-    public MeshExport(string name, UObject asset, ExportStyleBase[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
+    public MeshExport(string name, UObject? asset, ExportStyleBase[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
         if (styles.Length > 0 && !string.Equals(styles[0].StyleName, name, StringComparison.Ordinal))
             Name = $"{name} - {styles[0].StyleName}";
+
+        var useGameModel = styles.OfType<ExportRivalsModelStyle>().Any(style => style.UseGameModel);
+
+        var exportedRivalsSkin = false;
+        foreach (var skinStyle in styles.OfType<ExportStructStyle>().Where(style => style is not ExportColorStyle))
+        {
+            if (TryExportRivalsSkinActor(skinStyle.StyleData, exportType, styles, useGameModel))
+                exportedRivalsSkin = true;
+        }
+
+        if (exportedRivalsSkin)
+            return;
 
         var objectStyles = styles.OfType<ExportObjectStyle>().ToArray();
         if (objectStyles.Length > 0)
         {
             foreach (var objectStyle in objectStyles)
             {
-                if (metaData.Settings.ImportGameModel
-                    && objectStyle.StyleData.TryGetValue(out FStructFallback resultInfoStruct, "ResultInfo")
-                    && resultInfoStruct.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
-                    && likeActorClass.ClassDefaultObject.TryLoad(out UObject likeActorObject))
-                {
-                    Export(likeActorObject, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
-                }
-                else if (objectStyle.StyleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass")
-                         && showActorClass.ClassDefaultObject.TryLoad(out UObject showActorObject))
-                {
-                    Export(showActorObject, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
-                }
-                else
-                {
-                    Export(objectStyle.StyleData, objectStyle.AssociatedExportType is not EExportType.None ? objectStyle.AssociatedExportType : exportType, styles);
-                }
+                var styleExportType = objectStyle.AssociatedExportType is not EExportType.None
+                    ? objectStyle.AssociatedExportType
+                    : exportType;
+
+                if (TryExportRivalsSkinActor(objectStyle.StyleData, styleExportType, styles, useGameModel))
+                    continue;
+
+                Export(objectStyle.StyleData, styleExportType, styles);
             }
 
             return;
         }
+
+        if (asset is null)
+            return;
 
         Export(asset, exportType, styles);
         
@@ -114,6 +121,43 @@ public class MeshExport : BaseExport
         
         Meshes.Add(exportMesh);
         
+    }
+
+    private bool TryExportRivalsSkinActor(FStructFallback styleData, EExportType exportType, ExportStyleBase[] styles, bool useGameModel)
+    {
+        if (useGameModel
+            && styleData.TryGetValue(out FStructFallback resultInfo, "ResultInfo")
+            && resultInfo.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
+            && TryExportActorClass(likeActorClass, exportType, styles))
+        {
+            return true;
+        }
+
+        return styleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass")
+               && TryExportActorClass(showActorClass, exportType, styles);
+    }
+
+    private bool TryExportRivalsSkinActor(UObject styleData, EExportType exportType, ExportStyleBase[] styles, bool useGameModel)
+    {
+        if (useGameModel
+            && styleData.TryGetValue(out FStructFallback resultInfo, "ResultInfo")
+            && resultInfo.TryGetValue(out UBlueprintGeneratedClass likeActorClass, "LikeActorClass")
+            && TryExportActorClass(likeActorClass, exportType, styles))
+        {
+            return true;
+        }
+
+        return styleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass")
+               && TryExportActorClass(showActorClass, exportType, styles);
+    }
+
+    private bool TryExportActorClass(UBlueprintGeneratedClass actorClass, EExportType exportType, ExportStyleBase[] styles)
+    {
+        if (!actorClass.ClassDefaultObject.TryLoad(out UObject actorObject))
+            return false;
+
+        Export(actorObject, exportType, styles);
+        return true;
     }
 
     public void Export(UObject asset, EExportType exportType, ExportStyleBase[]? styles = null)

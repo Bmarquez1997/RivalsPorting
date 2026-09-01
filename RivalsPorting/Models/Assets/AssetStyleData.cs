@@ -164,6 +164,20 @@ public class SoftTextureStyleData : BaseStyleData
     }
 }
 
+/// <summary>Lobby (ShowActor) vs in-game (LikeActor) model selection for outfits.</summary>
+public class ModelStyleData : BaseStyleData
+{
+    public bool UseGameModel { get; }
+
+    public ModelStyleData(string name, bool useGameModel, Bitmap? previewImage)
+    {
+        StyleName = name;
+        UseGameModel = useGameModel;
+        StyleDisplayImage = previewImage;
+        ShowName = true;
+    }
+}
+
 /// <summary>Hero shape/form selection for multi-shape outfits (e.g. Cloak vs Dagger).</summary>
 public class FormStyleData : BaseStyleData
 {

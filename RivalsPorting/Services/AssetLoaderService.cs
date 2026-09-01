@@ -176,9 +176,7 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                                 formStyles.Add(new FormStyleData(shapeName, heroId, shape.ShapeId, formPreview));
                             }
 
-                            assetItem.AssetInfo = formStyles.Count > 1 || skins.Count > 0
-                                ? new AssetInfo(assetItem, skins.ToArray(), formStyles, skinLookup)
-                                : new AssetInfo(assetItem);
+                            assetItem.AssetInfo = new AssetInfo(assetItem, skins.ToArray(), formStyles, skinLookup);
 
                             loader.Source.AddOrUpdate(assetItem);
                             loader.LoadedAssets++;

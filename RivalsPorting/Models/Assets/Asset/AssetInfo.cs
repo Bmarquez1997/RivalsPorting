@@ -154,6 +154,15 @@ public partial class AssetInfo : Base.BaseAssetInfo
         Asset = asset;
         _outfitSkinLookup = skinLookup;
 
+        StyleInfos.Add(new AssetStyleInfo("Model",
+        [
+            new ModelStyleData("Lobby", false, Asset.IconDisplayImage),
+            new ModelStyleData("Game", true, Asset.IconDisplayImage)
+        ])
+        {
+            ExportSelectedOnly = true
+        });
+
         var formArray = forms.ToArray();
         if (formArray.Length > 1)
             StyleInfos.Add(new AssetStyleInfo("Forms", formArray));
@@ -203,7 +212,9 @@ public partial class AssetInfo : Base.BaseAssetInfo
     public BaseStyleData[] GetAllStyles()
     {
         return StyleInfos
-            .SelectMany<AssetStyleInfo, BaseStyleData>(info => info.StyleDatas)
+            .SelectMany<AssetStyleInfo, BaseStyleData>(info => info.ExportSelectedOnly
+                ? [info.SelectedStyle]
+                : info.StyleDatas)
             .ToArray();
     }
 
