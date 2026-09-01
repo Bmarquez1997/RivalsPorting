@@ -137,14 +137,26 @@ public partial class AssetsViewModel(
 
         try
         {
-            await SupaBase.PostExports([
-                ..AssetLoader.ActiveLoader.SelectedAssetInfos
-                    .OfType<AssetInfo>()
-                    .Select(asset => asset.Asset.CreationData.Object?.GetPathName() ?? asset.Asset.CreationData.ID),
-                ..AssetLoader.ActiveLoader.SelectedAssetInfos
-                    .OfType<CustomAssetInfo>()
-                    .Select(asset => $"Custom/{asset.Asset.Asset.Name}"),
-            ]);
+            var exportedProperly = await _exporter.Export(
+                _assetLoader.ActiveLoader.SelectedAssetInfos,
+                _exportMeta);
+            if (exportedProperly && _supaBase.IsLoggedIn)
+            {
+                await _supaBase.PostExports([
+                    .._assetLoader.ActiveLoader.SelectedAssetInfos
+                        .OfType<AssetInfo>()
+                        .Select(asset => asset.Asset.CreationData.Object?.GetPathName() ?? asset.Asset.CreationData.ID),
+                    .._assetLoader.ActiveLoader.SelectedAssetInfos
+                        .OfType<CustomAssetInfo>()
+                        .Select(asset => $"Custom/{asset.Asset.Asset.Name}"),
+                ]);
+            }
+        }
+        finally
+        {
+            _exportMeta?.Dispose();
+            _exportMeta = null;
+            IsExporting = false;
         }
     }
 

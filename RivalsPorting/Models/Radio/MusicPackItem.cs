@@ -16,6 +16,7 @@ using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.UObject;
 using FFMpegCore;
 using RivalsPorting.Application;
+using RivalsPorting.Exporting.Extensions;
 using RivalsPorting.Shared.Extensions;
 using Material.Icons;
 using RivalsPorting.Extensions;

@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using Material.Icons;
-using RivalsPorting.Models;
 
 namespace RivalsPorting;
 
@@ -65,7 +64,7 @@ public enum EExportType
     [CosmeticAsset]
     Toy = ExportCategory.Cosmetic + 7,
 
-    [Description("Emoticons"), Export(EPrimitiveExportType.Texture)]
+    [Description("Moods"), Export(EPrimitiveExportType.Texture)]
     [CosmeticAsset]
     Emoticon = ExportCategory.Cosmetic + 8,
 
@@ -73,7 +72,7 @@ public enum EExportType
     [CosmeticAsset]
     Spray = ExportCategory.Cosmetic + 9,
 
-    [Description("Banners"), Export(EPrimitiveExportType.Texture)]
+    [Description("Nameplates"), Export(EPrimitiveExportType.Texture)]
     [CosmeticAsset]
     Banner = ExportCategory.Cosmetic + 10,
 

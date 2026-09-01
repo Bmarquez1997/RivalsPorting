@@ -14,10 +14,10 @@ using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.Engine.Animation;
 using CUE4Parse.UE4.Objects.UObject;
-using RivalsPorting.Extensions;
+using RivalsPorting.CUE4Parse.Extensions;
+using RivalsPorting.CUE4Parse.Models.Fortnite.Enums;
 using RivalsPorting.Shared.Extensions;
 using RivalsPorting.Exporting.Models;
-using RivalsPorting.Models.Fortnite;
 
 namespace RivalsPorting.Exporting.Context;
 

@@ -17,7 +17,7 @@ using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.UObject;
 using DynamicData;
 using FluentAvalonia.UI.Controls;
-using RivalsPorting.Models.Unreal.Material;
+using RivalsPorting.Controls.Material;
 using RivalsPorting.Extensions;
 using Serilog;
 

@@ -12,13 +12,14 @@ using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
+using RivalsPorting.CUE4Parse.Extensions;
+using RivalsPorting.CUE4Parse.Models.Fortnite.AnimNotifies;
+using RivalsPorting.CUE4Parse.Models.Marvel;
 using RivalsPorting.Exporting;
+using RivalsPorting.Exporting.Extensions;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
-using RivalsPorting.Extensions;
-using RivalsPorting.Models.Assets;
-using RivalsPorting.Models.Fortnite;
-using RivalsPorting.Models.Marvel;
+using RivalsPorting.Exporting.Styles;
 using RivalsPorting.Shared.Extensions;
 
 namespace RivalsPorting.Exporting.Types;
@@ -72,7 +73,7 @@ public class AnimExport : BaseExport
             }
             case EExportType.Emote:
             {
-                var animStyles = styles.OfType<AnimStyleData>().ToArray();
+                var animStyles = styles.OfType<ExportObjectStyle>().ToArray();
                 if (animStyles.Length > 0)
                 {
                     foreach (var style in animStyles)
@@ -91,7 +92,7 @@ public class AnimExport : BaseExport
                         AnimMontage(montage);
                 }
 
-                RivalsEmoteWeaponProps.AppendForExportedAnim(Exporter, Props, asset, styles);
+                Context.Meta.Provider.AppendRivalsEmoteWeaponProps(Context, Props, asset, styles);
                 break;
             }
             case EExportType.MVP:
@@ -99,7 +100,7 @@ public class AnimExport : BaseExport
                 foreach (var levelSequence in ResolveMvpLevelSequences(asset, styles))
                 {
                     var skeleton = Skeleton;
-                    RivalsMvpExport.AppendFromLevelSequence(Exporter, levelSequence, ref skeleton, Sections, Props);
+                    Context.Meta.Provider.AppendRivalsMvp(Context, levelSequence, ref skeleton, Sections, Props);
                     Skeleton = skeleton;
                 }
 
@@ -132,15 +133,15 @@ public class AnimExport : BaseExport
             case UAnimSequenceBase sequence:
             {
                 if (sequence.Skeleton.Load<USkeleton>() is { } skeleton)
-                    Skeleton = Exporter.Skeleton(skeleton);
+                    Skeleton = Context.Skeleton(skeleton);
 
-                Sections.AddIfNotNull(Exporter.AnimSequence(sequence));
+                Sections.AddIfNotNull(Context.AnimSequence(sequence));
                 break;
             }
         }
     }
 
-    private static IEnumerable<UObject> ResolveMvpLevelSequences(UObject asset, BaseStyleData[] styles)
+    private static IEnumerable<UObject> ResolveMvpLevelSequences(UObject asset, ExportStyleBase[] styles)
     {
         var sequences = new List<UObject>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -159,7 +160,7 @@ public class AnimExport : BaseExport
             sequences.Add(candidate);
         }
 
-        foreach (var style in styles.OfType<AnimStyleData>())
+        foreach (var style in styles.OfType<ExportObjectStyle>())
             TryAdd(style.StyleData);
 
         TryAdd(asset);
@@ -273,7 +274,7 @@ public class AnimExport : BaseExport
                 if (!timedSkeleton.SkeletalMeshTemplate.TryLoad(out USkeletalMesh skeletalMesh))
                     break;
 
-                var mesh = Exporter.Mesh(skeletalMesh);
+                var mesh = Context.Mesh(skeletalMesh);
                 if (mesh is null) break;
 
                 var animSections = new List<ExportAnimSection>();
@@ -285,7 +286,7 @@ public class AnimExport : BaseExport
                             if (propMontage.CompositeSections.FirstOrDefault() is { } firstSection)
                                 HandleSectionTree(animSections, propMontage, firstSection);
                             break;
-                        case UAnimSequenceBase propSequence when Exporter.AnimSequence(propSequence) is { } section:
+                        case UAnimSequenceBase propSequence when Context.AnimSequence(propSequence) is { } section:
                             animSections.Add(section);
                             break;
                     }

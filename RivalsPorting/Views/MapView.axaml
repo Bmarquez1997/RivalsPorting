@@ -6,6 +6,7 @@
              xmlns:controls="clr-namespace:RivalsPorting.Controls"
              xmlns:material="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:rivalsPorting="clr-namespace:RivalsPorting"
+             xmlns:exporting="clr-namespace:RivalsPorting;assembly=RivalsPorting.Exporting"
              xmlns:map="clr-namespace:RivalsPorting.Models.Map"
              xmlns:views="clr-namespace:RivalsPorting.Views"
              xmlns:sidebar="clr-namespace:RivalsPorting.Controls.Navigation.Sidebar"
@@ -200,7 +201,7 @@
                                          Command="{Binding SelectedMap.ExportCommand}">
                                 <SplitButton.Flyout>
                                     <MenuFlyout
-                                        ItemsSource="{ext:EnumToItemsSource {x:Type rivalsPorting:EExportLocation}}">
+                                        ItemsSource="{ext:EnumToItemsSource {x:Type exporting:EExportLocation}}">
                                         <MenuFlyout.ItemContainerTheme>
                                             <ControlTheme x:DataType="ext:EnumRecord" TargetType="MenuItem"
                                                           BasedOn="{StaticResource {x:Type MenuItem}}">

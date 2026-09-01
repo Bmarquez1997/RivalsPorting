@@ -35,11 +35,11 @@ using CUE4Parse.Utils;
 using EpicManifestParser;
 using EpicManifestParser.UE;
 using RivalsPorting.Exporting;
+using RivalsPorting.CUE4Parse.Models.Fortnite.Styles;
 using RivalsPorting.Extensions;
 using RivalsPorting.Framework;
 using RivalsPorting.Models.API.Responses;
 using RivalsPorting.Models.CUE4Parse;
-using RivalsPorting.Models.Fortnite;
 using RivalsPorting.Models.Information;
 using RivalsPorting.Shared.Extensions;
 using RivalsPorting.Views;
@@ -260,13 +260,13 @@ public partial class CUE4ParseService : ObservableObject, IService, IResettable
     [LoadingStage("Loading Oodle", stage: 3, weight: 1)]
     private async Task InitializeOodle()
     {
-        if (!File.Exists(Dependencies.NoodleFile.FullName))
+        if (!File.Exists(Dependencies.OodleFile.FullName))
         {
-            var downloadPath = Dependencies.NoodleFile.FullName;
+            var downloadPath = Dependencies.OodleFile.FullName;
             await OodleHelper.DownloadOodleDllAsync(ref downloadPath);
         }
         
-        await OodleHelper.InitializeAsync(Dependencies.NoodleFile.FullName);
+        await OodleHelper.InitializeAsync(Dependencies.OodleFile.FullName);
     }
     
     [LoadingStage("Loading Zlib", stage: 4, weight: 1)]

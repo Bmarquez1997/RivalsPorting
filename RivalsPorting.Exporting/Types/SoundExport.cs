@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Wwise;
+using RivalsPorting.Exporting.Extensions;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
 
@@ -40,6 +41,9 @@ public class SoundExport : BaseExport
             case UAkAudioEvent akAudio:
             {
                 akAudioSounds.AddRange(SoundExtensions.HandleSoundBnk(akAudio,
+                    metaData.Provider.Provider,
+                    metaData.Provider.ArchiveDirectory,
+                    metaData.Provider.VgmStreamFile,
                     metaData.AssetsRoot,
                     metaData.CustomPath,
                     metaData.Settings.SoundFormat));

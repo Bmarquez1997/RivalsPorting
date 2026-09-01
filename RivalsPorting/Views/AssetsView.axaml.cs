@@ -12,6 +12,7 @@ using RivalsPorting.Controls.WrapPanel;
 using RivalsPorting.Framework;
 using RivalsPorting.Models.Assets;
 using RivalsPorting.Models.Assets.Asset;
+using RivalsPorting.Models.Assets.Custom;
 using RivalsPorting.Models.Assets.Filters;
 using RivalsPorting.Services;
 using RivalsPorting.ViewModels;

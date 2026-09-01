@@ -14,28 +14,19 @@ public partial class ExportSettingsViewModel : ViewModelBase
     [ObservableProperty] private BlenderSettingsViewModel _blender = new();
     [ObservableProperty] private UnrealSettingsViewModel _unreal = new();
     [ObservableProperty] private FolderSettingsViewModel _folder = new();
-    
+
+    public BaseExportSettings GetSettingsViewModel(EExportLocation exportLocation = EExportLocation.Blender) => exportLocation switch
+    {
+        EExportLocation.Blender => Blender,
+        EExportLocation.Unreal => Unreal,
+        EExportLocation.AssetsFolder or EExportLocation.CustomFolder => Folder,
+        _ => Folder
+    };
+
     public ExportDataMeta CreateExportMeta(EExportLocation exportLocation = EExportLocation.Blender, string? customPath = null)
     {
-        // Kept on BlenderSettings for upstream merge compatibility, but never enable for Rivals.
+        // Retained for upstream compatibility, but Rivals exports must never merge armatures.
         Blender.MergeArmatures = false;
-
-        return new ExportDataMeta
-        {
-            ExportLocation = exportLocation,
-            AssetsRoot = AppSettings.Application.AssetPath,
-            Settings = exportLocation switch
-            {
-                EExportLocation.Blender => Blender,
-                EExportLocation.Unreal => Unreal,
-                EExportLocation.AssetsFolder or EExportLocation.CustomFolder => Folder
-            },
-            CustomPath = customPath
-        };
-    }
-
-    public ExportDataMeta CreateExportMeta(EExportLocation exportLocation = EExportLocation.Blender, string? customPath = null)
-    {
         var viewModel = GetSettingsViewModel(exportLocation);
         return new ExportDataMeta
         {

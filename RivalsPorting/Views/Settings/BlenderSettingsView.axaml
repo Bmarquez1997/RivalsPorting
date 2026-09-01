@@ -7,6 +7,7 @@
              xmlns:enums="clr-namespace:CUE4Parse_Conversion.Writers.UEFormat.Enums;assembly=CUE4Parse-Conversion"
              xmlns:settings="clr-namespace:RivalsPorting.ViewModels.Settings"
              xmlns:rivalsPorting="clr-namespace:RivalsPorting"
+             xmlns:exporting="clr-namespace:RivalsPorting;assembly=RivalsPorting.Exporting"
              xmlns:controls="clr-namespace:RivalsPorting.Controls.Settings"
              xmlns:sidebar="clr-namespace:RivalsPorting.Controls.Navigation.Sidebar"
              xmlns:controls1="clr-namespace:RivalsPorting.Controls"
@@ -254,7 +255,7 @@
                             <controls:SettingsItem Title="Image Format"
                                                    Description="The file type that textures should be exported as.">
                                 <controls:SettingsItem.Footer>
-                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type rivalsPorting:EImageFormat}}"
+                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type exporting:EImageFormat}}"
                                               SelectedItem="{Binding ImageFormat, Converter={StaticResource EnumToRecord}}"/>
                                 </controls:SettingsItem.Footer>
                             </controls:SettingsItem>
@@ -282,7 +283,7 @@
                                                    Description="The file type that sounds should be exported as."
                                                    IsEnabled="{Binding ImportSounds}">
                                 <controls:SettingsItem.Footer>
-                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type rivalsPorting:ESoundFormat}}"
+                                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type exporting:ESoundFormat}}"
                                               SelectedItem="{Binding SoundFormat, Converter={StaticResource EnumToRecord}}"/>
                                 </controls:SettingsItem.Footer>
                             </controls:SettingsItem>

@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using RivalsPorting.Models;
 using RivalsPorting.Exporting.Models;
 
 namespace RivalsPorting.Exporting.Types;

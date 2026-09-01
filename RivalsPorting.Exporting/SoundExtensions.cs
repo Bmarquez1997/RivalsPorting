@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using CUE4Parse_Conversion.Sounds;
 using CUE4Parse.GameTypes.FN.Assets.Exports.Sound;
+using CUE4Parse.FileProvider.Vfs;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Sound.Node;
 using CUE4Parse.UE4.Assets.Exports.Wwise;
@@ -156,10 +157,12 @@ public static class SoundExtensions
         FileSystemExtensions.TryDeleteFile(adpcmPath);
     }
 
-    public static List<string> HandleSoundBnk(UAkAudioEvent akAudio, string assetsRoot, string? customPath, ESoundFormat soundFormat = ESoundFormat.WAV)
+    public static List<string> HandleSoundBnk(UAkAudioEvent akAudio, AbstractVfsFileProvider provider,
+        string archiveDirectory, FileInfo vgmStream, string assetsRoot, string? customPath,
+        ESoundFormat soundFormat = ESoundFormat.WAV)
     {
         var trackPaths = new List<string>();
-        var wwiseProvider = new WwiseProvider(UEParse.Provider, AppSettings.Installation.CurrentProfile.ArchiveDirectory);
+        var wwiseProvider = new WwiseProvider(provider, archiveDirectory);
         var events = wwiseProvider.ExtractAudioEventSounds(akAudio);
 
         foreach (var audioEvent in events)
@@ -169,7 +172,7 @@ public static class SoundExtensions
 
             var savedAudioPath = Path.Combine(rootPath, customPath == null ? $"Game/{namedPath}" : namedPath.SubstringAfterLast('/'));
 
-            if (TrySaveBnkTrack(savedAudioPath, audioEvent.Data?.GetData(), out var wavPath, GetNewFileExtension(soundFormat)))
+            if (TrySaveBnkTrack(savedAudioPath, audioEvent.Data?.GetData(), vgmStream, out var wavPath, GetNewFileExtension(soundFormat)))
                 trackPaths.Add(wavPath);
         }
 
@@ -177,12 +180,13 @@ public static class SoundExtensions
         return trackPaths;
     }
 
-    public static bool TrySaveBnkTrack(string inputFilePath, byte[]? inputFileData, out string wavFilePath, string fileExtension = ".wav")
+    public static bool TrySaveBnkTrack(string inputFilePath, byte[]? inputFileData, FileInfo vgmStream,
+        out string wavFilePath, string fileExtension = ".wav")
     {
         wavFilePath = string.Empty;
         if (inputFileData == null) return false;
 
-        var vgmFilePath = Dependencies.VgmStreamFile.FullName;
+        var vgmFilePath = vgmStream.FullName;
 
         Directory.CreateDirectory(inputFilePath.SubstringBeforeLast("/"));
         File.WriteAllBytes(inputFilePath, inputFileData);

@@ -23,6 +23,7 @@ using DynamicData;
 using RivalsPorting.Extensions;
 using RivalsPorting.Shared.Extensions;
 using RivalsPorting.Exporting;
+using RivalsPorting.Exporting.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;

@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FortnitePorting.Framework;
-using FortnitePorting.Models.Chat;
-using FortnitePorting.Models.Clipboard;
-using FortnitePorting.Models.Supabase.Tables;
-using FortnitePorting.Services;
-using FortnitePorting.Windows;
+using RivalsPorting.Framework;
+using RivalsPorting.Models.Chat;
+using RivalsPorting.Models.Clipboard;
+using RivalsPorting.Models.Supabase.Tables;
+using RivalsPorting.Services;
+using RivalsPorting.Windows;
 
-namespace FortnitePorting.ViewModels;
+namespace RivalsPorting.ViewModels;
 
 public partial class ChatViewModel(
     SupabaseService supabase,
@@ -116,7 +116,7 @@ public partial class ChatViewModel(
         }
 
         if (text.StartsWith("/shrug"))
-            text = @"Ø\_(?)_/Ø";
+            text = @"ù\_(?)_/ù";
 
         var pendingImage = PendingImage;
         var pendingGameFile = PendingGameFile;
@@ -128,7 +128,7 @@ public partial class ChatViewModel(
             var memoryStream = new MemoryStream();
             pendingImage.Bitmap.Save(memoryStream);
 
-            var result = await _api.FortnitePorting.UploadImage(memoryStream.ToArray(), pendingImage.Name);
+            var result = await _api.RivalsPorting.UploadImage(memoryStream.ToArray(), pendingImage.Name);
             imagePath = result?.Path;
         }
 

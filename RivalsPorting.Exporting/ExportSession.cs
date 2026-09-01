@@ -10,7 +10,6 @@ using RivalsPorting.Exporting.Models.Files;
 using RivalsPorting.Exporting.Models.Files.Meta;
 using RivalsPorting.Exporting.Styles;
 using RivalsPorting.Exporting.Types;
-using RivalsPorting.Models;
 
 namespace RivalsPorting.Exporting;
 
@@ -59,7 +58,7 @@ public class ExportSession
         return primitiveType switch
         {
             EPrimitiveExportType.Mesh => new MeshExport(displayName, asset, styles, exportType, Meta, fileMeta),
-            EPrimitiveExportType.Texture => new TextureExport(displayName, asset, exportType, Meta, fileMeta),
+            EPrimitiveExportType.Texture => new TextureExport(displayName, asset, styles, exportType, Meta, fileMeta),
             EPrimitiveExportType.Sound => new SoundExport(displayName, asset, exportType, Meta, fileMeta),
             EPrimitiveExportType.Animation => new AnimExport(displayName, asset, styles, exportType, Meta, fileMeta),
             EPrimitiveExportType.Font => new FontExport(displayName, asset, exportType, Meta, fileMeta),

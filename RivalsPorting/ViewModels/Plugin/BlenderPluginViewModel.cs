@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using FluentAvalonia.UI.Controls;
 using Newtonsoft.Json;
 using RivalsPorting.Framework;
+using RivalsPorting.Models.Information;
 using RivalsPorting.Models.Plugin;
 using RivalsPorting.Services;
 

@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse.Utils;
 using RivalsPorting.Application;
+using RivalsPorting.Exporting.Extensions;
 using RivalsPorting.Extensions;
 using RivalsPorting.Framework;
 using RivalsPorting.Services;

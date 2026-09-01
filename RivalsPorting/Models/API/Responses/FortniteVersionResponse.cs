@@ -20,9 +20,3 @@ public class FortniteVersionMappings
     public string Url;
     public string Md5Hash;
 }
-
-public class AesKey
-{
-    public string Key;
-    public string GUID;
-}

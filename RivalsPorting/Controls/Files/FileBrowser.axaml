@@ -80,30 +80,16 @@
                     <material:MaterialIcon Kind="{Binding FlatViewToggleIcon}" />
                 </ToggleButton>
 
-                <ComboBox Grid.Column="2" HorizontalAlignment="Stretch" Margin="{ext:Space 0, 0, 1, 0}"
-                          IsVisible="{Binding !UseFlatView}"
-                          ItemsSource="{ext:EnumToItemsSource {x:Type RivalsPorting:EFileFilterType}}"
-                          SelectedItem="{Binding FileTypeFilter, Converter={StaticResource EnumToRecord}}">
-                    <ComboBox.Styles>
-                        <Style Selector="ComboBox[IsVisible=true] /template/ ContentPresenter#ContentPresenter">
-                            <Setter Property="ContentTemplate">
-                                <DataTemplate DataType="ext:EnumRecord">
-                                    <controls:IconText Text="{Binding Description}" Icon="Filter" />
-                                </DataTemplate>
-                            </Setter>
-                        </Style>
-                    </ComboBox.Styles>
-                </ComboBox>
-                
-                <DropDownButton Grid.Column="2" HorizontalAlignment="Stretch" Margin="{ext:Space 0, 0, 1, 0}"
-                                IsVisible="{Binding UseFlatView}">
-                    <DropDownButton.Flyout>
-                        <Flyout VerticalOffset="4">
-                            <ItemsControl ItemsSource="{Binding VfsFilterCollection}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="files:VfsFilterItem">
-                                        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                  Content="{Binding Title}" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="{ext:Space 0, 0, 1, 0}">
+                    <ComboBox HorizontalAlignment="Stretch" Margin="{ext:Space 0, 0, 1, 0}"
+                              IsVisible="{Binding !UseFlatView}"
+                              ItemsSource="{ext:EnumToItemsSource {x:Type RivalsPorting:EFileFilterType}}"
+                              SelectedItem="{Binding FileTypeFilter, Converter={StaticResource EnumToRecord}}">
+                        <ComboBox.Styles>
+                            <Style Selector="ComboBox[IsVisible=true] /template/ ContentPresenter#ContentPresenter">
+                                <Setter Property="ContentTemplate">
+                                    <DataTemplate DataType="ext:EnumRecord">
+                                        <controls:IconText Text="{Binding Description}" Icon="Filter" />
                                     </DataTemplate>
                                 </Setter>
                             </Style>

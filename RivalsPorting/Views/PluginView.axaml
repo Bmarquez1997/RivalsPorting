@@ -4,6 +4,7 @@
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:rivalsPorting="clr-namespace:RivalsPorting"
+             xmlns:exporting="clr-namespace:RivalsPorting;assembly=RivalsPorting.Exporting"
              xmlns:sidebar="clr-namespace:RivalsPorting.Controls.Navigation.Sidebar"
              d:DesignHeight="770" d:DesignWidth="1160"
              x:Class="RivalsPorting.Views.PluginView"
@@ -18,9 +19,9 @@
         <sidebar:Sidebar x:Name="Sidebar" Grid.Column="0" ItemSelected="OnItemSelected">
             <sidebar:Sidebar.Items>
                 <sidebar:SidebarItemText Text="PLUGIN"/>
-                <sidebar:SidebarItemButton Text="Blender" IconBitmap="/Assets/Icons/Blender.png" Tag="{x:Static rivalsPorting:EExportLocation.Blender}"/>
-                <sidebar:SidebarItemButton Text="Unreal" IconBitmap="/Assets/Icons/Unreal.png" Tag="{x:Static rivalsPorting:EExportLocation.Unreal}"/>
-                <sidebar:SidebarItemButton Text="Unity" IconBitmap="/Assets/Icons/Unity.png" Tag="{x:Static rivalsPorting:EExportLocation.Unity}" IsEnabled="False"/>
+                <sidebar:SidebarItemButton Text="Blender" IconBitmap="/Assets/Icons/Blender.png" Tag="{x:Static exporting:EExportLocation.Blender}"/>
+                <sidebar:SidebarItemButton Text="Unreal" IconBitmap="/Assets/Icons/Unreal.png" Tag="{x:Static exporting:EExportLocation.Unreal}"/>
+                <sidebar:SidebarItemButton Text="Unity" IconBitmap="/Assets/Icons/Unity.png" Tag="{x:Static exporting:EExportLocation.Unity}" IsEnabled="False"/>
             </sidebar:Sidebar.Items>
         </sidebar:Sidebar>
         

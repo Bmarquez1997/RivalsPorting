@@ -3,7 +3,10 @@ using CUE4Parse.UE4.Assets.Objects;
 
 namespace RivalsPorting.Exporting.Styles;
 
-public abstract class ExportStyleBase;
+public abstract class ExportStyleBase
+{
+    public string StyleName = string.Empty;
+}
 
 public class ExportObjectStyle : ExportStyleBase
 {
@@ -20,4 +23,10 @@ public class ExportColorStyle : ExportStructStyle
 {
     public FStructFallback ColorData = null!;
     public bool IsParamSet;
+}
+
+public class ExportRivalsFormStyle : ExportStyleBase
+{
+    public string HeroId = string.Empty;
+    public string ShapeId = "0";
 }

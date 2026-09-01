@@ -24,6 +24,10 @@ public class RivalsPortingAPI(RestClient client) : APIBase(client)
     public async Task<BroadcastResponse> Broadcasts() => await ExecuteAsync<BroadcastResponse>("content/broadcasts");
 
     public async Task<GalleryResponse> Gallery() => await ExecuteAsync<GalleryResponse>("content/gallery");
+
+    // Version data used by custom Rivals installations.
+    public async Task<FortniteVersionResponse?> FortniteVersion(string version = "latest")
+        => await ExecuteAsync<FortniteVersionResponse>($"fortnite/versions/{version}");
     
     // Auth
     public async Task<AuthResponse?> AuthInfo() => await ExecuteAsync<AuthResponse?>("auth/info");

@@ -11,7 +11,8 @@ using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using RivalsPorting.Exporting.Context;
 using RivalsPorting.Exporting.Models;
-using RivalsPorting.Models.Assets;
+using RivalsPorting.Exporting.Styles;
+using RivalsPorting.Exporting.Types;
 
 namespace RivalsPorting.Exporting;
 
@@ -57,7 +58,7 @@ public static class RivalsEmoteWeaponProps
         }
     }
 
-    public static void AppendForExportedAnim(ExportContext exporter, List<ExportProp> props, UObject animAsset, BaseStyleData[] styles)
+    public static void AppendForExportedAnim(ExportContext exporter, List<ExportProp> props, UObject animAsset, ExportStyleBase[] styles)
     {
         var animPath = ResolveExportedAnimPath(animAsset, styles);
         if (string.IsNullOrEmpty(animPath)) return;
@@ -76,15 +77,66 @@ public static class RivalsEmoteWeaponProps
         AppendFromEmote(exporter, props, emote, showBp);
     }
 
-    public static UBlueprintGeneratedClass? ResolveShowActorFromStyles(BaseStyleData[] styles)
+    public static UBlueprintGeneratedClass? ResolveShowActorFromStyles(ExportStyleBase[] styles)
     {
-        foreach (var style in styles.OfType<AssetStyleData>())
+        foreach (var style in styles.OfType<ExportStructStyle>())
         {
             if (style.StyleData.TryGetValue(out UBlueprintGeneratedClass showActorClass, "ShowActorClass"))
                 return showActorClass;
         }
 
         return null;
+    }
+
+    public static void ImportLobbyPose(MeshExport export, ExportContext exporter, ExportStyleBase[] styles)
+    {
+        string? heroId = null;
+        string? shapeId = null;
+
+        if (styles.OfType<ExportRivalsFormStyle>().FirstOrDefault() is { } formStyle)
+        {
+            heroId = formStyle.HeroId;
+            shapeId = formStyle.ShapeId;
+        }
+
+        foreach (var style in styles.OfType<ExportStructStyle>())
+        {
+            if (!style.StyleData.TryGetValue(out FStructFallback identifier, "Identifier"))
+                continue;
+
+            heroId ??= identifier.GetOrDefault("HeroID", string.Empty);
+            shapeId ??= identifier.GetOrDefault("ShapeID", "0");
+            if (!string.IsNullOrEmpty(heroId))
+                break;
+        }
+
+        if (string.IsNullOrEmpty(heroId)
+            || !UEParse.Provider.TryLoadPackageObject<UDataTable>(EmoteTablePath, out var emoteTable)
+            || emoteTable.RowMap is null)
+        {
+            return;
+        }
+
+        shapeId ??= "0";
+        foreach (var emote in emoteTable.RowMap.Values)
+        {
+            if (!emote.TryGetValue(out FStructFallback identifier, "EmoteIdentifier")
+                || identifier.GetOrDefault("EmoteID", string.Empty) != "201"
+                || identifier.GetOrDefault("SkinID", string.Empty) != "001"
+                || identifier.GetOrDefault("HeroID", string.Empty) != heroId
+                || identifier.GetOrDefault("ShapeID", "0") != shapeId
+                || GetEmoteAnimationPath(emote) is not { } animPath
+                || !UEParse.Provider.TryLoadPackageObject(animPath, out var animAsset)
+                || animAsset is null)
+            {
+                continue;
+            }
+
+            export.Animation = new AnimExport(animAsset.Name, animAsset, [], EExportType.Animation, exporter.Meta, null);
+            if (ResolveShowActorFromStyles(styles) is { } showBp)
+                AppendFromEmote(exporter, export.Animation.Props, emote, showBp);
+            return;
+        }
     }
 
     public static UBlueprintGeneratedClass? ResolveDefaultShowActor(string heroId, string shapeId)
@@ -197,9 +249,9 @@ public static class RivalsEmoteWeaponProps
         return null;
     }
 
-    private static string? ResolveExportedAnimPath(UObject animAsset, BaseStyleData[] styles)
+    private static string? ResolveExportedAnimPath(UObject animAsset, ExportStyleBase[] styles)
     {
-        if (styles.OfType<AnimStyleData>().FirstOrDefault() is { } animStyle)
+        if (styles.OfType<ExportObjectStyle>().FirstOrDefault() is { } animStyle)
             return animStyle.StyleData.GetPathName();
 
         return animAsset.GetPathName();

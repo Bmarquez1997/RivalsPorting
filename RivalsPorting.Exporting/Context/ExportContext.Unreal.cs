@@ -14,12 +14,10 @@ using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
-using RivalsPorting.Extensions;
-using RivalsPorting.Models.Fortnite;
+using RivalsPorting.CUE4Parse.Extensions;
+using RivalsPorting.CUE4Parse.Models.Unreal.Lights;
 using RivalsPorting.Shared.Extensions;
 using RivalsPorting.Exporting.Models;
-using RivalsPorting.Models.CUE4Parse;
-using RivalsPorting.Models.Unreal.Lights;
 using Serilog;
 
 namespace RivalsPorting.Exporting.Context;

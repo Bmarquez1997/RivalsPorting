@@ -8,7 +8,6 @@ using CommunityToolkit.Mvvm.Input;
 using DynamicData;
 using DynamicData.Binding;
 using FluentAvalonia.UI.Controls;
-using RivalsPorting.Models.Article;
 using RivalsPorting.Models.Supabase.Tables;
 using RivalsPorting.Shared.Extensions;
 using ReactiveUI;

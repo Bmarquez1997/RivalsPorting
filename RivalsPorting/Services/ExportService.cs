@@ -117,7 +117,7 @@ public class ExportService(
             {
                 var asset = assetInfo.Asset;
                 var baseStyles = metaData.ExportLocation.IsFolder ? assetInfo.GetAllStyles() : assetInfo.GetSelectedStyles();
-                var exportStyles = ConvertStyles(baseStyles);
+                var exportStyles = ConvertStyles(baseStyles, metaData.Provider.Provider);
                 var exportType = asset.CreationData.ExportType;
 
                 return CreateExportWithProgress(session, asset.CreationData.DisplayName, asset.CreationData.Object, exportType, exportStyles, metaData);
@@ -279,24 +279,43 @@ public class ExportService(
             });
     }
 
-    private static ExportStyleBase[] ConvertStyles(BaseStyleData[] styles)
+    private static ExportStyleBase[] ConvertStyles(BaseStyleData[] styles, global::CUE4Parse.FileProvider.Vfs.AbstractVfsFileProvider provider)
     {
         return styles.Select<BaseStyleData, ExportStyleBase>(style => style switch
         {
             AssetColorStyleData colorStyle => new ExportColorStyle
             {
+                StyleName = colorStyle.StyleName,
                 StyleData = colorStyle.StyleData,
                 ColorData = colorStyle.ColorData,
                 IsParamSet = colorStyle.IsParamSet
             },
             AssetStyleData assetStyle => new ExportStructStyle
             {
+                StyleName = assetStyle.StyleName,
                 StyleData = assetStyle.StyleData
             },
             ObjectStyleData objStyle => new ExportObjectStyle
             {
+                StyleName = objStyle.StyleName,
                 StyleData = objStyle.StyleData,
                 AssociatedExportType = objStyle.AssociatedExportType
+            },
+            SoftAnimStyleData softAnim when provider.TryLoadPackageObject(softAnim.AnimPath, out var animObject) => new ExportObjectStyle
+            {
+                StyleName = softAnim.StyleName,
+                StyleData = animObject
+            },
+            SoftTextureStyleData softTexture when provider.TryLoadPackageObject(softTexture.TexturePath, out var textureObject) => new ExportObjectStyle
+            {
+                StyleName = softTexture.StyleName,
+                StyleData = textureObject
+            },
+            FormStyleData formStyle => new ExportRivalsFormStyle
+            {
+                StyleName = formStyle.StyleName,
+                HeroId = formStyle.HeroId,
+                ShapeId = formStyle.ShapeId
             },
             _ => throw new NotSupportedException($"Unknown style type: {style.GetType().Name}")
         }).ToArray();

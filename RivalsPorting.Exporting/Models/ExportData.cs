@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
+using RivalsPorting.Exporting.Providers;
 using RivalsPorting.Exporting.Types;
-using RivalsPorting.ViewModels;
 
 namespace RivalsPorting.Exporting.Models;
 

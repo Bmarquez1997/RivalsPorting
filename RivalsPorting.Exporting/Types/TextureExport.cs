@@ -8,10 +8,7 @@ using RivalsPorting.CUE4Parse.Extensions;
 using RivalsPorting.CUE4Parse.Models.Unreal.VirtualTexture;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files.Meta;
-using RivalsPorting.Extensions;
-using RivalsPorting.Models.Assets;
-using RivalsPorting.Models.Fortnite;
-using RivalsPorting.Models.Unreal;
+using RivalsPorting.Exporting.Styles;
 using RivalsPorting.Shared.Extensions;
 using Path = System.IO.Path;
 
@@ -34,19 +31,20 @@ public class TextureExport : BaseExport
     {
     }
 
-    public TextureExport(string name, UObject asset, BaseStyleData[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
+    public TextureExport(string name, UObject asset, ExportStyleBase[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
         if (styles.Length > 0 && !string.Equals(styles[0].StyleName, name, StringComparison.Ordinal))
             Name = $"{name} - {styles[0].StyleName}";
 
         var textures = new List<UTexture>();
-        var softTextures = styles.OfType<SoftTextureStyleData>().ToArray();
-        if (softTextures.Length > 0)
+        var textureStyles = styles.OfType<ExportObjectStyle>()
+            .Where(style => style.StyleData is UTexture)
+            .ToArray();
+        if (textureStyles.Length > 0)
         {
-            foreach (var softTexture in softTextures)
+            foreach (var textureStyle in textureStyles)
             {
-                if (UEParse.Provider.TryLoadPackageObject(softTexture.TexturePath, out UTexture texture))
-                    textures.Add(texture);
+                textures.Add((UTexture) textureStyle.StyleData);
             }
         }
         else

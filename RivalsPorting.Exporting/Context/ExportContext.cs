@@ -27,10 +27,9 @@ using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Engine.Animation;
 using CUE4Parse.Utils;
 using FFMpegCore;
-using RivalsPorting.Services;
+using RivalsPorting.CUE4Parse.Extensions;
+using RivalsPorting.Exporting.Extensions;
 using RivalsPorting.Exporting.Models;
-using RivalsPorting.Extensions;
-using RivalsPorting.Models.CUE4Parse;
 using Serilog;
 using Image = System.Drawing.Image;
 

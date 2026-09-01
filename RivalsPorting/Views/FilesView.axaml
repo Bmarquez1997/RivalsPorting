@@ -9,6 +9,7 @@
              xmlns:files="clr-namespace:RivalsPorting.Models.Files"
              xmlns:views="clr-namespace:RivalsPorting.Views"
              xmlns:rivalsPorting="clr-namespace:RivalsPorting"
+             xmlns:exporting="clr-namespace:RivalsPorting;assembly=RivalsPorting.Exporting"
              xmlns:wrapPanel="clr-namespace:RivalsPorting.Controls.WrapPanel"
              xmlns:files1="clr-namespace:RivalsPorting.Controls.Files"
              xmlns:loading="clr-namespace:RivalsPorting.Controls.Loading"
@@ -63,7 +64,7 @@
                 <SplitButton Grid.Column="4" HorizontalAlignment="Stretch" Command="{Binding ExportCommand}"
                              IsVisible="{Binding ShowAssetExportButton}">
                     <SplitButton.Flyout>
-                        <MenuFlyout ItemsSource="{ext:EnumToItemsSource {x:Type rivalsPorting:EExportLocation}}">
+                        <MenuFlyout ItemsSource="{ext:EnumToItemsSource {x:Type exporting:EExportLocation}}">
                             <MenuFlyout.ItemContainerTheme>
                                 <ControlTheme x:DataType="ext:EnumRecord" TargetType="MenuItem"
                                               BasedOn="{StaticResource {x:Type MenuItem}}">

@@ -23,12 +23,6 @@ using RivalsPorting.Validators;
 using Material.Icons;
 using NAudio.Wave;
 using Newtonsoft.Json;
-using RivalsPorting.Controls;
-using RivalsPorting.Models;
-using RivalsPorting.Models.API.Responses;
-using RivalsPorting.Models.Map;
-using RivalsPorting.Models.Radio;
-using RivalsPorting.Validators;
 
 namespace RivalsPorting.ViewModels.Settings;
 
@@ -70,6 +64,7 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
     [ObservableProperty] private bool _dontAskAboutKofi;
     [ObservableProperty] private DateTime _nextKofiAskDate = DateTime.Today;
     [ObservableProperty] private bool _showAssetNames;
+    [ObservableProperty] private bool _showVideoPreviews = true;
     
     [ObservableProperty] private bool _useDefaultExportLoadType = false;
     [ObservableProperty] private EExportType _defaultExportLoadType = EExportType.Outfit;
@@ -101,9 +96,7 @@ public partial class ApplicationSettingsViewModel : SettingsViewModelBase
     
     partial void OnAudioDeviceIndexChanged(int value)
     {
-        MusicPlayerWindow.Instance?.WindowModel.UpdateOutputDevice();
-        SoundPreviewWM?.UpdateOutputDevice();
-        SoundBankPreviewWindow.Instance?.WindowModel.UpdateOutputDevice();
+        Audio.NotifyOutputDeviceChanged();
     }
     
     partial void OnThemeChanged(EThemeType value)

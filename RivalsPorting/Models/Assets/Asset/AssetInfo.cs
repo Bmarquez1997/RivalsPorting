@@ -13,7 +13,6 @@ using RivalsPorting.CUE4Parse.Models.Fortnite;
 using RivalsPorting.CUE4Parse.Models.Fortnite.Enums;
 using RivalsPorting.Extensions;
 using RivalsPorting.Models.Assets;
-using RivalsPorting.Models.Fortnite;
 using Serilog;
 
 namespace RivalsPorting.Models.Assets.Asset;

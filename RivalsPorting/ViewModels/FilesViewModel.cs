@@ -21,6 +21,7 @@ using RivalsPorting.CUE4Parse.Models.Unreal;
 using RivalsPorting.CUE4Parse.Models.Unreal.VirtualTexture;
 using RivalsPorting.Exporting;
 using RivalsPorting.Exporting.Context;
+using RivalsPorting.Exporting.Extensions;
 using RivalsPorting.Exporting.Models;
 using RivalsPorting.Exporting.Models.Files;
 using RivalsPorting.Exporting.Models.Files.Meta;
@@ -287,7 +288,13 @@ public partial class FilesViewModel(
                 break;
             case UAkAudioEvent akAudio:
             {
-                var tracks = SoundExtensions.HandleSoundBnk(akAudio, AppSettings.Application.AssetPath, null);
+                var tracks = SoundExtensions.HandleSoundBnk(
+                    akAudio,
+                    UEParse.Provider!,
+                    AppSettings.Installation.CurrentProfile.ArchiveDirectory,
+                    Dependencies.VgmStreamFile,
+                    AppSettings.Application.AssetPath,
+                    null);
                 SoundBankPreviewWindow.Preview(akAudio.Name, tracks);
                 break;
             }

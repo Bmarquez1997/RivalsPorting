@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Material.Icons;
 
-namespace RivalsPorting.Models;
+namespace RivalsPorting;
 
 public class ExportAttribute(EPrimitiveExportType type) : Attribute
 {

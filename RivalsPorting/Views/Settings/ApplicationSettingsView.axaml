@@ -9,6 +9,7 @@
              xmlns:controls="clr-namespace:RivalsPorting.Controls.Settings"
              xmlns:controls1="clr-namespace:RivalsPorting.Controls"
              xmlns:rivalsPorting="clr-namespace:RivalsPorting"
+             xmlns:exporting="clr-namespace:RivalsPorting;assembly=RivalsPorting.Exporting"
              xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="RivalsPorting.Views.Settings.ApplicationSettingsView"
@@ -70,7 +71,7 @@
                                   SelectedItem="{Binding DefaultExportLoadType}"
                                   HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate DataType="rivalsPorting:EExportType">
+                                <DataTemplate DataType="exporting:EExportType">
                                     <controls1:ImageText Text="{Binding Converter={StaticResource EnumToRecord}}" 
                                                          Image="{Binding Converter={StaticResource ExportTypeIcon}}"/>
                                 </DataTemplate>
@@ -143,7 +144,7 @@
                                   SelectedItem="{Binding DefaultExportLoadType}"
                                   HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate DataType="rivalsPorting:EExportType">
+                                <DataTemplate DataType="exporting:EExportType">
                                     <controls1:ImageText Text="{Binding Converter={StaticResource EnumToRecord}}" 
                                                          Image="{Binding Converter={StaticResource ExportTypeIcon}}"/>
                                 </DataTemplate>
@@ -156,7 +157,7 @@
 
             <controls:SettingsItem Title="Default Export Location" Description="The default export location used on startup.">
                 <controls:SettingsItem.Footer>
-                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type rivalsPorting:EExportLocation}}"
+                    <ComboBox ItemsSource="{ext:EnumToItemsSource {x:Type exporting:EExportLocation}}"
                               SelectedItem="{Binding DefaultExportLocation, Converter={StaticResource EnumToRecord}}"
                               HorizontalAlignment="Center" VerticalAlignment="Center">
                         <ComboBox.ItemContainerTheme>

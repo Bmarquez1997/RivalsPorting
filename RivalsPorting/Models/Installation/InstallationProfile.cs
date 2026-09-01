@@ -64,6 +64,7 @@ public partial class InstallationProfile : ObservableValidator
     [JsonIgnore] public bool MappingsFileEnabled => IsCustom;
     [JsonIgnore] public bool TextureStreamingEnabled => RivalsVersion is ERivalsVersion.LatestInstalled;
     [JsonIgnore] public bool LoadInstalledBundlesEnabled => RivalsVersion is ERivalsVersion.LatestInstalled;
+    [JsonIgnore] public bool CanFetchVersion => !string.IsNullOrWhiteSpace(FetchVersion);
     
     public async Task BrowseArchivePath()
     {
