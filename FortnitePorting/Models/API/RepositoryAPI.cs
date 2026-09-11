@@ -8,7 +8,7 @@ namespace FortnitePorting.Models.API;
 public class RepositoryAPI(RestClient client) : APIBase(client)
 {
     public const string REPOSITORY_URL = "https://github.com/Bmarquez1997/RivalsPorting/raw/refs/heads/main/Repository.json";
-    public const string MAPPINGS_URL = "https://github.com/Bmarquez1997/RivalsPorting/raw/refs/heads/main/Mappings.json";
+    public const string MAPPINGS_URL = "https://github.com/SpaceDepot/rivals-depot/raw/refs/heads/main/Mappings.json";
     
     public async Task<RepositoryResponse?> GetRepositoryAsync(string url = REPOSITORY_URL)
     {
