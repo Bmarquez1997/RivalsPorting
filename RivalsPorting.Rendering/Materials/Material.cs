@@ -200,7 +200,8 @@ public class Material
             SetLayerParameters(materialInstanceEditorData.StaticParameters);
         }
 
-        CheckLayerUsage(materialInstance.Parent);
+        if (materialInstance.Parent.TryLoad<UUnrealMaterial>(out var parentMaterial))
+            CheckLayerUsage(parentMaterial);
     }
 
     private void SetLayerParameters(FStaticParameterSet? staticParameterSet)
