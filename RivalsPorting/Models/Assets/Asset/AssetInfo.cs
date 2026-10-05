@@ -135,6 +135,12 @@ public partial class AssetInfo : Base.BaseAssetInfo
 
     private readonly Dictionary<(string SkinId, string ShapeId), FStructFallback>? _outfitSkinLookup;
 
+    /// <summary>
+    /// Objects that always export with the asset and are never offered as a style choice,
+    /// e.g. the extra meshes that make up a multi-part accessory.
+    /// </summary>
+    public List<BaseStyleData> FixedStyles { get; } = [];
+
     public AssetInfo(AssetItem asset, FStructFallback[] styles)
     {
         Asset = asset;
@@ -204,18 +210,23 @@ public partial class AssetInfo : Base.BaseAssetInfo
     
     public BaseStyleData[] GetSelectedStyles()
     {
-        return StyleInfos
-            .SelectMany<AssetStyleInfo, BaseStyleData>(info => info.MultiSelect ? info.SelectedItems : [info.SelectedStyle])
-            .ToArray();
+        return
+        [
+            ..FixedStyles,
+            ..StyleInfos.SelectMany<AssetStyleInfo, BaseStyleData>(info =>
+                info.MultiSelect ? info.SelectedItems : [info.SelectedStyle])
+        ];
     }
     
     public BaseStyleData[] GetAllStyles()
     {
-        return StyleInfos
-            .SelectMany<AssetStyleInfo, BaseStyleData>(info => info.ExportSelectedOnly
+        return
+        [
+            ..FixedStyles,
+            ..StyleInfos.SelectMany<AssetStyleInfo, BaseStyleData>(info => info.ExportSelectedOnly
                 ? [info.SelectedStyle]
                 : info.StyleDatas)
-            .ToArray();
+        ];
     }
 
     /// <summary>

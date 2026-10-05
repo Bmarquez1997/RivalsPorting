@@ -7,6 +7,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports.Engine;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.i18N;
@@ -180,6 +181,13 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                         loader.LoadedAssets = loader.TotalAssets;
                     }
                 },
+                // new AssetLoader(EExportType.Pickaxe) //Weapons
+                // {
+                //     PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                //     LoadHiddenAssets = true,
+                //     HideRarity = true,
+                //     AssetHandler = LoadAccessoriesAsync
+                // },
                 new AssetLoader(EExportType.Emote)
                 {
                     ClassNames = ["DataTable"],
@@ -473,10 +481,13 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                         loader.LoadedAssets = loader.TotalAssets;
                     }
                 },
-                // new AssetLoader(EExportType.Backpack) //Accessory
-                // {
-                //     ClassNames = ["AthenaLoadingScreenItemDefinition"]
-                // },
+                new AssetLoader(EExportType.Backpack) //Accessory
+                {
+                    PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
+                    LoadHiddenAssets = true,
+                    HideRarity = true,
+                    AssetHandler = LoadAccessoriesAsync
+                },
                 new AssetLoader(EExportType.Emoticon) // Mood
                 {
                     PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
@@ -682,6 +693,132 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
         ActiveLoader = Get(type);
         ActiveCollection = ActiveLoader.Filtered;
         ActiveLoader.UpdateFilterVisibility();
+    }
+
+    private static async Task LoadAccessoriesAsync(AssetLoader loader)
+    {
+        var itemTable = await UEParse.Provider.SafeLoadPackageObjectAsync<UDataTable>(
+            "Marvel/Content/Marvel/Data/DataTable/MarvelItemTable");
+        if (itemTable?.RowMap == null) return;
+
+        var accessoryRows = itemTable.RowMap
+            .Where(entry => entry.Value.TryGetValue(out FName typeId, "TypeID")
+                            && typeId.Text.EndsWith(
+                                "HERO_ACCESSORY_SLOT", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(entry => entry.Key.Text, StringComparer.Ordinal)
+            .ToArray();
+
+        loader.TotalAssets = accessoryRows.Length;
+        foreach (var (key, row) in accessoryRows)
+        {
+            var itemIndexes = row.GetOrDefault("ItemIndexes", Array.Empty<FStructFallback>());
+            var itemIndex = itemIndexes.FirstOrDefault(index =>
+                                index.GetOrDefault("ShapeID", 0) == 0)
+                            ?? itemIndexes.FirstOrDefault();
+            var indexId = itemIndex?.GetOrDefault("IndexID", string.Empty) ?? string.Empty;
+            if (indexId.Length < 7)
+            {
+                loader.LoadedAssets++;
+                continue;
+            }
+
+            var heroId = indexId.Substring(2, 4);
+            var meshStem = $"SK_Slot_{indexId[..^4]}_{indexId[^4..]}";
+            var meshDirectory =
+                $"Marvel/Content/Marvel/Characters/{heroId}/{heroId}001/Slots/Accessories/{indexId}/Meshes";
+            var mainMeshPath = $"{meshDirectory}/{meshStem}";
+
+            if (await UEParse.Provider.SafeLoadPackageObjectAsync<USkeletalMesh>(mainMeshPath) is not { } mainMesh)
+            {
+                loader.LoadedAssets++;
+                continue;
+            }
+
+            var meshes = new List<USkeletalMesh> { mainMesh };
+            if (AccessorySecondaryMeshSuffixes.TryGetValue(key.Text, out var secondarySuffixes))
+            {
+                foreach (var suffix in secondarySuffixes)
+                {
+                    var path = $"{meshDirectory}/{meshStem}{suffix}";
+                    if (await UEParse.Provider.SafeLoadPackageObjectAsync<USkeletalMesh>(path) is { } secondaryMesh)
+                        meshes.Add(secondaryMesh);
+                }
+            }
+
+            var itemNumericId = key.Text.StartsWith("Slot_", StringComparison.OrdinalIgnoreCase)
+                ? key.Text["Slot_".Length..]
+                : key.Text;
+            var displayName = row.GetOrDefault("ItemName", new FText(key.Text)).Text;
+            if (!string.IsNullOrWhiteSpace(displayName))
+                displayName = displayName.ToLower().TitleCase();
+
+            var itemDescription = row.GetOrDefault<FStructFallback?>("ItemDescription");
+            var description = itemDescription?.GetOrDefault(
+                "NormalDescription", new FText(string.Empty)).Text ?? string.Empty;
+            var lowResIconPath = GetAccessoryInventoryIconPath(row);
+            var highResIconPath =
+                $"Marvel/Content/Marvel/UI/Textures/Mall/PendantCard/img_mall_{itemNumericId}_pendant";
+
+            var assetArgs = new AssetItemCreationArgs
+            {
+                ID = key.Text,
+                DisplayName = displayName,
+                Description = description,
+                MainColor = new FLinearColor(1, 1, 1, 1),
+                SecondaryColor = new FLinearColor(0, 0, 0, 1),
+                LowResIconPath = lowResIconPath ?? highResIconPath,
+                HighResIconPath = highResIconPath,
+                ExportType = EExportType.Backpack,
+                Object = mainMesh,
+                HideRarity = true
+            };
+
+            var assetItem = new AssetItem(assetArgs);
+            await assetItem.LoadBitmapAsync();
+
+            assetItem.AssetInfo = new AssetInfo(assetItem);
+
+            // Accessories have no styles; extra meshes (e.g. Khonshu's spring) are parts of the one asset.
+            foreach (var (index, mesh) in meshes.Index())
+            {
+                assetItem.AssetInfo.FixedStyles.Add(
+                    new ObjectStyleData(index == 0 ? displayName : mesh.Name, mesh, assetItem.IconDisplayImage)
+                    {
+                        AssociatedExportType = EExportType.Mesh
+                    });
+            }
+
+            loader.Source.AddOrUpdate(assetItem);
+            loader.LoadedAssets++;
+        }
+
+        loader.LoadedAssets = loader.TotalAssets;
+    }
+
+    private static readonly Dictionary<string, string[]> AccessorySecondaryMeshSuffixes =
+        new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Slot_03810300001"] = ["_Spring_02"]
+    };
+
+    private static string? GetAccessoryInventoryIconPath(FStructFallback row)
+    {
+        if (!row.TryGetValue(out FInstancedStruct sparseConfig, "ItemSparseConfig")
+            || sparseConfig.NonConstStruct == null
+            || !sparseConfig.NonConstStruct.TryGetValue(out FStructFallback[] bigIcons, "BigIcons"))
+            return null;
+
+        foreach (var iconEntry in bigIcons)
+        {
+            if (iconEntry.TryGetValue(out FSoftObjectPath icon, "Icon")
+                && !icon.AssetPathName.IsNone
+                && !string.IsNullOrEmpty(icon.AssetPathName.Text))
+            {
+                return icon.AssetPathName.Text;
+            }
+        }
+
+        return null;
     }
 
     private static string GetDataTableIconPath(FStructFallback iconStruct)
@@ -1077,11 +1214,14 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
     }
 
     private static string? ResolveMarvelItemLocResName(string itemId)
+        => ResolveMarvelItemLocResValue(itemId, "ItemName");
+
+    private static string? ResolveMarvelItemLocResValue(string itemId, string field)
     {
         var i18n = UEParse.Provider?.Internationalization;
         if (i18n is null) return null;
 
-        var key = $"MarvelItemTable_{itemId}_ItemName";
+        var key = $"MarvelItemTable_{itemId}_{field}";
 
         var shared = i18n.SafeGet("123_Customize_ST", key, string.Empty);
         if (!string.IsNullOrWhiteSpace(shared))

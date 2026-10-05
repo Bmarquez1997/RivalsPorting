@@ -44,11 +44,11 @@ public enum EExportType
     [NonAsset]
     CharacterPart = ExportCategory.Cosmetic + 2,
 
-    [Description("Backpacks"), Export(EPrimitiveExportType.Mesh)]
+    [Description("Accessories"), Export(EPrimitiveExportType.Mesh)]
     [CosmeticAsset]
     Backpack = ExportCategory.Cosmetic + 3,
 
-    [Description("Pickaxes"), Export(EPrimitiveExportType.Mesh)]
+    [Description("Weapons"), Export(EPrimitiveExportType.Mesh)]
     [CosmeticAsset]
     Pickaxe = ExportCategory.Cosmetic + 4,
 
