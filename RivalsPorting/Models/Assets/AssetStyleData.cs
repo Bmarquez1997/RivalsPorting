@@ -178,6 +178,20 @@ public class ModelStyleData : BaseStyleData
     }
 }
 
+/// <summary>Optional include of ShowBP Weapon* meshes with an outfit export.</summary>
+public class WeaponStyleData : BaseStyleData
+{
+    public bool IncludeWeapons { get; }
+
+    public WeaponStyleData(string name, bool includeWeapons, Bitmap? previewImage)
+    {
+        StyleName = name;
+        IncludeWeapons = includeWeapons;
+        StyleDisplayImage = previewImage;
+        ShowName = true;
+    }
+}
+
 /// <summary>Hero shape/form selection for multi-shape outfits (e.g. Cloak vs Dagger).</summary>
 public class FormStyleData : BaseStyleData
 {

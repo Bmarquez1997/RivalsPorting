@@ -33,7 +33,10 @@ public partial class AssetStyleInfo : ObservableObject
     [ObservableProperty, NotifyPropertyChangedFor(nameof(SelectedStyle))] private int _selectedStyleIndex;
     [ObservableProperty] private ObservableCollection<BaseStyleData> _selectedItems = [];
 
-    public BaseStyleData SelectedStyle => StyleDatas[SelectedStyleIndex];
+    public BaseStyleData? SelectedStyle =>
+        SelectedStyleIndex >= 0 && SelectedStyleIndex < StyleDatas.Count
+            ? StyleDatas[SelectedStyleIndex]
+            : null;
     
     [ObservableProperty] private bool _requiredSelection = true;
 

@@ -181,13 +181,6 @@ public partial class AssetLoaderService : ObservableObject, IService, IResettabl
                         loader.LoadedAssets = loader.TotalAssets;
                     }
                 },
-                // new AssetLoader(EExportType.Pickaxe) //Weapons
-                // {
-                //     PlaceholderIconPath = "Marvel/Content/Marvel/UI/Textures/Gallery/Logo/img_gallery_insidepage_logo",
-                //     LoadHiddenAssets = true,
-                //     HideRarity = true,
-                //     AssetHandler = LoadAccessoriesAsync
-                // },
                 new AssetLoader(EExportType.Emote)
                 {
                     ClassNames = ["DataTable"],

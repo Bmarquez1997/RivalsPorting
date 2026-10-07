@@ -41,8 +41,11 @@ public class MeshExport : BaseExport
     
     public MeshExport(string name, UObject? asset, ExportStyleBase[] styles, EExportType exportType, ExportDataMeta metaData, IExportFileMeta? fileMeta) : base(name, exportType, metaData)
     {
-        if (styles.Length > 0 && !string.Equals(styles[0].StyleName, name, StringComparison.Ordinal))
-            Name = $"{name} - {styles[0].StyleName}";
+        // Prefer skin/struct style name for the export label; Model/Weapons channels are often styles[0].
+        var labelStyle = styles.OfType<ExportStructStyle>().FirstOrDefault(style => style is not ExportColorStyle)
+                         ?? styles.FirstOrDefault();
+        if (labelStyle is not null && !string.Equals(labelStyle.StyleName, name, StringComparison.Ordinal))
+            Name = $"{name} - {labelStyle.StyleName}";
 
         var useGameModel = styles.OfType<ExportRivalsModelStyle>().Any(style => style.UseGameModel);
 
@@ -156,11 +159,11 @@ public class MeshExport : BaseExport
         if (!actorClass.ClassDefaultObject.TryLoad(out UObject actorObject))
             return false;
 
-        Export(actorObject, exportType, styles);
+        Export(actorObject, exportType, styles, actorClass);
         return true;
     }
 
-    public void Export(UObject asset, EExportType exportType, ExportStyleBase[]? styles = null)
+    public void Export(UObject asset, EExportType exportType, ExportStyleBase[]? styles = null, UBlueprintGeneratedClass? actorClass = null)
     {
         switch (exportType)
         {
@@ -184,6 +187,11 @@ public class MeshExport : BaseExport
                     {
                         Meshes.AddIfNotNull(Context.CharacterPart(part));
                     }
+                }
+
+                if (styles?.OfType<ExportRivalsWeaponStyle>().Any(style => style.IncludeWeapons) == true)
+                {
+                    RivalsShowBpWeapons.AppendWeaponMeshes(Context, Meshes, asset, actorClass);
                 }
 
                 if (Context.Meta.Settings.ImportLobbyPoses)

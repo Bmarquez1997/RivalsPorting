@@ -334,6 +334,11 @@ public class ExportService(
                 StyleName = modelStyle.StyleName,
                 UseGameModel = modelStyle.UseGameModel
             },
+            WeaponStyleData weaponStyle => new ExportRivalsWeaponStyle
+            {
+                StyleName = weaponStyle.StyleName,
+                IncludeWeapons = weaponStyle.IncludeWeapons
+            },
             _ => throw new NotSupportedException($"Unknown style type: {style.GetType().Name}")
         }).ToArray();
     }

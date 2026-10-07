@@ -32,10 +32,16 @@ class MeshImportContext:
         self.collection = create_or_get_collection(self.name) if self.options.get("ImportIntoCollection") else bpy.context.scene.collection
 
         if self.type in [EExportType.OUTFIT, EExportType.BACKPACK, EExportType.PICKAXE, EExportType.FALL_GUYS_OUTFIT]:
-            target_meshes = data.get("OverrideMeshes")
-            normal_meshes = data.get("Meshes")
+            # Fortnite part overrides win by Type. Rivals meshes often omit Type; those must
+            # all be kept — otherwise None==None drops every mesh after the body.
+            target_meshes = list(data.get("OverrideMeshes") or [])
+            normal_meshes = data.get("Meshes") or []
             for mesh in normal_meshes:
-                if not any(target_meshes, lambda target_mesh: target_mesh.get("Type") == mesh.get("Type")):
+                mesh_type = mesh.get("Type")
+                if mesh_type is None or not any(
+                    target_meshes,
+                    lambda target_mesh: target_mesh.get("Type") == mesh_type,
+                ):
                     target_meshes.append(mesh)
         else:
             target_meshes = data.get("Meshes")

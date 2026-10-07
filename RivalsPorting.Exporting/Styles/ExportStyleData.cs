@@ -35,3 +35,8 @@ public class ExportRivalsModelStyle : ExportStyleBase
 {
     public bool UseGameModel;
 }
+
+public class ExportRivalsWeaponStyle : ExportStyleBase
+{
+    public bool IncludeWeapons;
+}

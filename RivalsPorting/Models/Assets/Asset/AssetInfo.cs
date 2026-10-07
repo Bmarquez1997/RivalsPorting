@@ -169,6 +169,15 @@ public partial class AssetInfo : Base.BaseAssetInfo
             ExportSelectedOnly = true
         });
 
+        StyleInfos.Add(new AssetStyleInfo("Weapons",
+        [
+            new WeaponStyleData("None", includeWeapons: false, Asset.IconDisplayImage),
+            new WeaponStyleData("Include", includeWeapons: true, Asset.IconDisplayImage)
+        ])
+        {
+            ExportSelectedOnly = true
+        });
+
         var formArray = forms.ToArray();
         if (formArray.Length > 1)
             StyleInfos.Add(new AssetStyleInfo("Forms", formArray));
@@ -213,8 +222,7 @@ public partial class AssetInfo : Base.BaseAssetInfo
         return
         [
             ..FixedStyles,
-            ..StyleInfos.SelectMany<AssetStyleInfo, BaseStyleData>(info =>
-                info.MultiSelect ? info.SelectedItems : [info.SelectedStyle])
+            ..StyleInfos.SelectMany(GetChannelSelection)
         ];
     }
     
@@ -223,10 +231,22 @@ public partial class AssetInfo : Base.BaseAssetInfo
         return
         [
             ..FixedStyles,
-            ..StyleInfos.SelectMany<AssetStyleInfo, BaseStyleData>(info => info.ExportSelectedOnly
-                ? [info.SelectedStyle]
-                : info.StyleDatas)
+            ..StyleInfos.SelectMany<AssetStyleInfo, BaseStyleData>(info =>
+            {
+                if (!info.ExportSelectedOnly)
+                    return info.StyleDatas;
+
+                return info.SelectedStyle is { } selected ? [selected] : [];
+            })
         ];
+    }
+
+    private static IEnumerable<BaseStyleData> GetChannelSelection(AssetStyleInfo info)
+    {
+        if (info.MultiSelect)
+            return info.SelectedItems;
+
+        return info.SelectedStyle is { } selected ? [selected] : [];
     }
 
     /// <summary>

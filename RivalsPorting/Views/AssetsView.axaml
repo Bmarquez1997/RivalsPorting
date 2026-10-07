@@ -368,8 +368,9 @@
                                                                         IsVisible="{Binding !MultiSelect}">
                                                             <DropDownButton.Flyout>
                                                                 <Flyout>
+                                                                    <!-- SelectedItems must not bind here: an empty SelectedItems
+                                                                         collection fights SelectedIndex and resets Lobby/Skins to 0. -->
                                                                     <ListBox SelectionMode="{Binding SelectionMode}"
-                                                                             SelectedItems="{Binding SelectedItems}"
                                                                              SelectedIndex="{Binding SelectedStyleIndex, Mode=TwoWay}"
                                                                              ItemsSource="{Binding StyleDatas}"
                                                                              HorizontalAlignment="Stretch"

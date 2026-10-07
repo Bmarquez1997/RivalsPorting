@@ -80,7 +80,14 @@ def merge_parts(parts):
             merge_parts.append(part)
 
     body_part = first(merge_parts, lambda p: p.get("Type") == EFortCustomPartType.BODY)
-    other_parts = where(merge_parts, lambda p: p.get("Type") != EFortCustomPartType.BODY)
+    # Rivals outfit meshes often have no Fortnite Type; treat the first part as the body.
+    if body_part is None and merge_parts:
+        body_part = merge_parts[0]
+
+    if body_part is None:
+        return None
+
+    other_parts = where(merge_parts, lambda p: p is not body_part)
 
     base_armature = body_part.get("Skeleton")
     extra_armatures = [p.get("Skeleton") for p in other_parts]
